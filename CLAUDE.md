@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single self-contained file, `dynasty-board.html` (~700 KB), for a College Football 27 dynasty-mode companion. No build, no package.json, no git, no tests. Open it in a browser to run it. The only external requests are Google Fonts.
+A single self-contained file, `public/index.html` (~700 KB), for a College Football 27 dynasty-mode companion. No build and no package.json. Open it in a browser to run it. The only external requests are Google Fonts.
+
+## Deploy
+
+Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets (`wrangler.jsonc`, directory `./public`). Pushing to `main` runs `.github/workflows/deploy.yml`: it runs `check.mjs`, and only if that passes it runs `wrangler deploy`. Anything in `public/` is published, so keep dev files out of it. `public/_redirects` keeps the old `/dynasty-board` URL working.
 
 ## Layout of the file
 
@@ -12,7 +16,7 @@ A single self-contained file, `dynasty-board.html` (~700 KB), for a College Foot
 - Lines ~477-645: static HTML for the five tabs (`#viewBoard`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`) plus the team dossier drawer (`#dossier`, `#scrim`).
 - Lines ~646-1661: one `<script>`, plain JS with no framework. UI is rendered by building HTML strings into `innerHTML`.
 
-**Line 647 (`const DATA = [...]`) is ~540 KB on one line and line 1041 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 647p dynasty-board.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
+**Line 647 (`const DATA = [...]`) is ~540 KB on one line and line 1041 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 647p public/index.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
 
 ## Data model
 

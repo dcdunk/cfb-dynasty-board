@@ -1,4 +1,4 @@
-// Smoke test: opens dynasty-board.html in headless Chrome and clicks through every tab.
+// Smoke test: opens public/index.html in headless Chrome and clicks through every tab.
 // Run: node check.mjs   (needs Node 22+ and Google Chrome; no npm install)
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -7,11 +7,11 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const CHROME = process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const PAGE = pathToFileURL(resolve(process.argv[2] || join(import.meta.dirname, "dynasty-board.html"))).href;
+const PAGE = pathToFileURL(resolve(process.argv[2] || join(import.meta.dirname, "public/index.html"))).href;
 const profile = mkdtempSync(join(tmpdir(), "board-check-")); // fresh profile = empty localStorage
 
 const chrome = spawn(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`,
-  "--no-first-run", "--window-size=1280,900", "about:blank"]);
+  "--no-first-run", "--window-size=1280,900", ...(process.platform === "linux" ? ["--no-sandbox"] : []), "about:blank"]);
 const port = await new Promise((ok, fail) => {
   let buf = "";
   chrome.stderr.on("data", d => { buf += d; const m = buf.match(/127\.0\.0\.1:(\d+)\//); if (m) ok(m[1]); });

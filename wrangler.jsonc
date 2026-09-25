@@ -1,0 +1,7 @@
+{
+  // Static site: everything in ./public is served as-is. public/index.html is the home page.
+  "name": "cfb-dynasty-board",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./public" },
+  "routes": [{ "pattern": "cfbdynastyboard.com", "custom_domain": true }]
+}
