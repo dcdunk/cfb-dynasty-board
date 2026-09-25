@@ -77,7 +77,7 @@ const r = await send("Runtime.evaluate", { expression: `(${inPage})()`, awaitPro
 const fails = [...errors, ...(r.result.exceptionDetails ? ["Check crashed: " + r.result.exceptionDetails.exception?.description] : r.result.result.value)];
 
 chrome.kill(); await new Promise(r => chrome.once("exit", r));
-rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
+try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch {} // leftover temp files are harmless
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
 console.log("PASS: all 5 tabs, dossier, search, roll, pipelines, house rules. No JS errors.");
 process.exit(0);
