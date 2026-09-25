@@ -79,6 +79,13 @@ const fails = [...errors, ...(r.result.exceptionDetails ? ["Check crashed: " + r
 
 chrome.kill(); await new Promise(r => chrome.once("exit", r));
 try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch {} // leftover temp files are harmless
+// Worker: www must 301 to the main domain, keeping the path.
+const worker = (await import("./src/index.js")).default;
+const env = { ASSETS: { fetch: () => new Response("site") } };
+const www = await worker.fetch(new Request("https://www.cfbdynastyboard.com/a?b=1"), env);
+if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboard.com/a?b=1") fails.push("Worker: www redirect broken");
+if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
+
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log("PASS: all 5 tabs, dossier, search, roll, pipelines, house rules. No JS errors.");
+console.log("PASS: all 5 tabs, dossier, search, roll, pipelines, house rules, www redirect. No JS errors.");
 process.exit(0);

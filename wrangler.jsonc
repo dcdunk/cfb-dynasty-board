@@ -1,8 +1,10 @@
 {
-  // Static site: everything in ./public is served as-is. public/index.html is the home page.
+  // Static site: everything in ./public is served as-is, via src/index.js (www redirect). public/index.html is the home page.
   "name": "cfb-dynasty-board",
+  "main": "src/index.js",
   "compatibility_date": "2026-09-01",
-  "assets": { "directory": "./public" },
+  // run_worker_first so the www redirect in src/index.js sees every request
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
   "routes": [
     { "pattern": "cfbdynastyboard.com", "custom_domain": true },
     { "pattern": "www.cfbdynastyboard.com", "custom_domain": true }

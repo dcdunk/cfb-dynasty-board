@@ -8,7 +8,7 @@ A single self-contained file, `public/index.html` (~700 KB), for a College Footb
 
 ## Deploy
 
-Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets (`wrangler.jsonc`, directory `./public`). Pushing to `main` runs `.github/workflows/deploy.yml`: it runs `check.mjs`, and only if that passes it runs `wrangler deploy`. Anything in `public/` is published, so keep dev files out of it. `public/_redirects` keeps the old `/dynasty-board` URL working.
+Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets (`wrangler.jsonc`, directory `./public`). Pushing to `main` runs `.github/workflows/deploy.yml`: it runs `check.mjs`, and only if that passes it runs `wrangler deploy`. Anything in `public/` is published, so keep dev files out of it. `public/_redirects` keeps the old `/dynasty-board` URL working. `src/index.js` runs before assets (`run_worker_first`) and 301s `www.` to the main domain; everything else goes to `env.ASSETS`.
 
 ## Layout of the file
 
