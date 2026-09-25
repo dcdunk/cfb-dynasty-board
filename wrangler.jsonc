@@ -3,5 +3,8 @@
   "name": "cfb-dynasty-board",
   "compatibility_date": "2026-09-01",
   "assets": { "directory": "./public" },
-  "routes": [{ "pattern": "cfbdynastyboard.com", "custom_domain": true }]
+  "routes": [
+    { "pattern": "cfbdynastyboard.com", "custom_domain": true },
+    { "pattern": "www.cfbdynastyboard.com", "custom_domain": true }
+  ]
 }
