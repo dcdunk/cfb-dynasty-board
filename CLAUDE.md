@@ -44,10 +44,10 @@ Changing the shape of either object breaks saved data for existing users. Bump t
 
 ## Verifying changes
 
-There is no test suite. After any JS edit, at minimum syntax-check the script block (adjust line numbers if the file shifted):
+`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all five tabs, opens a dossier, searches, rolls, steps the pipeline map, and deals house rules. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
 
 ```bash
-sed -n '647,1660p' dynasty-board.html > /tmp/app.js && node --check /tmp/app.js
+node check.mjs
 ```
 
-Then open the file in the browser pane and click through all five tabs plus the dossier, checking the console for errors. The user is a non-coder PM and expects changes to be tested before being reported done.
+`node check.mjs path/to/other.html` tests a different copy. When you add a feature, add a check for it in the `inPage` function. The user is a non-coder PM, so don't report a change as done until this passes.
