@@ -46,6 +46,7 @@ const inPage = async () => {
     ok($("#" + views[tab]).innerText.trim().length > 50, `${tab}: view looks empty`);
   };
 
+  ok(document.querySelector('link[rel="icon"]'), "Favicon link missing");
   await open("tabBoard");
   ok($$("#rows tr").length >= 100, `Board: expected 100+ team rows, got ${$$("#rows tr").length}`);
   $("#rows tr").click(); await wait(100);
