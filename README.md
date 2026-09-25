@@ -4,7 +4,7 @@ A companion site for College Football 27 dynasty mode. Live at **[cfbdynastyboar
 
 ## What's on it
 
-- **Board**: every FBS team in a sortable table with ratings, prestige and conference filters. Click a team for its full dossier.
+- **Board**: all 138 teams in a sortable table with ratings, prestige and conference filters. Click a team for its full dossier.
 - **Randomizer**: can't pick a team? Filter the pool and roll for one.
 - **Coaches**: searchable database of head coaches and coordinators.
 - **Pipelines**: each team's recruiting pipelines on a US map.

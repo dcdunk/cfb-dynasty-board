@@ -16,7 +16,7 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 - Lines ~477-645: static HTML for the five tabs (`#viewBoard`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`) plus the team dossier drawer (`#dossier`, `#scrim`).
 - Lines ~646-1661: one `<script>`, plain JS with no framework. UI is rendered by building HTML strings into `innerHTML`.
 
-**Line 647 (`const DATA = [...]`) is ~540 KB on one line and line 1041 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 647p public/index.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
+**Line 650 (`const DATA = [...]`) is ~540 KB on one line and line 1044 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 650p public/index.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
 
 ## Data model
 
