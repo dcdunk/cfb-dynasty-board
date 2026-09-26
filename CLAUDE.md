@@ -20,7 +20,7 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 
 ## Data model
 
-`DATA` is an array of ~138 teams with short keys, e.g. `n` name, `nk` nickname, `ab` abbrev, `c` conference, `o/of/df` overall/offense/defense ratings, `p` prestige, `sl` "City, ST" location, `pl` recruiting pipelines as `[state, tier, weight]`, `st` coaching staff (flattened into `COACHES`), `h` hashtags. Look at a record before assuming a key's meaning. `MAP` holds US state SVG paths (`states`) plus recruiting regions (`reg`, `split`).
+`DATA` is an array of ~138 teams with short keys, e.g. `n` name, `nk` nickname, `ab` abbrev, `c` conference, `o/of/df` overall/offense/defense ratings, `p` prestige, `sl` "City, ST" location, `pl` recruiting pipelines as `[state, tier, weight]`, `st` coaching staff (flattened into `COACHES`), `h` hashtags. Look at a record before assuming a key's meaning. `hMap(regs, tiers?)` draws a region map; its clipPath ids are unique per call because split states (CA, TX, FL) break when two maps share ids and one is hidden. `MAP` holds US state SVG paths (`states`) plus recruiting regions (`reg`, `split`).
 
 Every "Search a program" box uses the shared `combo(input, pick, current)` picker (ranking in `teamMatches`); don't reintroduce `<datalist>`.
 
@@ -37,7 +37,7 @@ Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS`
 | Coaches | Sortable staff table (`CCOLS`) | `cDraw` |
 | Pipelines | Recruiting pipeline map per team | `buildMap`, `paintMap`, `pDraw`, `pSet` |
 | House rules | Generates self-imposed challenge rules for a team | `hDraw`, `hDeal`, `hApplyPreset`, `hToggleRule`, `hText` |
-| Recruiting & NIL | Per-team plan from grades `g`, NIL `nt`/`na`, prestige, pipelines (reuses `purist` + `hMap`) and roster class years. Starts on the House rules team. Mechanics (hours, action costs) are from launch-window guides cited on the page; `recHours` interpolates between the only two published points | `recDraw`, `recNeeds` |
+| Recruiting & NIL | Program-level, year-agnostic strategy (users may take a job in year 5): prestige band (`ARCH`), NIL rank, lasting vs earned grades (`GLAST`), tier-colored pipelines, checklist. Deliberately avoids this save's roster/uncommitted NIL. Follows the House rules team unless the `#rLink` toggle is off (saved in `rec-v1`). Mechanics cited on the page; `recHours` interpolates between the only two published points | `recDraw`, `recPick` |
 | Sliders | Matt10's slider sets, hand-transcribed from his forum image (`SLDIFF`, `SLPEN`, `SLFIX`). Rows with a third value show what changed from the previous version. Update the version, date and `#slNew` notes when he posts a new set | `slDraw` |
 
 House rules are the most intricate part: `HRULES` (built-in rules, each with category `c` from `HCATS` and strain level `l` 1-3), `HPRE` presets, `HSTRICT` difficulty weights, `HTOK` text tokens filled per team by `fillTok`, and `HMAPS` region helpers. User-created rules/presets live in `HU` and merge in via `huSync`.

@@ -493,11 +493,12 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .cb li.cb-none{cursor:default; color:var(--faint); font-size:12.5px}
 
 /* ---------- recruiting & NIL ---------- */
-.rec-q{flex:0 1 300px}
+.rec-ctl{display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; flex:0 1 480px; justify-content:flex-end}
+.rec-q{flex:1 1 240px}
+.rec .sw{width:12px; height:12px; display:inline-block; vertical-align:-1px; border:1px solid var(--line)}
+.rec td.swc{width:12px; padding-right:0}
+.rec .arch{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 118; font-weight:800; text-transform:uppercase; font-size:22px; letter-spacing:-.005em}
 .rec-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; align-items:start; margin-top:20px; grid-auto-flow:dense}
-.rec-grid .span2{grid-column:span 2}
-.rec .span2{overflow-x:auto}
-@media (max-width:720px){.rec-grid .span2{grid-column:auto}}
 .rec .body{padding:12px}
 .rec .big{font-family:"IBM Plex Mono",monospace; font-size:26px; font-weight:600; line-height:1.1}
 .rec .kpis{display:grid; grid-template-columns:1fr 1fr; gap:14px}
@@ -711,12 +712,15 @@ td .sl-was{margin-left:6px}
   <header class="sl-head">
     <div>
       <h2 class="hh">Recruiting &amp; NIL plan</h2>
-      <p class="hint">A game plan built from your program's grades, budget, pipelines and roster. Recruiting NIL and keeping your own players draw on the same budget, so plan both together.</p>
+      <p class="hint">A strategy for the program itself, built on what doesn't change much from year to year: its tier, budget, lasting strengths and pipelines. Useful whether you start there or take the job in year 5. Recruiting NIL and keeping your own players draw on the same budget, so plan both together.</p>
     </div>
+    <div class="rec-ctl">
+    <button type="button" class="chip" id="rLink" aria-pressed="true" title="When on, this tab and House Rules share one program">Follow House Rules team</button>
     <label class="search rec-q">
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
       <input id="rq" type="text" placeholder="Search a program" aria-label="Program for the recruiting plan" autocomplete="off" spellcheck="false">
     </label>
+    </div>
   </header>
   <div class="rec-grid" id="recGrid"></div>
   <p class="rec-src">Mechanics from launch-window guides (June and July 2026); patches may have changed some numbers. Sources:
@@ -971,6 +975,7 @@ const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"]
 let curTab = "board";
 function showTab(which){
   curTab = which;
+  if (which === "rec") recDraw();
   for (const [k, tb, vw] of TABS) {
     $(vw).hidden = k !== which;
     $(tb).setAttribute("aria-selected", k === which);
@@ -1518,16 +1523,17 @@ const IC = {
   roll:`<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.6"/><path d="M12 1.5v3h-3"/></svg>`,
   x:`<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13"/></svg>`
 };
-function hMap(regs){
-  const on = new Set(regs);
+let hMapN = 0;
+function hMap(regs, tiers){
+  const on = new Set(regs), k = ++hMapN, fill = r => tiers && tiers[r] != null ? ` style="fill:var(--t${tiers[r]})"` : "";
   const shapes = Object.entries(MAP.states).map(([s, d]) => {
     const split = Object.entries(MAP.split).filter(([, v]) => v.s === s);
     if (!split.length) {
-      const lit = [...on].some(p => !MAP.split[p] && (MAP.reg[p] || []).includes(s));
-      return `<path class="hs${lit ? " on" : ""}" d="${d}"/>`;
+      const lit = [...on].find(p => !MAP.split[p] && (MAP.reg[p] || []).includes(s));
+      return `<path class="hs${lit ? " on" : ""}" d="${d}"${lit ? fill(lit) : ""}/>`;
     }
-    return `<path class="hs" d="${d}"/><clipPath id="hcp-${s}"><path d="${d}"/></clipPath><g clip-path="url(#hcp-${s})">` +
-      split.map(([p, v]) => `<polygon class="hp${on.has(p) ? " on" : ""}" points="${v.pts.map(q => q.join(",")).join(" ")}"/>`).join("") + `</g>`;
+    return `<path class="hs" d="${d}"/><clipPath id="hcp${k}-${s}"><path d="${d}"/></clipPath><g clip-path="url(#hcp${k}-${s})">` +
+      split.map(([p, v]) => `<polygon class="hp${on.has(p) ? " on" : ""}"${on.has(p) ? fill(p) : ""} points="${v.pts.map(q => q.join(",")).join(" ")}"/>`).join("") + `</g>`;
   }).join("");
   return `<figure class="hmap" style="margin:12px 0 0"><svg viewBox="0 0 959 593" role="img" aria-label="Map of allowed recruiting regions">${shapes}<g class="bd">${MAP.borders}</g></svg><figcaption>Shaded: where you may recruit (${on.size} of 42 regions)</figcaption></figure>`;
 }
@@ -1840,65 +1846,75 @@ $("#slDiff").addEventListener("click", e => { const b = e.target.closest("[data-
 slDraw();
 
 /* ---- recruiting & NIL plan ---- */
+// Program-level, year-agnostic: users may take a job in year 5, so nothing here depends on this save's roster or uncommitted NIL.
 // Hours: sources give only the endpoints (1-star ~350, 5-star ~1,000 preseason hours); in between is a straight-line estimate.
 const recHours = p => Math.round((350 + (Math.min(5, Math.max(1, p)) - 1) * 650 / 4) / 10) * 10;
-const STARTERS = {QB:1, RB:1, WR:3, TE:1, OL:5, DL:4, LB:3, CB:2, S:2, "K/P":2};
 const RCOST = [["Offer scholarship",5],["Search social media",5],["DM the player",10],["Scout (per session)",10],["Schedule visit","10–20"],
   ["Soft sell",20],["Contact friends and family",25],["Sway",30],["Hard sell",50],["Send the house",50]];
-let rTeam = "";
-function recNeeds(t){
-  return POSG.slice(1).map(([g, pos]) => {
-    const all = t.r.filter(p => pos.includes(p[1])).sort((a, b) => b[3] - a[3]);
-    const out = all.filter(p => p[2].startsWith("SR")), top = all.slice(0, STARTERS[g]);
-    return {g, out, st:top.filter(p => p[2].startsWith("SR")).length, left:all.length - out.length};
-  }).sort((a, b) => b.st - a.st || b.out.length - a.out.length);
-}
+// Grades a coach can't move quickly vs grades earned by results and tenure (GRADES order).
+const GLAST = ["Conference","Brand exposure","Facilities","Academics","Campus life"];
+const ARCH = [
+  [4.5, "Blue blood", "You have the most hours in the sport, so recruit nationally on top of your pipelines. Chase 5★ talent at every position, keep 2 to 4 true long shots, and spend most NIL keeping your stars from being poached."],
+  [3.5, "Contender", "Win your pipelines first, then pick a few national battles for 5★ players at premium positions. Split NIL between retaining starters and closing on the handful of recruits who change your ceiling."],
+  [2.5, "Climber", "Pipeline-first. Build the class from your strongest regions and use the transfer portal for immediate starters. Save NIL for a few difference makers rather than matching bigger schools on every offer."],
+  [0, "Rebuild", "Hours are scarce, so stay close to home and scout early. Target recruits who care about playing time, fill holes through the portal, and avoid bidding wars you can't sustain. Keep the few good players you have."]];
+const NILRANK = [...DATA].sort((a, b) => b.nt - a.nt).map(t => t.n);
+let rTeam = "", rLink = true;
+try { const v = JSON.parse(localStorage.getItem("rec-v1") || "null"); if (v) { rLink = v.link !== false; rTeam = v.team || ""; } } catch (e) {}
+const recSave = () => { try { localStorage.setItem("rec-v1", JSON.stringify({link:rLink, team:rTeam})); } catch (e) {} };
+const recTeam = () => rLink ? H.team : rTeam;
+function recPick(n){ if (rLink) hSetTeam(n); else rTeam = n; recSave(); recDraw(); }
 function recDraw(){
-  const t = DATA.find(x => x.n === rTeam), gr = GRADES.map((n, i) => [n, t.g[i]]).sort((a, b) => GVAL[b[1]] - GVAL[a[1]]);
-  let hard = gr.filter(x => GVAL[x[1]] >= 9); if (!hard.length) hard = gr.slice(0, 2);
-  const soft = gr.filter(x => !hard.includes(x) && GVAL[x[1]] >= 5), weak = gr.filter(x => !hard.includes(x) && GVAL[x[1]] < 5);
+  const t = DATA.find(x => x.n === recTeam()), gv = n => t.g[GRADES.indexOf(n)];
+  const [, arch, plan] = ARCH.find(a => t.p >= a[0]), target = Math.min(5, Math.floor(t.p) + 1), nr = NILRANK.indexOf(t.n) + 1;
+  const last = GLAST.map(n => [n, gv(n)]).sort((a, b) => GVAL[b[1]] - GVAL[a[1]]), earned = GRADES.filter(n => !GLAST.includes(n)).map(n => [n, gv(n)]);
+  let hard = last.filter(x => GVAL[x[1]] >= 9); if (!hard.length) hard = last.slice(0, 2);
+  const soft = last.filter(x => !hard.includes(x) && GVAL[x[1]] >= 5), weak = last.filter(x => !hard.includes(x) && GVAL[x[1]] < 5);
   const grs = (h, sub, xs) => `<div class="grp"><h4>${h}<small>${sub}</small></h4>${xs.length
     ? xs.map(([n, g]) => `<span class="gr">${n} <b>${g}</b></span>`).join("") : '<span class="gr" style="color:var(--faint)">None</span>'}</div>`;
-  const pct = t.nt ? Math.round(t.na / t.nt * 100) : 0, target = Math.min(5, Math.floor(t.p) + 1), needs = recNeeds(t);
-  const leaving = needs.reduce((s, n) => s + n.out.length, 0), [tier, regs] = purist(t);
-  const pl = t.pl.filter(p => p[1] > 0).sort((a, b) => b[2] - a[2]);
-  const map = hMap(regs).replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions)</figcaption>`);
-  $("#rq").value = document.activeElement === $("#rq") ? $("#rq").value : t.n;
+  const [tier, regs] = purist(t), pl = t.pl.filter(p => p[1] > 0).sort((a, b) => b[2] - a[2]);
+  const map = hMap(regs, Object.fromEntries(pl.map(p => [p[0], p[1]])))
+    .replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions), colored by tier</figcaption>`);
+  $("#rLink").setAttribute("aria-pressed", rLink);
+  if (document.activeElement !== $("#rq")) $("#rq").value = t.n;
   $("#recGrid").innerHTML = `
-  <section class="sl-card"><h3>Budget<span>${esc(t.n)}</span></h3><div class="body">
-    <div class="kpis"><div><div class="big">${fmt(t.na)}</div><span>NIL available of ${fmt(t.nt)}</span></div>
+  <section class="sl-card"><h3>Program tier<span>${esc(t.n)} · ${t.p}★ prestige</span></h3><div class="body">
+    <div class="arch">${arch}</div>
+    <p class="note" style="margin-top:8px">${plan}</p>
+    <p class="note">Prestige moves with results. If it rises or falls by the time you're there, use that tier's approach instead.</p></div></section>
+  <section class="sl-card"><h3>Resources<span>Program baseline</span></h3><div class="body">
+    <div class="kpis"><div><div class="big">${fmt(t.nt)}</div><span>NIL budget · #${nr} of ${DATA.length}</span></div>
       <div><div class="big">~${fmt(recHours(t.p))}</div><span>Preseason recruiting hours</span></div></div>
-    <div class="bar" role="img" aria-label="${pct}% of NIL budget available"><i style="width:${pct}%"></i></div>
-    <p class="note">${pct}% of the NIL budget is uncommitted. Hours scale with prestige (${t.p}★); each recruit takes at most <b>50 hours a week</b> from you, or 70 with the Always Be Crootin coach ability.</p></div></section>
-  <section class="sl-card"><h3>Target level<span>${t.p}★ prestige</span></h3><div class="body">
-    <div class="big">${target}★</div><span class="sub">recruits and transfers to chase</span>
-    <p class="note">Aim about <b>one star above your prestige</b>. Carry <b>2 to 4 long shots</b> above that, and drop them early if you fall behind. Put most of your hours on priority targets you can realistically land.</p></div></section>
-  <section class="sl-card"><h3>Pitch plan<span>From your 8 school grades</span></h3>
+    <p class="note">Target <b>${target}★</b> recruits and transfers, about one star above prestige. Each recruit takes at most <b>50 hours a week</b> from you, or 70 with the Always Be Crootin coach ability.</p></div></section>
+  <section class="sl-card"><h3>Pitch plan<span>Strengths that last</span></h3>
     ${grs("Hard sell", "big swing, worth the risk", hard)}${grs("Soft sell", "steady, smaller gains", soft)}${grs("Avoid", "skip recruits whose dealbreaker is here", weak)}
-    <p class="note" style="padding:0 12px 12px;margin:0">Target recruits whose top motivations match your hard-sell grades. Breaking a promise on a dealbreaker is a top reason players enter the portal.</p></section>
-  <section class="sl-card span2"><h3>Class needs<span>${leaving} seniors leave after this season</span></h3><table>
-    <thead><tr><th class="l">Pos</th><th>Starters out</th><th>Seniors out</th><th>Returning</th><th class="l">Best departing</th></tr></thead><tbody>${
-    needs.map(n => `<tr><td class="l">${n.g}</td><td class="mono${n.st ? " need" : ""}">${n.st} of ${STARTERS[n.g]}</td><td class="mono">${n.out.length}</td><td class="mono">${n.left}</td>
-      <td class="l sub">${n.out[0] ? `${esc(n.out[0][0])} · ${n.out[0][3]}` : "–"}</td></tr>`).join("")}</tbody></table>
-    <p class="note" style="padding:0 12px 12px">Starters are the top-rated players at each position (5 OL, 4 DL, 3 WR and LB, 2 CB and S). Seniors include redshirt seniors; early NFL departures aren't known yet.</p></section>
+    <div class="grp"><h4>Earned grades<small>change with your results and tenure</small></h4>${earned.map(([n, g]) => `<span class="gr" style="color:var(--dim)">${n} <b>${g}</b></span>`).join("")}</div>
+    <p class="note" style="padding:0 12px 12px;margin:0">Target recruits whose top motivations match your hard-sell grades. Breaking a promise on a dealbreaker is a top reason players enter the portal. Earned grades above are where the program starts; recheck them when you take over.</p></section>
   <section class="sl-card"><h3>Where to recruit<span>${pl.length} active pipelines</span></h3><div class="body">${map}</div><table><tbody>${
-    pl.slice(0, 6).map(p => `<tr><td class="l">${esc(p[0])}</td><td class="sub">${TIERN[p[1]]}</td><td class="mono">${p[2]}</td></tr>`).join("")}</tbody></table></section>
+    pl.slice(0, 8).map(p => `<tr><td class="swc"><i class="sw" style="background:var(--t${p[1]})" role="img" aria-label="Tier ${p[1]}"></i></td><td class="l">${esc(p[0])}</td><td class="sub">${TIERN[p[1]]}</td><td class="mono">${p[2]}</td></tr>`).join("")}</tbody></table></section>
+  <section class="sl-card"><h3>When you take over<span>Year one checklist</span></h3><ul class="tips">
+    <li><b>Count who's leaving.</b> Sort the roster by class and find positions losing starters; those are this cycle's priority targets. <button type="button" class="ghost" id="recRoster">Current roster</button></li>
+    <li><b>Check the NIL already committed.</b> Only the uncommitted part is yours to spend; graduating seniors free up more at season's end.</li>
+    <li><b>Recheck the earned grades.</b> A coaching change resets coach stability and coach prestige, which shifts which pitches work.</li>
+    <li><b>Scout in the preseason.</b> It takes 3 to 5 sessions to reveal a player, and preseason hours aren't needed for pitches yet.</li></ul></section>
   <section class="sl-card"><h3>NIL plan<span>Rules of thumb</span></h3><ul class="tips">
     <li><b>Keep before you chase.</b> Retaining your own players and recruiting share one budget. When it's tight, pay the starters you can't replace first.</li>
     <li><b>Offers set the baseline.</b> What you pay a recruit becomes their floor, and it rises as they produce. Cutting it later costs you the bonus plus a penalty.</li>
     <li><b>Offers are refundable.</b> NIL comes back if the recruit signs elsewhere or you drop them from your board.</li>
-    <li><b>Seniors free up money.</b> Graduating players' NIL returns to the pool${leaving ? `, and ${leaving} seniors leave after this season` : ""}.</li>
+    <li><b>Seniors free up money.</b> Graduating players' NIL returns to the pool each offseason.</li>
     <li><b>Overpaying to fix a weak grade is a trap.</b> If a recruit's dealbreaker is a grade you can't meet, the NIL it takes to land them compounds every year.</li></ul></section>
   <section class="sl-card"><h3>Hour costs<span>Per recruiting action</span></h3><table><tbody>${
     RCOST.map(([n, h]) => `<tr><td class="l">${n}</td><td class="mono">${h} hrs</td></tr>`).join("")}</tbody></table>
-    <p class="note" style="padding:0 12px 12px">Scheduling a visit uses only your hours, not the recruit's 50-hour cap. Scouting takes 3 to 5 sessions to reveal a player fully, so do it in the preseason when hours aren't needed for pitches.</p></section>`;
+    <p class="note" style="padding:0 12px 12px">Scheduling a visit uses only your hours, not the recruit's 50-hour cap.</p></section>`;
+  $("#recRoster").addEventListener("click", () => openTeam(t.n));
 }
+$("#rLink").addEventListener("click", () => { rLink = !rLink; if (!rLink) rTeam = H.team; recSave(); recDraw(); });
 function hOpenFor(n){ hSetTeam(n); showTab("house"); window.scrollTo({top:0}); }
 huLoad();
 if (!hLoad()) hApplyPreset("purist");
 if (H.pre && !presetOf(H.pre)) H.pre = "";
 hDraw();
-rTeam = H.team; combo($("#rq"), n => { rTeam = n; recDraw(); }, () => rTeam); recDraw();
+if (!DATA.some(t => t.n === rTeam)) rTeam = H.team; combo($("#rq"), recPick, recTeam); recDraw();
 
 draw();
 </script>

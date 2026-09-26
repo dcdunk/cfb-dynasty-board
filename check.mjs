@@ -109,15 +109,22 @@ const inPage = async () => {
   ok(localStorage.getItem("house-v1"), "House rules: state was not saved");
 
   await open("tabRec");
-  ok($("#rq").value === "UCLA", `Recruiting: should start on the saved House rules team (UCLA on a fresh profile), got ${$("#rq").value}`);
+  ok($("#rq").value === $("#hq").value, `Recruiting: linked by default, should show House rules team ${$("#hq").value}, got ${$("#rq").value}`);
   const recTitles = [...$$("#recGrid .sl-card h3")].map(h => h.firstChild.textContent);
-  ok(["Budget","Target level","Pitch plan","Class needs","Where to recruit","NIL plan","Hour costs"].every(x => recTitles.includes(x)), `Recruiting: missing sections, got ${recTitles}`);
+  ok(["Program tier","Resources","Pitch plan","Where to recruit","When you take over","NIL plan","Hour costs"].every(x => recTitles.includes(x)), `Recruiting: missing sections, got ${recTitles}`);
   type("#rq", "georgia"); $("#rq").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
-  ok($("#rq").value === "Georgia", `Recruiting: picker should switch to Georgia, got ${$("#rq").value}`);
-  ok($("#recGrid").innerText.includes("5★ prestige") && $("#recGrid").innerText.includes("~1,000"), "Recruiting: Georgia (5★) should show 5★ prestige and ~1,000 hours");
-  const seniors = +$("#recGrid").innerText.match(/(\d+) seniors leave/)[1];
-  ok(seniors > 0 && seniors < 85, `Recruiting: implausible senior count ${seniors}`);
-  ok($$("#recGrid .hmap .on").length > 0, "Recruiting: pipeline map has no shaded regions");
+  ok($("#rq").value === "Georgia" && $("#hq").value === "Georgia", "Recruiting: while linked, picking Georgia should also switch House rules");
+  ok($("#recGrid").innerText.includes("5★ prestige") && $("#recGrid").innerText.includes("~1,000") && $("#recGrid .arch").innerText.toLowerCase() === "blue blood", "Recruiting: Georgia should be a 5★ blue blood with ~1,000 hours");
+  ok($$("#recGrid .sw").length > 0 && $("#recGrid .sw").style.background.includes("--t"), "Recruiting: pipeline tier squares missing");
+  $("#rLink").click();
+  ok($("#rLink").getAttribute("aria-pressed") === "false", "Recruiting: link toggle did not turn off");
+  type("#rq", "temple"); $("#rq").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+  ok($("#rq").value === "Temple" && $("#hq").value === "Georgia", "Recruiting: unlinked pick should not change House rules");
+  $("#rLink").click();
+  ok($("#rq").value === "Georgia", "Recruiting: relinking should snap back to the House rules team");
+  // Split states (CA, TX, FL) must clip to their own outline; duplicate clipPath ids across maps drew them as rectangles.
+  const ids = [...$$("clipPath")].map(c => c.id);
+  ok(ids.length === new Set(ids).size, "Maps: duplicate clipPath ids");
 
   await open("tabSlide");
   const row = name => [...$$("#slGrid tr")].find(r => r.cells[0]?.innerText === name)?.innerText.replace(/\s+/g, " ");
