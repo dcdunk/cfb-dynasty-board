@@ -608,6 +608,10 @@ body.coach-on{margin-right:400px}
 .pm.me{align-self:flex-end; background:var(--accent-soft); color:var(--text); padding:8px 11px}
 .pm.bot{align-self:flex-start}
 .pm.bot p{margin:0 0 8px}
+.pm.bot h4{margin:12px 0 4px; font:600 11px "IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.06em; color:var(--accent-ink)}
+.pm.bot h4:first-child{margin-top:0}
+.pm.bot ul{margin:0 0 6px; padding-left:18px}
+.pm.bot li{margin:0 0 4px}
 .pstat{padding:0 14px 6px; font:12px "IBM Plex Mono",monospace; color:var(--dim)}
 .pform{display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid var(--line)}
 .pform{align-items:flex-end}
@@ -2084,7 +2088,8 @@ function pRules(t, strict, pre, force){
 const P = {team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
-const PHELP = `<p>I'm Coach. Tell me a program and how you want to play it, like "tough Florida dynasty with a created coach" or "casual Oregon rebuild". I'll suggest house rules, a recruiting approach and sliders from this site's data. Then you can say "make it harder", "no transfers" and so on.</p>`;
+const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
+  "I'll suggest house rules, a recruiting approach and sliders from this site's data. Then say \"make it harder\", \"no transfers\" and so on."].join("\n"));
 function pPlan(q){
   const s = norm(q), teams = pFindTeams(q);
   if (/\b(random|surprise|any team|pick (a|one) for me)\b/.test(s)) teams.unshift(DATA[Math.floor(Math.random() * DATA.length)]);
@@ -2105,6 +2110,21 @@ function pPlan(q){
     return {...prev, created, rules:prev.rules.filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force).sort((a, b) => catIx(a) - catIx(b))};
   return {t, strict, pre:pre || (prev && strict === prev.strict ? prev.pre : null), rules:pRules(t, strict, pre, force), created};
 }
+// Coach replies are a tiny markdown subset: "### title", "- bullet", "**bold**". Escaped before formatting.
+function pMd(s){
+  const out = []; let ul = false;
+  const inl = x => esc(x).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  for (const raw of s.split("\n")) {
+    const l = raw.trim(), b = l.match(/^(?:[-*•]|\d+\.)\s+(.*)/), hd = l.match(/^#{1,6}\s*(.*)|^\*\*([^*]+)\*\*:?$/);
+    if (!b && ul) { out.push("</ul>"); ul = false; }
+    if (!l) continue;
+    if (hd) out.push(`<h4>${inl(hd[1] ?? hd[2])}</h4>`);
+    else if (b) { if (!ul) { out.push("<ul>"); ul = true; } out.push(`<li>${inl(b[1])}</li>`); }
+    else out.push(`<p>${inl(l)}</p>`);
+  }
+  if (ul) out.push("</ul>");
+  return out.join("");
+}
 function pRender(p){
   const {t, strict, pre, rules, created} = p, s = strainOf(rules), [sl] = strainLbl(s);
   const [, arch, archTxt] = ARCH.find(a => t.p >= a[0]), nr = NILRANK.indexOf(t.n) + 1;
@@ -2112,12 +2132,13 @@ function pRender(p){
   const hc = (t.st || []).find(c => c[0] === "HC"), sld = SLDIFF[strict === "hard" ? "heis" : "aa"];
   const label = pre ? presetOf(pre).n : HSTRICT[strict].n;
   const coach = created
-    ? `You replace ${hc ? `${esc(hc[1])} (level ${hc[2]}, ${esc(hc[4])}, pipeline ${esc(hc[5] || "none")})` : "the current head coach"}. A created coach doesn't inherit that level or pipeline, so the program's own pipelines carry recruiting early on. Pair it with the Earn the headset rule if you want to start as a coordinator.`
-    : hc ? `You coach as ${esc(hc[1])}: level ${hc[2]}, ${esc(hc[4])}, grade ${esc(hc[3])}${hc[5] ? `, pipeline ${esc(hc[5])}` : ""}.` : "";
-  const html = `<p>${esc(t.n)} ${esc(t.nk)}: ${esc(t.c)}, ${t.p}★ prestige, ${t.o} overall, NIL budget #${nr} of ${DATA.length}.</p>
-    <p>For a ${esc(label.toLowerCase())} run, play with ${rules.length} house rules: ${esc(and(rules.map(id => unesc(HR[id].n))))}.</p>
-    <p>As a ${esc(arch.toLowerCase())} program: ${esc(archTxt)} Your best pipelines are ${pl.length ? esc(and(pl.map(x => x[0]))) : "thin, so recruit close to home"}.</p>
-    ${coach ? `<p>${coach}</p>` : ""}<p>Use Matt10's ${sld.n} sliders.</p>`;
+    ? `You replace ${hc ? `${hc[1]} (level ${hc[2]}, ${hc[4]}, pipeline ${hc[5] || "none"})` : "the current head coach"}. A created coach doesn't inherit that level or pipeline, so the program's own pipelines carry recruiting early on. Pair it with the Earn the headset rule if you want to start as a coordinator.`
+    : hc ? `You coach as ${hc[1]}: level ${hc[2]}, ${hc[4]}, grade ${hc[3]}${hc[5] ? `, pipeline ${hc[5]}` : ""}.` : "";
+  const plain = x => unesc(x.replace(/<[^>]+>/g, ""));
+  const html = pMd([`### ${t.n} ${t.nk}`, `- ${t.c} · ${t.p}★ prestige · ${t.o} overall · NIL budget #${nr} of ${DATA.length}`,
+    `### House rules · ${label}`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
+    `### Recruiting · ${arch}`, `- ${archTxt}`, `- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`,
+    ...(coach ? [`### ${created ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set`].join("\n"));
   P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)} ranked ${nr} of ${DATA.length}. National titles: ${tYears(t).join(", ") || "none"}.`,
     `Challenge: ${label}, strain ${sl}. House rules: ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
     `Recruiting band ${arch}: ${archTxt} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
@@ -2128,8 +2149,8 @@ function pRender(p){
 function pGlory(){
   const xs = DATA.filter(t => t.ti >= 3 && t.p <= 4).sort((a, b) => b.ti - a.ti || a.p - b.p).slice(0, 3);
   P.facts = "Former powerhouses on the board (national titles, current prestige, overall):\n" + xs.map(t => `${t.n} ${t.nk} (${t.c}): ${t.ti} titles (${tYears(t).join(", ")}), ${t.p} stars, ${t.o} overall`).join("\n");
-  return `<p>Three fallen powerhouses on the board: ${esc(and(xs.map(t => `${t.n} (${t.ti} national titles, last in ${tYears(t).slice(-1)[0]}, now ${t.p}★ and ${t.o} overall)`)))}.</p>
-    <p>Name one, like "${esc(xs[0].n)} back to glory", and I'll build the plan.</p>`;
+  return pMd(["### Fallen powerhouses", ...xs.map(t => `- **${t.n}:** ${t.ti} national titles, last in ${tYears(t).slice(-1)[0]}. Now ${t.p}★ and ${t.o} overall.`),
+    `Name one, like "${xs[0].n} back to glory", and I'll build the plan.`].join("\n"));
 }
 const PLEAGUE = "Every program (name | conference | prestige stars | overall | national title seasons):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${tYears(t).join(" ") || "none"}`).join("\n");
 async function pAsk(q){
@@ -2142,19 +2163,19 @@ async function pAsk(q){
   // AI on: its reply replaces the templated one; the template still builds P.facts for it.
   // A direct question ("when did Nebraska...?") is answered as asked, not turned into a plan pitch.
   const question = /\?\s*$|^(who|what|when|where|why|how|is|are|does|do|did|can|which)\b/i.test(q);
-  if (P.aiOn && P.ai) return pWrite(q, pSay("bot", "<p></p>").firstChild, !plan || question, !html || question);
+  if (P.aiOn && P.ai) return pWrite(q, pSay("bot", ""), !plan || question, !html || question);
   pSay("bot", html || `<p>I didn't catch a program${P.team ? " or a change to the plan" : ""} in that.</p>` + PHELP);
 }
 async function pWrite(q, el, free, open){
   el.textContent = "…"; P.busy = true;
   const sys = "You are Coach, the Dynasty Board assistant for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
     + "Do not use your own memory of real college football: no years, records, coaches or history unless they appear below. National title seasons below come from NCAA.com. "
-    + "If the facts don't answer the question, say the board doesn't have that. Reply in 2 to 4 plain sentences, no lists.\n\nFACTS:\n" + (P.facts || "") + (open ? "\n\n" + PLEAGUE : "");
+    + "If the facts don't answer the question, say the board doesn't have that. Format: short sections, each starting with a '### ' title line, then '- ' bullet points of one sentence each. No paragraphs longer than one sentence. Keep it under 180 words.\n\nFACTS:\n" + (P.facts || "") + (open ? "\n\n" + PLEAGUE : "");
   try {
-    const chunks = await P.ai.chat.completions.create({stream:true, temperature:.2, max_tokens:220,
-      messages:[{role:"system", content:sys}, ...P.hist.slice(-4), {role:"user", content:free ? q : `Reply to: "${q}". Name the house rules and say why they fit.`}]});
+    const chunks = await P.ai.chat.completions.create({stream:true, temperature:.2, max_tokens:450,
+      messages:[{role:"system", content:sys}, ...P.hist.slice(-4), {role:"user", content:free ? q : `Reply to: "${q}". Use four sections: Program, House rules, Recruiting, Sliders. One short bullet per house rule: its name in bold, then the rule.`}]});
     let out = "";
-    for await (const c of chunks) { out += c.choices[0]?.delta?.content || ""; el.textContent = out; }
+    for await (const c of chunks) { out += c.choices[0]?.delta?.content || ""; el.innerHTML = pMd(out); }
     P.hist.push({role:"user", content:q}, {role:"assistant", content:out});
   } catch (e) { el.textContent = "The AI model stopped responding. Turn AI chat off to get the standard reply."; }
   P.busy = false;

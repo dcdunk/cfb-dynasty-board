@@ -156,8 +156,11 @@ const inPage = async () => {
   const ask = async q => { $("#pIn").value = q; $("#pForm").requestSubmit(); await wait(50); return [...$$("#pLog .pm.bot")].pop().textContent; };
   ok(/didn't catch a program/.test(await ask("hello")), "Planner: text with no program should get the help reply");
   let m = await ask("plan a tough Florida dynasty with a created coach");
-  ok(/Florida Gators/.test(m) && /hardcore run/.test(m) && /You replace/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
+  ok(/Florida Gators/.test(m) && /House rules · Hardcore/.test(m) && /You replace/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
   ok(P.plan.rules.length === 8, "Planner: Hardcore should deal 8 rules");
+  const last = [...$$("#pLog .pm.bot")].pop();
+  ok(last.querySelectorAll("h4").length >= 4 && last.querySelectorAll("li").length >= 10, "Coach: reply should be titles and bullets, not a wall of text");
+  ok(pMd("### A\n- **b:** <i>x</i>\ntext") === "<h4>A</h4><ul><li><b>b:</b> &lt;i&gt;x&lt;/i&gt;</li></ul><p>text</p>", "Coach: markdown renderer wrong or not escaping");
   ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: longest team name should win (Georgia Tech)");
   ok(/Minnesota/.test(await ask("i want to take a former powerhouse program back to glory, what are 3 options?")), "Coach: back-to-glory should answer from board data (Minnesota has 6 titles)");
   ok(/1960/.test([...$$("#pLog .pm.bot")].pop().textContent), "Coach: glory reply should name Minnesota's last title (1960, NCAA.com)");
