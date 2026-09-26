@@ -83,6 +83,13 @@ const inPage = async () => {
   const before = $("#pq").value; $("#pnext").click(); await wait(50);
   ok($("#pq").value !== before, "Pipelines: next team button did nothing");
   ok($$("#pmap path").length > 40, "Pipelines: map did not draw");
+  // With every region label shown at once (worst case), no two may overlap.
+  const labs = [...$$("#pmap .lbl")]; labs.forEach(l => l.removeAttribute("hidden"));
+  const boxes = labs.map(l => [l.dataset.lab, l.getBBox()]), hits = [];
+  boxes.forEach(([a, p], i) => boxes.slice(i + 1).forEach(([b, q]) => {
+    if (p.x < q.x + q.width && q.x < p.x + p.width && p.y < q.y + q.height && q.y < p.y + p.height) hits.push(`${a}/${b}`); }));
+  ok(!hits.length, `Pipelines: overlapping map labels: ${hits.join(", ")}`);
+  labs.forEach(l => l.setAttribute("hidden", "")); $("#pnext").click(); $("#pprev").click();
 
   // Program picker (shared by Pipelines and House rules)
   const type = (sel, text) => { const i = $(sel); i.focus(); i.value = text; i.dispatchEvent(new Event("input")); };
