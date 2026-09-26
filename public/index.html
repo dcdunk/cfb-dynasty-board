@@ -594,7 +594,7 @@ td .sl-was{margin-left:6px}
     <div class="rail-in">
       <label class="search">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
-        <input id="cq" type="search" placeholder="Search coach name" aria-label="Search coach name" autocomplete="off" spellcheck="false">
+        <input id="cq" type="search" placeholder="Search coach or school" aria-label="Search coach or school" autocomplete="off" spellcheck="false">
       </label>
       <div class="chips" id="cchips" role="group" aria-label="Filter by role"></div>
       <span class="spacer"></span>
@@ -1017,7 +1017,7 @@ $("#chrow").addEventListener("click", e => {
   cDraw();
 });
 function cDraw(){
-  const list = COACHES.filter(c => (cRole === "All" || c.role === cRole) && (!cQuery || norm(c.name).includes(cQuery)))
+  const list = COACHES.filter(c => (cRole === "All" || c.role === cRole) && (!cQuery || norm(c.name).includes(cQuery) || norm(c.team).includes(cQuery)))
     .sort((a, b) => {
       const x = cVal(a, cKey), y = cVal(b, cKey);
       const d = typeof x === "string" ? x.localeCompare(y) : x - y;
@@ -1032,7 +1032,7 @@ function cDraw(){
     <tr tabindex="0" data-n="${c.team}">
       <td class="l role">${c.role}</td>
       <td class="l"><span class="team">${hl(c.name, cQuery)}</span>${c.gen ? `<span class="dev d1">Generic</span>` : ""}</td>
-      <td class="l sub">${c.team}</td>
+      <td class="l sub">${hl(c.team, cQuery)}</td>
       <td class="mono big">${c.lvl}</td>
       <td class="mono">${c.gr}</td>
       <td class="l mut">${c.arch}</td>

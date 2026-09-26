@@ -74,6 +74,9 @@ const inPage = async () => {
   $("#cq").value = part.toLowerCase(); $("#cq").dispatchEvent(new Event("input"));
   ok([...$$("#crows .team")].every(t => t.innerText.toLowerCase().includes(part.toLowerCase())), "Coaches: search did not filter by name");
   ok($("#crows mark.hit")?.innerText.toLowerCase() === part.toLowerCase(), "Coaches: match not highlighted");
+  $("#cq").value = "temple"; $("#cq").dispatchEvent(new Event("input"));
+  ok($$("#crows tr").length >= 3 && [...$$("#crows tr")].every(r => r.dataset.n === "Temple"), "Coaches: school search 'temple' should list Temple's staff");
+  ok($("#crows td.sub mark.hit")?.innerText === "Temple", "Coaches: school match not highlighted");
   $("#cq").value = ""; $("#cq").dispatchEvent(new Event("input"));
 
   await open("tabPipe");
