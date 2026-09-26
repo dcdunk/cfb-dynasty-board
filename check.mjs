@@ -156,7 +156,7 @@ const inPage = async () => {
   const ask = async q => { $("#pIn").value = q; $("#pForm").requestSubmit(); await wait(50); return [...$$("#pLog .pm.bot")].pop().textContent; };
   ok(/didn't catch a program/.test(await ask("hello")), "Planner: text with no program should get the help reply");
   let m = await ask("plan a tough Florida dynasty with a created coach");
-  ok(/Florida Gators/.test(m) && /House rules · Hardcore/.test(m) && /You replace/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
+  ok(/Florida Gators/.test(m) && /House rules · Hardcore/.test(m) && /NIL rank #\d+ of 138/.test(m) && /NIL rank: #/.test(P.facts) && /You replace/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
   ok(P.plan.rules.length === 8, "Planner: Hardcore should deal 8 rules");
   const last = [...$$("#pLog .pm.bot")].pop();
   ok(last.querySelectorAll("h4").length >= 4 && last.querySelectorAll("li").length >= 10, "Coach: reply should be titles and bullets, not a wall of text");
