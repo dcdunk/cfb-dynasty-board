@@ -126,6 +126,10 @@ const inPage = async () => {
   ok($("#rq").value === "Georgia" && $("#hq").value === "Georgia", "Recruiting: while linked, picking Georgia should also switch House rules");
   ok($("#recGrid .kpis .big").innerText === "5★" && $("#recGrid").innerText.includes("~1,000") && $("#recGrid .arch").innerText.toLowerCase() === "blue blood", "Recruiting: Georgia should be a 5★ blue blood with ~1,000 hours");
   ok($$("#recGrid .sw").length > 0 && $("#recGrid .sw").style.background.includes("--t"), "Recruiting: pipeline tier squares missing");
+  const sec4 = () => [...$$("#recGrid .rec-sec")][3].innerText;
+  const g4 = sec4(); recPick("Temple"); const t4 = sec4(); recPick("Georgia");
+  ok(g4 !== t4 && t4.includes("Temple") && /Power 4 schools to poach/.test(t4) && /Retention first/.test(g4),
+    "Recruiting: section 4 should be program-specific (Georgia retention-first, Temple poaching warning)");
   $("#rLink").click();
   ok($("#rLink").getAttribute("aria-checked") === "false", "Recruiting: link toggle did not turn off");
   type("#rq", "temple"); $("#rq").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));

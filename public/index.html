@@ -764,6 +764,10 @@ td .sl-was{margin-left:6px}
     <a href="https://dynastycentral.gg/college-football-27/dynasty-guides/recruiting-guide" target="_blank" rel="noopener">Dynasty Central</a>,
     <a href="https://gamerant.com/college-football-cfb-27-dynasty-recruiting-guide/" target="_blank" rel="noopener">Game Rant</a>,
     <a href="https://cfb27.com/article/cfb-27-dynasty-recruiting-guide" target="_blank" rel="noopener">CFB27.com</a>.
+    Real-world recruiting patterns:
+    <a href="https://thespade.substack.com/p/the-2026-college-football-recruiting" target="_blank" rel="noopener">The Spade</a>,
+    <a href="https://www.espn.com/college-football/story/_/id/43601368/recruiting-roster-challenges-facing-group-5-power-4-gap-college-football-conferences" target="_blank" rel="noopener">ESPN</a>,
+    <a href="https://thenilstandard.com/guides/what-college-football-positions-cost" target="_blank" rel="noopener">The NIL Standard</a>.
     Team data from the same preseason save as the rest of the board.</p>
 </section>
 
@@ -1561,6 +1565,7 @@ const IC = {
   x:`<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13"/></svg>`
 };
 const tiersOf = t => Object.fromEntries(t.pl.filter(p => p[1] > 0).map(p => [p[0], p[1]]));
+const STNAME = {AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",DC:"Washington, D.C.",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming"};
 let hMapN = 0;
 function hMap(regs, tiers){
   const on = new Set(regs), k = ++hMapN, fill = r => !tiers ? "" : ` style="fill:${tiers[r] != null ? `var(--t${tiers[r]})` : "var(--accent-soft)"}"`;
@@ -1918,6 +1923,45 @@ function recDraw(){
     .replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions), colored by tier</figcaption>`);
   $("#rLink").setAttribute("aria-checked", rLink);
   if (document.activeElement !== $("#rq")) $("#rq").value = t.n;
+  // ---- program-specific spending + year-one advice: in-game data + real-world recruiting patterns (sources in #recSrc4)
+  const cn = t.c === "Independent" ? null : t.c, cA = /^Conference/.test(t.c) ? "" : "the ";
+  const peers = cn ? DATA.filter(x => x.c === t.c) : DATA.filter(isP4);           // independents compare against P4
+  const confT = [...peers].sort((a, b) => b.nt - a.nt), cr = confT.indexOf(t) + 1, inConf = cn ? `${cA}${esc(cn)}` : "Power 4 football";
+  const richer = confT.slice(0, cr - 1).slice(0, 3).map(x => x.n), poorer = confT.length - cr;
+  const hs = hard.map(x => x[0].toLowerCase()), topP = pl[0], p4 = isP4(t);
+  const rivals = topP ? DATA.filter(x => x !== t && x.pl.some(q => q[0] === topP[0] && q[1] >= 3))
+    .map(x => [x, x.pl.find(q => q[0] === topP[0])[1]]).sort((a, b) => b[1] - a[1] || b[0].nt - a[0].nt).slice(0, 4) : [];
+  const outspend = rivals.filter(([x]) => x.nt > t.nt), undercut = rivals.filter(([x]) => x.nt <= t.nt);
+  const listRich = richer.length > 2 ? `${esc(richer.join(", "))} and others` : esc(and(richer));
+  const side = t.df - t.of >= 3 ? ["defense", "offense", t.df, t.of] : t.of - t.df >= 3 ? ["offense", "defense", t.of, t.df] : null;
+  const home = regsIn(stOf(t)), homeT = Math.max(0, ...t.pl.filter(q => home.includes(q[0])).map(q => q[1]));
+  const hub = ["TX", "FL", "GA", "OH", "CA"].includes(stOf(t)), stN = STNAME[stOf(t)] || stOf(t), natl = t.p >= 4.5;
+  const nilTips = [
+    cr === 1 ? `<b>Biggest budget in ${inConf}.</b> At ${fmt(t.nt)} you can outbid every rival there, so use NIL to lock down your own pipelines first.`
+      : cr <= Math.ceil(confT.length / 3) ? `<b>Top-third budget in ${inConf}</b> (#${cr} of ${confT.length}). Only ${esc(and(richer))} can outspend you; pick your fights with them and outbid the other ${poorer}.`
+      : cr > confT.length * 2 / 3 ? `<b>Bottom-third budget in ${inConf}</b> (#${cr} of ${confT.length}). ${listRich} can outbid you, so don't match offers. Win on ${esc(and(hs))} instead.`
+      : `<b>Middle of ${inConf} on budget</b> (#${cr} of ${confT.length}). Outbid the schools below you when it matters and let ${esc(and(richer))} win the bidding wars.`,
+    p4 && t.p >= 3.5
+      ? `<b>Retention first.</b> Programs at this level lose starters to poaching, not to recruiting misses. Pay the players others will call about before chasing new names.`
+      : p4 ? `<b>Split it.</b> Keep your few proven starters, then put the rest into a class you can develop. Mid-tier Power 4 rosters turn over through both the portal and recruiting.`
+      : `<b>Expect Power 4 schools to poach your breakout players.</b> Transfers from Group of Five to Power 4 jumped 40% in a year. Save retention money for your top two or three producers and let the rest go.`,
+    `<b>Pay by position like the real market.</b> Quarterback first, then offensive tackle, edge rusher, receiver and corner. Running backs are the cheapest to replace.${side ? ` Your ${side[0]} (${side[2]}) is ahead of your ${side[1]} (${side[3]}), so tilt spending toward the ${side[1]}.` : ` Your offense (${t.of}) and defense (${t.df}) are balanced, so spend on the best player available.`}`,
+    weak.length ? `<b>Weak spots cost extra.</b> Recruits whose dealbreaker is ${esc(and(weak.map(x => x[0].toLowerCase())))} will need NIL to overlook it. Usually not worth it.`
+      : `<b>No weak lasting grades.</b> You rarely need NIL to cover a dealbreaker, so offers can go toward talent, not damage control.`];
+  const inSt = DATA.filter(x => x !== t && stOf(x) === stOf(t)).sort((a, b) => b.p - a.p);
+  const above = inSt.filter(x => x.p > t.p), below = inSt.filter(x => x.p <= t.p);
+  const lowE = [...earned].sort((a, b) => GVAL[a[1]] - GVAL[b[1]])[0];
+  const pr = [...peers].sort((a, b) => b.p - a.p).indexOf(t) + 1;
+  const yearTips = [
+    `<b>${natl ? "Recruit nationally, but own home." : "Win your backyard."}</b> ${natl ? "Your brand travels, yet the most stable national programs (Georgia, Ohio State, Notre Dame) still keep strong homegrown pipelines." : "Outside a handful of national brands, programs build through their own region."} ${hub ? `${esc(stN)} is one of the five richest recruiting states` : `${esc(stN)} isn't one of the top talent states`}${homeT >= 3 ? `, and your home pipeline is ${TIERN[homeT]}. Protect it before recruiting anywhere else.` : homeT ? `${hub ? ", but" : ", and"} your home pipeline is only ${TIERN[homeT]}. Building it up is the cheapest long-term win.` : `, and you have no pipeline at home yet. Start there.`}`,
+    inSt.length ? `<b>In-state competition.</b> ${above.length ? `${esc(and(above.slice(0, 3).map(x => `${x.n} (${x.p}★)`)))} ${above.length > 1 ? "outrank" : "outranks"} you at home.` : `No in-state program outranks you.`}${below.length ? ` You should win recruits over ${esc(and(below.slice(0, 3).map(x => x.n)))}.` : ""}`
+      : `<b>Only FBS program in ${esc(stN)}.</b> In-state recruits are yours to lose; lean on proximity to home.`,
+    topP ? (outspend.length ? `<b>${esc(topP[0])} is contested.</b> ${esc(and(outspend.map(([x, tr]) => `${x.n} (${TIERN[tr]})`)))} ${outspend.length > 1 ? "recruit" : "recruits"} there with more NIL than you. Beat them on relationships and your hard-sell grades.`
+      : undercut.length ? `<b>You're the money in ${esc(topP[0])}.</b> ${esc(and(undercut.map(([x]) => x.n)))} also recruit${undercut.length > 1 ? "" : "s"} there with less NIL, so a strong offer usually wins.`
+      : `<b>${esc(topP[0])} is yours.</b> No other program holds a Tier 3+ pipeline there.`) : `<b>No established pipelines.</b> Every region is a fair fight, so let scouting decide where you spend hours.`,
+    p4 && t.p >= 4 ? `<b>High school first, portal to patch.</b> The most stable programs (Georgia, Ohio State, Notre Dame) take the fewest transfers. Use the portal for one or two plug-in starters a year.`
+      : `<b>Use the portal every year.</b> Every program now gets at least a fifth of its new players there. ${p4 ? "Target proven Group of Five starters ready to move up." : "FCS standouts and Power 4 backups give you instant starters high school recruits can't."}`,
+    `<b>Know your standing.</b> #${pr} of ${peers.length} on prestige in ${cn ? `${cA}${esc(cn)}` : "Power 4"}. ${pr <= 3 || natl ? "Anything short of a title run is a step back." : pr > peers.length / 2 ? "A winning conference record is a real first-year goal." : "A top-half finish and a bowl build the prestige recruits notice."}${GVAL[lowE[1]] <= 6 ? ` Expect ${esc(lowE[0].toLowerCase())} (${lowE[1]}) to stay low until you win.` : ""} <button type="button" class="ghost" id="recRoster">Current roster</button>`];
   const sec = (n, h, sub, body) => `<section class="rec-sec"><h3 class="rec-sh"><b>0${n}</b>${h}<span>${sub}</span></h3>${body}</section>`;
   $("#recGrid").innerHTML =
   sec(1, "The program", `${esc(t.n)} · ${esc(t.c)}`, `<div class="sl-card rec-hero">
@@ -1937,18 +1981,10 @@ function recDraw(){
     <div class="rec-pitch">${grs("Hard sell", "big swing, worth the risk", hard)}${grs("Soft sell", "steady, smaller gains", soft)}${grs("Avoid", "skip recruits whose dealbreaker is here", weak)}</div>
     <div class="earned"><h4>Earned grades</h4>${earned.map(([n, g]) => `<span class="gr" style="color:var(--dim)">${n} <b>${g}</b></span>`).join("")}<span class="sub">change with your results and tenure; recheck when you take over</span></div>
     <p class="note" style="padding:0 16px 14px;margin:0">Target recruits whose top motivations match your hard-sell grades. Breaking a promise on a dealbreaker is a top reason players enter the portal.</p></div>`)
-  + sec(4, "Spending and year one", "One budget covers recruiting and retention", `<div class="rec-2">
-    <div class="sl-card"><h3>NIL plan<span>Rules of thumb</span></h3><ul class="tips">
-      <li><b>Keep before you chase.</b> Retaining your own players and recruiting share one budget. When it's tight, pay the starters you can't replace first.</li>
-      <li><b>Offers set the baseline.</b> What you pay a recruit becomes their floor, and it rises as they produce. Cutting it later costs you the bonus plus a penalty.</li>
-      <li><b>Offers are refundable.</b> NIL comes back if the recruit signs elsewhere or you drop them from your board.</li>
-      <li><b>Seniors free up money.</b> Graduating players' NIL returns to the pool each offseason.</li>
-      <li><b>Overpaying to fix a weak grade is a trap.</b> If a recruit's dealbreaker is a grade you can't meet, the NIL it takes to land them compounds every year.</li></ul></div>
-    <div class="sl-card"><h3>When you take over<span>Year one checklist</span></h3><ul class="tips">
-      <li><b>Count who's leaving.</b> Sort the roster by class and find positions losing starters; those are this cycle's priority targets. <button type="button" class="ghost" id="recRoster">Current roster</button></li>
-      <li><b>Check the NIL already committed.</b> Only the uncommitted part is yours to spend; graduating seniors free up more at season's end.</li>
-      <li><b>Recheck the earned grades.</b> A coaching change resets coach stability and coach prestige, which shifts which pitches work.</li>
-      <li><b>Scout in the preseason.</b> It takes 3 to 5 sessions to reveal a player, and preseason hours aren't needed for pitches yet.</li></ul></div></div>`)
+  + sec(4, "Spending and year one", `Built from ${esc(t.n)}'s budget, rivals and grades`, `<div class="rec-2">
+    <div class="sl-card"><h3>NIL plan<span>${esc(t.n)}</span></h3><ul class="tips">${nilTips.map(x => `<li>${x}</li>`).join("")}</ul>
+      <p class="note" style="padding:0 12px 12px;margin:0">How NIL works: an offer becomes the player's floor and rises as they produce, offers are refunded if the recruit goes elsewhere, and graduating seniors free up money each offseason.</p></div>
+    <div class="sl-card"><h3>Recruiting plan<span>Year one at ${esc(t.n)}</span></h3><ul class="tips">${yearTips.map(x => `<li>${x}</li>`).join("")}</ul></div></div>`)
   + sec(5, "Hour costs", "Per recruiting action. A visit uses only your hours, not the recruit's 50-hour cap", `<div class="sl-card"><div class="rec-costs">${
     RCOST.map(([n, h]) => `<div><span>${n}</span><b>${h} hrs</b></div>`).join("")}</div></div>`);
   $("#recRoster").addEventListener("click", () => openTeam(t.n));
