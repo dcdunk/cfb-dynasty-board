@@ -120,11 +120,11 @@ const inPage = async () => {
 
   await open("tabRec");
   ok($("#rq").value === $("#hq").value, `Recruiting: linked by default, should show House rules team ${$("#hq").value}, got ${$("#rq").value}`);
-  const recTitles = [...$$("#recGrid .sl-card h3")].map(h => h.firstChild.textContent);
-  ok(["Program tier","Resources","Pitch plan","Where to recruit","When you take over","NIL plan","Hour costs"].every(x => recTitles.includes(x)), `Recruiting: missing sections, got ${recTitles}`);
+  const recSecs = [...$$("#recGrid .rec-sh")].map(h => h.childNodes[1].textContent);
+  ok(recSecs.join("|") === "The program|Where to recruit|What to pitch|Spending and year one|Hour costs", `Recruiting: sections out of order: ${recSecs}`);
   type("#rq", "georgia"); $("#rq").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
   ok($("#rq").value === "Georgia" && $("#hq").value === "Georgia", "Recruiting: while linked, picking Georgia should also switch House rules");
-  ok($("#recGrid").innerText.includes("5★ prestige") && $("#recGrid").innerText.includes("~1,000") && $("#recGrid .arch").innerText.toLowerCase() === "blue blood", "Recruiting: Georgia should be a 5★ blue blood with ~1,000 hours");
+  ok($("#recGrid .kpis .big").innerText === "5★" && $("#recGrid").innerText.includes("~1,000") && $("#recGrid .arch").innerText.toLowerCase() === "blue blood", "Recruiting: Georgia should be a 5★ blue blood with ~1,000 hours");
   ok($$("#recGrid .sw").length > 0 && $("#recGrid .sw").style.background.includes("--t"), "Recruiting: pipeline tier squares missing");
   $("#rLink").click();
   ok($("#rLink").getAttribute("aria-checked") === "false", "Recruiting: link toggle did not turn off");

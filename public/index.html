@@ -511,7 +511,31 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .hleg span{display:inline-flex; align-items:center; gap:6px}
 .rec td.swc{width:12px; padding-right:0}
 .rec .arch{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 118; font-weight:800; text-transform:uppercase; font-size:22px; letter-spacing:-.005em}
-.rec-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; align-items:start; margin-top:20px; grid-auto-flow:dense}
+.rec-grid{margin-top:8px}
+.rec-sec{margin-top:30px}
+.rec-sh{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:0 0 10px; font-size:10.5px; letter-spacing:.085em; text-transform:uppercase; color:var(--faint); font-weight:600}
+.rec-sh b{font-family:"IBM Plex Mono",monospace; color:var(--accent); font-weight:600; letter-spacing:0}
+.rec-sh span{text-transform:none; letter-spacing:0; font-weight:400}
+.rec-2{display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:stretch}
+.rec-hero{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:0}
+.rec-hero > div{padding:18px 20px}
+.rec-hero > div + div{border-left:1px solid var(--line)}
+.rec-hero .kpis{grid-template-columns:1fr 1fr; gap:18px 20px}
+.rec-where{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center}
+.rec-where > div{padding:14px 16px}
+.rec-where table{margin-top:6px}
+.rec-pitch{display:grid; grid-template-columns:repeat(3,1fr)}
+.rec-pitch .grp{border-top:0; border-left:1px solid var(--hair); padding:14px 16px}
+.rec-pitch .grp:first-child{border-left:0}
+.rec .earned{border-top:1px solid var(--line); padding:12px 16px; display:flex; flex-wrap:wrap; gap:4px 18px; align-items:baseline}
+.rec .earned h4{margin:0 8px 0 0; font-size:12px; font-weight:600}
+.rec-costs{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); padding:6px 4px}
+.rec-costs div{display:flex; justify-content:space-between; gap:12px; padding:7px 12px; font-size:13px; border-bottom:1px solid var(--hair)}
+.rec-costs b{font-family:"IBM Plex Mono",monospace; font-weight:500}
+.rec .sl-card{height:100%}
+@media (max-width:860px){.rec-2,.rec-hero,.rec-where,.rec-pitch{grid-template-columns:1fr}
+  .rec-hero > div + div{border-left:0; border-top:1px solid var(--line)}
+  .rec-pitch .grp{border-left:0; border-top:1px solid var(--hair)} .rec-pitch .grp:first-child{border-top:0}}
 .rec .body{padding:12px}
 .rec .big{font-family:"IBM Plex Mono",monospace; font-size:26px; font-weight:600; line-height:1.1}
 .rec .kpis{display:grid; grid-template-columns:1fr 1fr; gap:14px}
@@ -1894,35 +1918,39 @@ function recDraw(){
     .replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions), colored by tier</figcaption>`);
   $("#rLink").setAttribute("aria-checked", rLink);
   if (document.activeElement !== $("#rq")) $("#rq").value = t.n;
-  $("#recGrid").innerHTML = `
-  <section class="sl-card"><h3>Program tier<span>${esc(t.n)} · ${t.p}★ prestige</span></h3><div class="body">
-    <div class="arch">${arch}</div>
-    <p class="note" style="margin-top:8px">${plan}</p>
-    <p class="note">Prestige moves with results. If it rises or falls by the time you're there, use that tier's approach instead.</p></div></section>
-  <section class="sl-card"><h3>Resources<span>Program baseline</span></h3><div class="body">
-    <div class="kpis"><div><div class="big">${fmt(t.nt)}</div><span>NIL budget · #${nr} of ${DATA.length}</span></div>
-      <div><div class="big">~${fmt(recHours(t.p))}</div><span>Preseason recruiting hours</span></div></div>
-    <p class="note">Target <b>${target}★</b> recruits and transfers, about one star above prestige. Each recruit takes at most <b>50 hours a week</b> from you, or 70 with the Always Be Crootin coach ability.</p></div></section>
-  <section class="sl-card"><h3>Pitch plan<span>Strengths that last</span></h3>
-    ${grs("Hard sell", "big swing, worth the risk", hard)}${grs("Soft sell", "steady, smaller gains", soft)}${grs("Avoid", "skip recruits whose dealbreaker is here", weak)}
-    <div class="grp"><h4>Earned grades<small>change with your results and tenure</small></h4>${earned.map(([n, g]) => `<span class="gr" style="color:var(--dim)">${n} <b>${g}</b></span>`).join("")}</div>
-    <p class="note" style="padding:0 12px 12px;margin:0">Target recruits whose top motivations match your hard-sell grades. Breaking a promise on a dealbreaker is a top reason players enter the portal. Earned grades above are where the program starts; recheck them when you take over.</p></section>
-  <section class="sl-card"><h3>Where to recruit<span>${pl.length} active pipelines</span></h3><div class="body">${map}</div><table><tbody>${
-    pl.slice(0, 8).map(p => `<tr><td class="swc"><i class="sw" style="background:var(--t${p[1]})" role="img" aria-label="Tier ${p[1]}"></i></td><td class="l">${esc(p[0])}</td><td class="sub">${TIERN[p[1]]}</td><td class="mono">${p[2]}</td></tr>`).join("")}</tbody></table></section>
-  <section class="sl-card"><h3>When you take over<span>Year one checklist</span></h3><ul class="tips">
-    <li><b>Count who's leaving.</b> Sort the roster by class and find positions losing starters; those are this cycle's priority targets. <button type="button" class="ghost" id="recRoster">Current roster</button></li>
-    <li><b>Check the NIL already committed.</b> Only the uncommitted part is yours to spend; graduating seniors free up more at season's end.</li>
-    <li><b>Recheck the earned grades.</b> A coaching change resets coach stability and coach prestige, which shifts which pitches work.</li>
-    <li><b>Scout in the preseason.</b> It takes 3 to 5 sessions to reveal a player, and preseason hours aren't needed for pitches yet.</li></ul></section>
-  <section class="sl-card"><h3>NIL plan<span>Rules of thumb</span></h3><ul class="tips">
-    <li><b>Keep before you chase.</b> Retaining your own players and recruiting share one budget. When it's tight, pay the starters you can't replace first.</li>
-    <li><b>Offers set the baseline.</b> What you pay a recruit becomes their floor, and it rises as they produce. Cutting it later costs you the bonus plus a penalty.</li>
-    <li><b>Offers are refundable.</b> NIL comes back if the recruit signs elsewhere or you drop them from your board.</li>
-    <li><b>Seniors free up money.</b> Graduating players' NIL returns to the pool each offseason.</li>
-    <li><b>Overpaying to fix a weak grade is a trap.</b> If a recruit's dealbreaker is a grade you can't meet, the NIL it takes to land them compounds every year.</li></ul></section>
-  <section class="sl-card"><h3>Hour costs<span>Per recruiting action</span></h3><table><tbody>${
-    RCOST.map(([n, h]) => `<tr><td class="l">${n}</td><td class="mono">${h} hrs</td></tr>`).join("")}</tbody></table>
-    <p class="note" style="padding:0 12px 12px">Scheduling a visit uses only your hours, not the recruit's 50-hour cap.</p></section>`;
+  const sec = (n, h, sub, body) => `<section class="rec-sec"><h3 class="rec-sh"><b>0${n}</b>${h}<span>${sub}</span></h3>${body}</section>`;
+  $("#recGrid").innerHTML =
+  sec(1, "The program", `${esc(t.n)} · ${esc(t.c)}`, `<div class="sl-card rec-hero">
+    <div><div class="arch">${arch}</div>
+      <p class="note" style="margin-top:8px">${plan}</p>
+      <p class="note">Prestige moves with results. If it rises or falls by the time you're there, use that tier's approach instead.</p></div>
+    <div><div class="kpis">
+      <div><div class="big">${t.p}★</div><span>Prestige</span></div>
+      <div><div class="big">${target}★</div><span>Recruits to target</span></div>
+      <div><div class="big">${fmt(t.nt)}</div><span>NIL budget · #${nr} of ${DATA.length}</span></div>
+      <div><div class="big">~${fmt(recHours(t.p))}</div><span>Preseason hours</span></div></div>
+      <p class="note">Target about one star above prestige. Each recruit takes at most <b>50 hours a week</b> from you, or 70 with the Always Be Crootin coach ability.</p></div></div>`)
+  + sec(2, "Where to recruit", `${pl.length} active pipelines`, `<div class="sl-card rec-where">
+    <div>${map}</div>
+    <div><table><tbody>${pl.slice(0, 10).map(p => `<tr><td class="swc"><i class="sw" style="background:var(--t${p[1]})" role="img" aria-label="Tier ${p[1]}"></i></td><td class="l">${esc(p[0])}</td><td class="sub">${TIERN[p[1]]}</td><td class="mono">${p[2]}</td></tr>`).join("")}</tbody></table></div></div>`)
+  + sec(3, "What to pitch", "From the grades that last", `<div class="sl-card">
+    <div class="rec-pitch">${grs("Hard sell", "big swing, worth the risk", hard)}${grs("Soft sell", "steady, smaller gains", soft)}${grs("Avoid", "skip recruits whose dealbreaker is here", weak)}</div>
+    <div class="earned"><h4>Earned grades</h4>${earned.map(([n, g]) => `<span class="gr" style="color:var(--dim)">${n} <b>${g}</b></span>`).join("")}<span class="sub">change with your results and tenure; recheck when you take over</span></div>
+    <p class="note" style="padding:0 16px 14px;margin:0">Target recruits whose top motivations match your hard-sell grades. Breaking a promise on a dealbreaker is a top reason players enter the portal.</p></div>`)
+  + sec(4, "Spending and year one", "One budget covers recruiting and retention", `<div class="rec-2">
+    <div class="sl-card"><h3>NIL plan<span>Rules of thumb</span></h3><ul class="tips">
+      <li><b>Keep before you chase.</b> Retaining your own players and recruiting share one budget. When it's tight, pay the starters you can't replace first.</li>
+      <li><b>Offers set the baseline.</b> What you pay a recruit becomes their floor, and it rises as they produce. Cutting it later costs you the bonus plus a penalty.</li>
+      <li><b>Offers are refundable.</b> NIL comes back if the recruit signs elsewhere or you drop them from your board.</li>
+      <li><b>Seniors free up money.</b> Graduating players' NIL returns to the pool each offseason.</li>
+      <li><b>Overpaying to fix a weak grade is a trap.</b> If a recruit's dealbreaker is a grade you can't meet, the NIL it takes to land them compounds every year.</li></ul></div>
+    <div class="sl-card"><h3>When you take over<span>Year one checklist</span></h3><ul class="tips">
+      <li><b>Count who's leaving.</b> Sort the roster by class and find positions losing starters; those are this cycle's priority targets. <button type="button" class="ghost" id="recRoster">Current roster</button></li>
+      <li><b>Check the NIL already committed.</b> Only the uncommitted part is yours to spend; graduating seniors free up more at season's end.</li>
+      <li><b>Recheck the earned grades.</b> A coaching change resets coach stability and coach prestige, which shifts which pitches work.</li>
+      <li><b>Scout in the preseason.</b> It takes 3 to 5 sessions to reveal a player, and preseason hours aren't needed for pitches yet.</li></ul></div></div>`)
+  + sec(5, "Hour costs", "Per recruiting action. A visit uses only your hours, not the recruit's 50-hour cap", `<div class="sl-card"><div class="rec-costs">${
+    RCOST.map(([n, h]) => `<div><span>${n}</span><b>${h} hrs</b></div>`).join("")}</div></div>`);
   $("#recRoster").addEventListener("click", () => openTeam(t.n));
 }
 $("#rLink").addEventListener("click", () => { rLink = !rLink; if (!rLink) rTeam = H.team; recSave(); recDraw(); });
