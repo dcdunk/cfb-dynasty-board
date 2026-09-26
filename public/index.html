@@ -610,14 +610,15 @@ body.coach-on{margin-right:400px}
 .pm.bot p{margin:0 0 8px}
 .pstat{padding:0 14px 6px; font:12px "IBM Plex Mono",monospace; color:var(--dim)}
 .pform{display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid var(--line)}
-.pform input{flex:1; min-width:0; font:14px "IBM Plex Sans",sans-serif; padding:9px 10px; border:1px solid var(--line); background:var(--ground); color:var(--text)}
-.pform button{font:600 13px "IBM Plex Sans",sans-serif; border:0; background:var(--accent); color:#fff; padding:0 14px; cursor:pointer}
+.pform{align-items:flex-end}
+.pform textarea{flex:1; min-width:0; resize:none; overflow-y:auto; max-height:140px; line-height:1.4; font:14px "IBM Plex Sans",sans-serif; padding:9px 10px; border:1px solid var(--line); background:var(--ground); color:var(--text)}
+.pform button{font:600 13px "IBM Plex Sans",sans-serif; border:0; background:var(--accent); color:#fff; padding:0 14px; height:38px; cursor:pointer}
 /* Phones: no room to push the page, so Coach takes the full screen and the page behind stops scrolling. */
 @media (max-width:900px){
   body.coach-on{margin-right:0; overflow:hidden}
   .pchat{width:100vw; border-left:0; padding-top:env(safe-area-inset-top,0px)}
   .coachbtn{top:18px; right:16px; padding:7px 10px}
-  .pform input{font-size:16px}
+  .pform textarea{font-size:16px}
 }
 </style>
 
@@ -824,7 +825,7 @@ body.coach-on{margin-right:400px}
     <button class="dclose" id="pClose" type="button" aria-label="Close Coach" style="position:static">×</button></div>
   <div class="plog" id="pLog" aria-live="polite"></div>
   <div class="pstat" id="pStat" hidden></div>
-  <form class="pform" id="pForm"><input id="pIn" autocomplete="off" placeholder="e.g. Tough Florida dynasty with a created coach" aria-label="Ask Coach"><button type="submit">Send</button></form>
+  <form class="pform" id="pForm"><textarea id="pIn" rows="1" autocomplete="off" placeholder="e.g. Tough Florida dynasty with a created coach" aria-label="Ask Coach"></textarea><button type="submit">Send</button></form>
 </aside>
 <div class="scrim" id="scrim"></div>
 <aside class="dossier" id="dossier" role="dialog" aria-modal="true" aria-labelledby="dname" hidden>
@@ -2116,22 +2117,35 @@ function pRender(p){
     coach.replace(/<[^>]+>/g, ""), `Sliders: Matt10's ${sld.n} set.`].join("\n");
   return html;
 }
+// Fallen powerhouses: 3+ titles in the game's data but prestige 4★ or lower. Most titles first, then lowest prestige.
+function pGlory(){
+  const xs = DATA.filter(t => t.ti >= 3 && t.p <= 4).sort((a, b) => b.ti - a.ti || a.p - b.p).slice(0, 3);
+  P.facts = "Former powerhouses on the board (national titles, current prestige, overall):\n" + xs.map(t => `${t.n} ${t.nk} (${t.c}): ${t.ti} titles, ${t.p} stars, ${t.o} overall`).join("\n")
+    + "\nThe board has title counts only, not the years they were won.";
+  return `<p>Three fallen powerhouses on the board: ${esc(and(xs.map(t => `${t.n} (${t.ti} national titles, now ${t.p}★ and ${t.o} overall)`)))}.</p>
+    <p>Name one, like "${esc(xs[0].n)} back to glory", and I'll build the plan.</p>`;
+}
+const PLEAGUE = "Every program (name | conference | prestige stars | overall | national titles):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${t.ti}`).join("\n");
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q));
   const plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q);
   let html = "";
   if (plan) { P.team = plan.t; P.plan = plan; html = pRender(plan); }
+  else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
   // AI on: its reply replaces the templated one; the template still builds P.facts for it.
-  if (P.aiOn && P.ai) return pWrite(q, pSay("bot", "<p></p>").firstChild, !plan);
+  // A direct question ("when did Nebraska...?") is answered as asked, not turned into a plan pitch.
+  const question = /\?\s*$|^(who|what|when|where|why|how|is|are|does|do|did|can|which)\b/i.test(q);
+  if (P.aiOn && P.ai) return pWrite(q, pSay("bot", "<p></p>").firstChild, !plan || question, !html || question);
   pSay("bot", html || `<p>I didn't catch a program${P.team ? " or a change to the plan" : ""} in that.</p>` + PHELP);
 }
-async function pWrite(q, el, free){
+async function pWrite(q, el, free, open){
   el.textContent = "…"; P.busy = true;
   const sys = "You are Coach, the Dynasty Board assistant for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
-    + "If the facts don't answer the question, say the board doesn't have that. Reply in 2 to 4 plain sentences, no lists.\n\nFACTS:\n" + (P.facts || "No program chosen yet.");
+    + "Do not use your own memory of real college football: no years, records, coaches or history unless they appear below. The board has national title counts but not the years they were won. "
+    + "If the facts don't answer the question, say the board doesn't have that. Reply in 2 to 4 plain sentences, no lists.\n\nFACTS:\n" + (P.facts || "") + (open ? "\n\n" + PLEAGUE : "");
   try {
-    const chunks = await P.ai.chat.completions.create({stream:true, temperature:.3, max_tokens:220,
+    const chunks = await P.ai.chat.completions.create({stream:true, temperature:.2, max_tokens:220,
       messages:[{role:"system", content:sys}, ...P.hist.slice(-4), {role:"user", content:free ? q : `Reply to: "${q}". Name the house rules and say why they fit.`}]});
     let out = "";
     for await (const c of chunks) { out += c.choices[0]?.delta?.content || ""; el.textContent = out; }
@@ -2163,7 +2177,11 @@ $("#pOpen").addEventListener("click", () => pToggle(!$("#pChat").classList.conta
 $("#pClose").addEventListener("click", () => pToggle(false));
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
 $("#pAi").addEventListener("click", pAiToggle);
-$("#pForm").addEventListener("submit", e => { e.preventDefault(); const v = $("#pIn").value; $("#pIn").value = ""; pAsk(v); });
+const pGrow = () => { const i = $("#pIn"); i.style.height = "auto"; i.style.height = i.scrollHeight + 2 + "px"; };
+$("#pIn").addEventListener("input", pGrow);
+// Enter sends, Shift+Enter adds a line.
+$("#pIn").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#pForm").requestSubmit(); } });
+$("#pForm").addEventListener("submit", e => { e.preventDefault(); const v = $("#pIn").value; $("#pIn").value = ""; pGrow(); pAsk(v); });
 draw();
 </script>
 

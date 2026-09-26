@@ -159,6 +159,11 @@ const inPage = async () => {
   ok(/Florida Gators/.test(m) && /hardcore run/.test(m) && /You replace/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
   ok(P.plan.rules.length === 8, "Planner: Hardcore should deal 8 rules");
   ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: longest team name should win (Georgia Tech)");
+  ok(/Minnesota/.test(await ask("i want to take a former powerhouse program back to glory, what are 3 options?")), "Coach: back-to-glory should answer from board data (Minnesota has 6 titles)");
+  ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: re-pick Georgia Tech");
+  $("#pIn").value = "x ".repeat(200); $("#pIn").dispatchEvent(new Event("input"));
+  ok($("#pIn").tagName === "TEXTAREA" && $("#pIn").offsetHeight > 60, "Coach: long input should wrap and grow");
+  $("#pIn").value = ""; $("#pIn").dispatchEvent(new Event("input"));
   m = await ask("no transfers");
   ok(/Closed portal/.test(m) && /Georgia Tech/.test(m), "Planner: follow-up didn't keep team and add Closed portal");
   ok(!$("#pLog button, #pLog ol"), "Planner: chat should be plain messages, no cards or buttons");
