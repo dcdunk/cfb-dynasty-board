@@ -2125,6 +2125,30 @@ function pMd(s){
   if (ul) out.push("</ul>");
   return out.join("");
 }
+// Recruiting advice that respects the plan's house rules: drop band advice a rule forbids, add a rule-aware tip instead.
+const PRTIP = {
+  "star-none":[/[45]★|long shots/, () => "Build with 3★ and below: scout early and sign high-potential players you can develop."],
+  "star-cap":[/[45]★|long shots/, t => `Stay at ${starCap(t)}★ and below until prestige catches up.`],
+  "star-one":[/5★|long shots/, () => "Save your one 5★ spot for a premium position like QB or edge rusher."],
+  "star-half":[/[45]★ talent at every/, () => "Keep at least half of each class at 3★ or below."],
+  "star-small":[/long shots/, () => "Small classes: offer fewer recruits and close on the ones you want most."],
+  "nil-zero":[/NIL/, () => "No NIL: win recruits with playing time, pipelines and your strongest pitch grades."],
+  "nil-half":[/NIL/, () => "Half budget: save NIL for two or three difference makers."],
+  "nil-cap":[/NIL/, () => "Hard NIL cap: spread offers thin and let bidding wars go."],
+  "nil-flat":[/NIL/, () => "Flat NIL scale: you can't outbid for a star, so sell the program instead."],
+  "nil-nobid":[/outbid|bidding/, () => "Walk away from bidding wars."],
+  "port-none":[/portal|transfer/, () => "No transfers: sign full classes and redshirt freshmen to build depth."],
+  "port-only":[/portal|transfer/, () => "Portal program: most starters come from transfers, so keep high school classes small."]
+};
+function pRecTips(t, rules, archTxt){
+  const on = rules.map(id => [id, PRTIP[id]]).filter(x => x[1]), ter = rules.find(id => HR[id].c === "ter" && HR[id].reg);
+  const drop = on.map(x => x[1][0]).concat(ter ? [/national/i] : []);
+  const tips = archTxt.split(/(?<=\.)\s+/).filter(s => !drop.some(re => re.test(s)));
+  on.forEach(([, [, f]]) => tips.push(f(t)));
+  if (ter) tips.push(`**Allowed regions (${plain(HR[ter].n)}):** ${and(HR[ter].reg(t))}`);
+  return tips;
+}
+const plain = x => unesc(x.replace(/<[^>]+>/g, ""));
 function pRender(p){
   const {t, strict, pre, rules, created} = p, s = strainOf(rules), [sl] = strainLbl(s);
   const [, arch, archTxt] = ARCH.find(a => t.p >= a[0]), nr = NILRANK.indexOf(t.n) + 1;
@@ -2134,14 +2158,14 @@ function pRender(p){
   const coach = created
     ? `You replace ${hc ? `${hc[1]} (level ${hc[2]}, ${hc[4]}, pipeline ${hc[5] || "none"})` : "the current head coach"}. A created coach doesn't inherit that level or pipeline, so the program's own pipelines carry recruiting early on. Pair it with the Earn the headset rule if you want to start as a coordinator.`
     : hc ? `You coach as ${hc[1]}: level ${hc[2]}, ${hc[4]}, grade ${hc[3]}${hc[5] ? `, pipeline ${hc[5]}` : ""}.` : "";
-  const plain = x => unesc(x.replace(/<[^>]+>/g, ""));
+  const recT = pRecTips(t, rules, archTxt);
   const html = pMd([`### ${t.n} ${t.nk}`, `- ${t.c} · ${t.p}★ prestige · ${t.o} overall · NIL rank #${nr} of ${DATA.length}`,
     `### House rules · ${label}`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
-    `### Recruiting · ${arch}`, `- ${archTxt}`, `- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`,
+    `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), `- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`,
     ...(coach ? [`### ${created ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set`].join("\n"));
   P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)}. NIL rank: #${nr} of ${DATA.length} (always call it "NIL rank"). National titles: ${tYears(t).join(", ") || "none"}.`,
     `Challenge: ${label}, strain ${sl}. House rules: ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
-    `Recruiting band ${arch}: ${archTxt} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
+    `Recruiting (already adjusted to the house rules, which always win): ${recT.join(" ").replace(/\*\*/g, "")} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
     coach.replace(/<[^>]+>/g, ""), `Sliders: Matt10's ${sld.n} set.`].join("\n");
   return html;
 }
