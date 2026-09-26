@@ -489,7 +489,7 @@ input[type=search]::-webkit-search-cancel-button{display:none}
   text-transform:uppercase; color:var(--accent); font-weight:500}
 .cb-n{font-weight:600; font-size:13.5px; color:var(--text); white-space:nowrap}
 .cb-s{margin-left:auto; font-size:11.5px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.cb mark{background:none; color:var(--accent-ink); text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px}
+mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px}
 .cb li.cb-none{cursor:default; color:var(--faint); font-size:12.5px}
 
 /* ---------- sliders ---------- */
@@ -545,7 +545,7 @@ td .sl-was{margin-left:6px}
   <div class="rail-in">
     <label class="search">
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
-      <input id="q" type="search" placeholder="Search school or nickname" aria-label="Search school or nickname">
+      <input id="q" type="search" placeholder="Search school or nickname" aria-label="Search school or nickname" autocomplete="off" spellcheck="false">
     </label>
     <div class="chips" id="chips" role="group" aria-label="Filter by conference"></div>
     <span class="spacer"></span>
@@ -594,7 +594,7 @@ td .sl-was{margin-left:6px}
     <div class="rail-in">
       <label class="search">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
-        <input id="cq" type="search" placeholder="Search coach name" aria-label="Search coach name">
+        <input id="cq" type="search" placeholder="Search coach name" aria-label="Search coach name" autocomplete="off" spellcheck="false">
       </label>
       <div class="chips" id="cchips" role="group" aria-label="Filter by role"></div>
       <span class="spacer"></span>
@@ -737,7 +737,7 @@ $("#chips").addEventListener("click", e => {
   [...$("#chips").children].forEach(x => x.setAttribute("aria-pressed", x === b));
   draw();
 });
-$("#q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); draw(); });
+$("#q").addEventListener("input", e => { query = norm(e.target.value.trim()); draw(); });
 $("#reset").addEventListener("click", () => {
   conf = "All"; query = ""; sortKey = "o"; sortDir = -1; $("#q").value = "";
   [...$("#chips").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.c === "All"));
@@ -764,7 +764,7 @@ function stars(v){
 function rowsFor(){
   let r = DATA.filter(t =>
     (conf === "All" || t.c === conf) &&
-    (!query || t.n.toLowerCase().includes(query) || t.nk.toLowerCase().includes(query)));
+    (!query || norm(t.n).includes(query) || norm(t.nk).includes(query) || norm(t.ab).startsWith(query)));
   const k = sortKey;
   return r.sort((a, b) => {
     const x = a[k], y = b[k];
@@ -784,7 +784,7 @@ function draw(){
   $("#rows").innerHTML = list.map((t, i) => `
     <tr tabindex="0" data-n="${t.n}" aria-selected="${picked === t.n}">
       <td class="l rk mono">${i + 1}</td>
-      <td class="l"><span class="team">${t.n}</span> <span class="sub">${t.nk}</span></td>
+      <td class="l"><span class="team">${hl(t.n, query)}</span> <span class="sub">${hl(t.nk, query)}</span></td>
       <td class="l sub">${t.c}${t.dv ? " " + t.dv : ""}</td>
       <td class="mono big">${t.o}</td>
       <td class="mono mut">${t.of}</td>
@@ -949,6 +949,12 @@ let cKey = "lvl", cDir = -1, cRole = "All", cQuery = "";
 const cVal = (c, k) => k === "gr" ? (GVAL[c.gr] ?? -1) : k === "role" ? ROLEORD[c.role] : c[k];
 const norm = x => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// Escapes s and wraps the first match of q in <mark class="hit">. Used by the picker and the table searches.
+function hl(s, q){
+  const v = norm(q.trim()), i = norm(s).indexOf(v);
+  return v && i >= 0 ? esc(s.slice(0, i)) + '<mark class="hit">' + esc(s.slice(i, i + v.length)) + "</mark>" + esc(s.slice(i + v.length)) : esc(s);
+}
 /* ---- program picker: one combobox shared by every "Search a program" box ---- */
 // Ranking: name starts with query, then a word in the name starts with it, then name/nickname/abbrev contains it.
 function teamMatches(q){
@@ -966,8 +972,6 @@ function combo(inp, pick, current){
   Object.entries({role:"combobox", "aria-autocomplete":"list", "aria-expanded":"false", "aria-controls":id})
     .forEach(([k, v]) => inp.setAttribute(k, v));
   let hits = [], act = -1;
-  const mark = (s, q) => { const i = norm(s).indexOf(norm(q.trim()));
-    return q.trim() && i >= 0 ? esc(s.slice(0, i)) + "<mark>" + esc(s.slice(i, i + q.trim().length)) + "</mark>" + esc(s.slice(i + q.trim().length)) : esc(s); };
   const move = i => { act = i; [...list.children].forEach((li, j) => li.setAttribute("aria-selected", j === i));
     if (i >= 0 && list.children[i]) { inp.setAttribute("aria-activedescendant", list.children[i].id); list.children[i].scrollIntoView({block:"nearest"}); }
     else inp.removeAttribute("aria-activedescendant"); };
@@ -975,7 +979,7 @@ function combo(inp, pick, current){
     const q = inp.value === current() ? "" : inp.value;
     hits = teamMatches(q);
     list.innerHTML = hits.length ? hits.map((t, i) => `<li role="option" id="${id}-${i}" data-n="${esc(t.n)}"${t.n === current() ? ' class="cur"' : ""}>
-      <span class="cb-n">${mark(t.n, q)}</span><span class="cb-s">${mark(t.nk, q)} · ${esc(t.c)}</span></li>`).join("")
+      <span class="cb-n">${hl(t.n, q)}</span><span class="cb-s">${hl(t.nk, q)} · ${esc(t.c)}</span></li>`).join("")
       : `<li class="cb-none">No program matches “${esc(q.trim())}”</li>`;
     list.hidden = false; inp.setAttribute("aria-expanded", "true");
     move(q ? 0 : hits.findIndex(t => t.n === current()));
@@ -1027,7 +1031,7 @@ function cDraw(){
   $("#crows").innerHTML = list.map(c => `
     <tr tabindex="0" data-n="${c.team}">
       <td class="l role">${c.role}</td>
-      <td class="l"><span class="team">${c.name}</span>${c.gen ? `<span class="dev d1">Generic</span>` : ""}</td>
+      <td class="l"><span class="team">${hl(c.name, cQuery)}</span>${c.gen ? `<span class="dev d1">Generic</span>` : ""}</td>
       <td class="l sub">${c.team}</td>
       <td class="mono big">${c.lvl}</td>
       <td class="mono">${c.gr}</td>
@@ -1363,7 +1367,6 @@ const HPRE = [
     r:["ter-foot","star-cap","port-vet","sch-road","job-coord","game-side"]}
 ];
 /* ---- custom rules and presets (saved in this browser) ---- */
-const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const unesc = s => { const d = document.createElement("textarea"); d.innerHTML = s; return d.value; };
 const HTOK = [
   ["{school}", "School", t => t.n], ["{nickname}", "Nickname", t => t.nk], ["{conference}", "Conference", t => t.c],

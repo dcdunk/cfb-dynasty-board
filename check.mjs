@@ -52,6 +52,14 @@ const inPage = async () => {
   $("#rows tr").click(); await wait(100);
   ok($("#dname").innerText.trim(), "Board: team dossier did not open");
   $("#dclose").click();
+  const find = (sel, text) => { $(sel).value = text; $(sel).dispatchEvent(new Event("input")); };
+  find("#q", "tide");
+  ok($$("#rows tr").length === 1 && $("#rows tr").dataset.n === "Alabama", "Board: nickname search 'tide' should leave only Alabama");
+  ok($("#rows mark.hit")?.innerText === "Tide", "Board: match not highlighted");
+  find("#q", "uga");
+  ok([...$$("#rows tr")].some(r => r.dataset.n === "Georgia"), "Board: abbreviation 'uga' should find Georgia");
+  find("#q", "texas a&m");
+  ok($("#rows tr")?.dataset.n === "Texas A&M", "Board: 'texas a&m' should find Texas A&M");
   $("#q").value = "zzzz"; $("#q").dispatchEvent(new Event("input"));
   ok($$("#rows tr").length === 0, "Board: search did not filter");
   $("#reset").click();
@@ -62,6 +70,11 @@ const inPage = async () => {
 
   await open("tabCoach");
   ok($$("#crows tr").length > 0, "Coaches: no coach rows");
+  const coach = $("#crows tr .team").innerText, part = coach.slice(0, 4);
+  $("#cq").value = part.toLowerCase(); $("#cq").dispatchEvent(new Event("input"));
+  ok([...$$("#crows .team")].every(t => t.innerText.toLowerCase().includes(part.toLowerCase())), "Coaches: search did not filter by name");
+  ok($("#crows mark.hit")?.innerText.toLowerCase() === part.toLowerCase(), "Coaches: match not highlighted");
+  $("#cq").value = ""; $("#cq").dispatchEvent(new Event("input"));
 
   await open("tabPipe");
   const before = $("#pq").value; $("#pnext").click(); await wait(50);
