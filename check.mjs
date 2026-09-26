@@ -117,7 +117,7 @@ const inPage = async () => {
   ok($("#recGrid").innerText.includes("5★ prestige") && $("#recGrid").innerText.includes("~1,000") && $("#recGrid .arch").innerText.toLowerCase() === "blue blood", "Recruiting: Georgia should be a 5★ blue blood with ~1,000 hours");
   ok($$("#recGrid .sw").length > 0 && $("#recGrid .sw").style.background.includes("--t"), "Recruiting: pipeline tier squares missing");
   $("#rLink").click();
-  ok($("#rLink").getAttribute("aria-pressed") === "false", "Recruiting: link toggle did not turn off");
+  ok($("#rLink").getAttribute("aria-checked") === "false", "Recruiting: link toggle did not turn off");
   type("#rq", "temple"); $("#rq").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
   ok($("#rq").value === "Temple" && $("#hq").value === "Georgia", "Recruiting: unlinked pick should not change House rules");
   $("#rLink").click();

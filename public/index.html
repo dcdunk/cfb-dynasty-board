@@ -495,6 +495,17 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 /* ---------- recruiting & NIL ---------- */
 .rec-ctl{display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; flex:0 1 480px; justify-content:flex-end}
 .rec-q{flex:1 1 240px}
+.tgl{font:inherit; font-size:12.5px; color:var(--dim); background:transparent; border:0; padding:4px 0; cursor:pointer;
+  display:inline-flex; align-items:center; gap:9px; white-space:nowrap}
+.tgl:hover{color:var(--text)}
+.tgl:focus-visible{outline:2px solid var(--focus); outline-offset:3px}
+.tgl .trk{width:32px; height:18px; border-radius:9px; background:var(--pip-off); position:relative; flex:none; transition:background .15s}
+.tgl .trk i{position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--panel);
+  box-shadow:0 1px 2px rgba(0,0,0,.3); transition:transform .15s}
+.tgl[aria-checked="true"]{color:var(--text)}
+.tgl[aria-checked="true"] .trk{background:var(--accent)}
+.tgl[aria-checked="true"] .trk i{transform:translateX(14px)}
+@media (prefers-reduced-motion:reduce){.tgl .trk, .tgl .trk i{transition:none}}
 .rec .sw{width:12px; height:12px; display:inline-block; vertical-align:-1px; border:1px solid var(--line)}
 .rec td.swc{width:12px; padding-right:0}
 .rec .arch{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 118; font-weight:800; text-transform:uppercase; font-size:22px; letter-spacing:-.005em}
@@ -715,7 +726,7 @@ td .sl-was{margin-left:6px}
       <p class="hint">A strategy for the program itself, built on what doesn't change much from year to year: its tier, budget, lasting strengths and pipelines. Useful whether you start there or take the job in year 5. Recruiting NIL and keeping your own players draw on the same budget, so plan both together.</p>
     </div>
     <div class="rec-ctl">
-    <button type="button" class="chip" id="rLink" aria-pressed="true" title="When on, this tab and House Rules share one program">Follow House Rules team</button>
+    <button type="button" class="tgl" id="rLink" role="switch" aria-checked="true" title="When on, this tab and House Rules share one program"><span class="trk" aria-hidden="true"><i></i></span>Follow House Rules team</button>
     <label class="search rec-q">
       <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
       <input id="rq" type="text" placeholder="Search a program" aria-label="Program for the recruiting plan" autocomplete="off" spellcheck="false">
@@ -1875,7 +1886,7 @@ function recDraw(){
   const [tier, regs] = purist(t), pl = t.pl.filter(p => p[1] > 0).sort((a, b) => b[2] - a[2]);
   const map = hMap(regs, Object.fromEntries(pl.map(p => [p[0], p[1]])))
     .replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions), colored by tier</figcaption>`);
-  $("#rLink").setAttribute("aria-pressed", rLink);
+  $("#rLink").setAttribute("aria-checked", rLink);
   if (document.activeElement !== $("#rq")) $("#rq").value = t.n;
   $("#recGrid").innerHTML = `
   <section class="sl-card"><h3>Program tier<span>${esc(t.n)} · ${t.p}★ prestige</span></h3><div class="body">
