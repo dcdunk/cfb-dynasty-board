@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single self-contained file, `public/index.html` (~700 KB), for a College Football 27 dynasty-mode companion. No build and no package.json. Open it in a browser to run it. The only external requests are Google Fonts.
+A single self-contained file, `public/index.html` (~700 KB), for a College Football 27 dynasty-mode companion. No build and no package.json. Open it in a browser to run it. The only external requests are Google Fonts, plus the opt-in AI chat model download.
 
 ## Deploy
 
@@ -38,6 +38,7 @@ Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS`
 | Pipelines | Recruiting pipeline map per team | `buildMap`, `paintMap`, `pDraw`, `pSet` |
 | House rules | Generates self-imposed challenge rules for a team | `hDraw`, `hDeal`, `hApplyPreset`, `hToggleRule`, `hText` |
 | Recruiting & NIL | Program-level, year-agnostic strategy (users may take a job in year 5): prestige band (`ARCH`), NIL rank, lasting vs earned grades (`GLAST`), tier-colored pipelines, checklist. Deliberately avoids this save's roster/uncommitted NIL. Follows the House rules team unless the `#rLink` toggle is off (saved in `rec-v1`). Mechanics cited on the page; `recHours` interpolates between the only two published points | `recDraw`, `recPick` |
+| Planner (floating "Plan a dynasty" panel, not a tab) | Chat that turns plain text ("tough Florida dynasty, created coach") into a plan from site data: house rules (`pRules`), recruiting band, coach, sliders, with buttons that apply it to the tabs. Keyword parsing only (`PDIFF`, `PPRE`, `PRULE`, `pFindTeams`, longest team name wins). Optional "AI chat" loads WebLLM + Qwen2.5 1.5B (~880 MB, from jsDelivr/Hugging Face, runs on the visitor's GPU, no API) only on click; it rephrases `P.facts` and must not add facts. check.mjs never loads the model | `pPlan`, `pRender`, `pAsk`, `pWrite` |
 | Sliders | Matt10's slider sets, hand-transcribed from his forum image (`SLDIFF`, `SLPEN`, `SLFIX`). Rows with a third value show what changed from the previous version. Update the version, date and `#slNew` notes when he posts a new set | `slDraw` |
 
 House rules are the most intricate part: `HRULES` (built-in rules, each with category `c` from `HCATS` and strain level `l` 1-3), `HPRE` presets, `HSTRICT` difficulty weights, `HTOK` text tokens filled per team by `fillTok`, and `HMAPS` region helpers. User-created rules/presets live in `HU` and merge in via `huSync`.

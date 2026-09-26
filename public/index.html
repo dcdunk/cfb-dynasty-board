@@ -586,6 +586,37 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl td.chg{color:var(--accent-ink); font-weight:600; background:var(--accent-soft)}
 .sl-was{font-weight:400; font-size:11px; color:var(--dim); margin-left:4px}
 td .sl-was{margin-left:6px}
+/* ---------- dynasty planner (chat) ---------- */
+.pfab{position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom,0px)); z-index:35; background:var(--text); color:var(--panel);
+  border:0; padding:11px 16px; font:600 13px/1 "IBM Plex Sans",sans-serif; letter-spacing:.02em; cursor:pointer; box-shadow:var(--shadow)}
+.pfab:hover{background:var(--accent-ink)}
+.pchat{position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom,0px)); z-index:60; width:min(430px,calc(100vw - 32px));
+  height:min(640px,calc(100vh - 36px)); background:var(--panel); border:1px solid var(--line); box-shadow:var(--shadow); display:flex; flex-direction:column}
+.phead{display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+.phead h2{margin:0; flex:1; font:800 15px/1 "Archivo",sans-serif; font-variation-settings:"wdth" 118; text-transform:uppercase; letter-spacing:.01em}
+.pai{font:500 12px "IBM Plex Sans",sans-serif; background:transparent; color:var(--dim); border:1px solid var(--line); padding:5px 9px; cursor:pointer}
+.pai[aria-pressed="true"]{color:var(--accent-ink); border-color:var(--accent); background:var(--accent-soft)}
+.pai:disabled{opacity:.5; cursor:not-allowed}
+.plog{flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px}
+.pm{max-width:92%; font-size:13.5px; line-height:1.5}
+.pm.me{align-self:flex-end; background:var(--accent-soft); color:var(--text); padding:8px 11px}
+.pm.bot{align-self:flex-start}
+.pm.bot p{margin:0 0 8px}
+.pm .pai-txt{border-left:2px solid var(--accent); padding-left:9px; color:var(--text)}
+.pcard{border:1px solid var(--line); background:var(--raise); padding:10px 12px; margin:0 0 8px}
+.pcard h4{margin:0 0 6px; font:600 11px "IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.06em; color:var(--dim)}
+.pcard ol{margin:0; padding-left:18px}
+.pcard li{margin:0 0 5px}
+.pcard .mono{font-family:"IBM Plex Mono",monospace}
+.pacts,.psug{display:flex; flex-wrap:wrap; gap:6px}
+.pacts button,.psug button{font:500 12px "IBM Plex Sans",sans-serif; background:var(--panel); color:var(--text); border:1px solid var(--line); padding:6px 9px; cursor:pointer}
+.pacts button:hover,.psug button:hover{border-color:var(--accent)}
+.pacts button.go{background:var(--text); color:var(--panel); border-color:var(--text)}
+.pstat{padding:0 14px 6px; font:12px "IBM Plex Mono",monospace; color:var(--dim)}
+.pform{display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid var(--line)}
+.pform input{flex:1; min-width:0; font:14px "IBM Plex Sans",sans-serif; padding:9px 10px; border:1px solid var(--line); background:var(--ground); color:var(--text)}
+.pform button{font:600 13px "IBM Plex Sans",sans-serif; border:0; background:var(--accent); color:#fff; padding:0 14px; cursor:pointer}
+@media (max-width:600px){.pchat{right:0; bottom:0; width:100vw; height:100dvh; border:0}}
 </style>
 
 <div class="masthead">
@@ -784,6 +815,15 @@ td .sl-was{margin-left:6px}
   <div class="sl-grid" id="slGrid"></div>
 </section>
 
+<button class="pfab" id="pOpen" type="button" aria-controls="pChat" aria-expanded="false">Plan a dynasty</button>
+<section class="pchat" id="pChat" role="dialog" aria-labelledby="pTitle" hidden>
+  <div class="phead"><h2 id="pTitle">Dynasty planner</h2>
+    <button class="pai" id="pAi" type="button" aria-pressed="false" title="Downloads a small AI model (about 880 MB) that runs on your device. Nothing is sent to a server.">AI chat: off</button>
+    <button class="dclose" id="pClose" type="button" aria-label="Close planner" style="position:static">×</button></div>
+  <div class="plog" id="pLog" aria-live="polite"></div>
+  <div class="pstat" id="pStat" hidden></div>
+  <form class="pform" id="pForm"><input id="pIn" autocomplete="off" placeholder="e.g. Tough Florida dynasty with a created coach" aria-label="Ask the planner"><button type="submit">Send</button></form>
+</section>
 <div class="scrim" id="scrim"></div>
 <aside class="dossier" id="dossier" role="dialog" aria-modal="true" aria-labelledby="dname" hidden>
   <div class="dhead">
@@ -1996,6 +2036,150 @@ if (!hLoad()) hApplyPreset("purist");
 if (H.pre && !presetOf(H.pre)) H.pre = "";
 hDraw();
 if (!DATA.some(t => t.n === rTeam)) rTeam = H.team; combo($("#rq"), recPick, recTeam); recDraw();
+
+/* ---- dynasty planner: keyword planner over the site's own data, with an optional in-browser AI model for wording ---- */
+// The planner never invents facts: every number comes from DATA/HRULES/ARCH/SLDIFF. The AI (WebLLM, runs on the visitor's GPU)
+// only rephrases those facts and answers follow-ups from them. Without WebGPU or with AI off, the templated reply stands alone.
+const PDIFF = [["hard", /\b(hard|harder|tough|tougher|brutal|hardcore|difficult|challeng\w*|insane|nightmare|grind)\b/], ["cas", /\b(casual|easy|easier|light|relaxed|chill)\b/]];
+const PPRE = [["money", /moneyball|no blue.?chips?|walk.?ons?|underdog/], ["old", /old.?school|no portal and no nil|classic/], ["portal", /portal era|portal program/],
+  ["blue", /blue.?blood/], ["home", /hometown|home.?grown|local kids/], ["real", /realis(m|tic)|sim.?like/], ["carousel", /carousel|coordinator|headset/]];
+const PRULE = [["port-none", /no (transfer|portal)|closed portal|without the portal/], ["ter-home", /in.?state|home state only|only local|recruit local/],
+  ["nil-zero", /no nil|zero nil|without nil|no money/], ["nil-half", /half (the )?(nil|budget)|low budget/], ["star-none", /no (5|five).?stars?|no blue.?chips?/],
+  ["game-heis", /heisman difficulty|on heisman/], ["job-coord", /start as (a )?coordinator|earn the headset/], ["sch-gaunt", /tough schedule|gauntlet|hardest schedule/]];
+const PNK = (() => { const c = {}; DATA.forEach(t => { const k = norm(t.nk); c[k] = (c[k] || 0) + 1; }); return c; })();
+function pFindTeams(q){
+  const v = " " + norm(q).replace(/[^a-z0-9&]+/g, " ") + " ", hits = [];
+  for (const t of DATA) {
+    const keys = [norm(t.n).replace(/[^a-z0-9&]+/g, " ")];
+    if (PNK[norm(t.nk)] === 1) keys.push(norm(t.nk));
+    if (t.ab.length >= 2) keys.push(norm(t.ab));
+    for (const k of keys) { const i = v.indexOf(" " + k + " "); if (i >= 0) hits.push([t, k.length, i]); }
+  }
+  hits.sort((a, b) => b[1] - a[1]);
+  const out = [];   // longest match wins, so "Georgia Tech" beats "Georgia"
+  for (const [t, len, i] of hits) if (!out.some(o => o[0] === t || (i < o[2] + o[1] && o[2] < i + len))) out.push([t, len, i]);
+  return out.sort((a, b) => a[2] - b[2]).map(o => o[0]);
+}
+function pRules(t, strict, pre, force){
+  if (pre) return presetOf(pre).r.filter(id => HR[id] && HR[id].w(t) && !force.some(f => HR[f].c === HR[id].c)).concat(force);
+  const want = {cas:1, std:2, hard:3}[strict], k = HSTRICT[strict].k, used = new Set(force.map(f => HR[f].c));
+  const cats = ["ter", "star", "port", "nil", "ros", "sch", "job", "game"].filter(c => !used.has(c)).slice(0, Math.max(0, k - force.length));
+  return force.concat(cats.map(c => {
+    const ok = HRULES.filter(r => r.c === c && !r.u && r.w(t));
+    const best = Math.min(...ok.map(r => Math.abs(r.l - want)));
+    const pool = ok.filter(r => Math.abs(r.l - want) === best);
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
+  }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
+}
+const P = {team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
+const pLog = $("#pLog");
+function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
+const pSug = xs => `<div class="psug">${xs.map(s => `<button type="button" data-q="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
+const PHELP = `<p>Tell me a program and how you want to play it. I build a plan from this site's data: house rules, recruiting approach, NIL standing, the coach you'd replace and a slider set.</p>`
+  + pSug(["Tough Florida dynasty with a created coach", "Casual Oregon rebuild", "Random team, no transfers", "Moneyball at Temple"]);
+function pPlan(q){
+  const s = norm(q), teams = pFindTeams(q);
+  if (/\b(random|surprise|any team|pick (a|one) for me)\b/.test(s)) teams.unshift(DATA[Math.floor(Math.random() * DATA.length)]);
+  const t = teams[0] || P.team;
+  if (!t) return null;
+  const heard = teams.length || PDIFF.some(([, re]) => re.test(s)) || PPRE.some(([, re]) => re.test(s)) || PRULE.some(([, re]) => re.test(s))
+    || /creat\w* (a )?coach|custom coach|own coach|harder|tougher|easier|lighter/.test(s);
+  if (!heard) return null;
+  const more = /\b(harder|tougher)\b/.test(s), less = /\b(easier|lighter)\b/.test(s);
+  let strict = (PDIFF.find(([, re]) => re.test(s)) || [P.plan && t === P.team ? P.plan.strict : "std"])[0];
+  if (P.plan && t === P.team && (more || less)) strict = more ? (P.plan.strict === "cas" ? "std" : "hard") : (P.plan.strict === "hard" ? "std" : "cas");
+  const pre = (PPRE.find(([, re]) => re.test(s)) || [null])[0];
+  const force = [...new Set(PRULE.filter(([, re]) => re.test(s)).map(x => x[0]))].filter(id => HR[id].w(t));
+  const created = /creat\w* (a )?coach|custom coach|my own coach|own coach|create a coach/.test(s) || (P.plan && t === P.team && P.plan.created);
+  const same = P.plan && t === P.plan.t && !teams.length, prev = same ? P.plan : null;
+  // A follow-up like "no transfers" edits the last plan in place instead of re-rolling every rule.
+  if (prev && strict === prev.strict && !pre)
+    return {...prev, created, rules:prev.rules.filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force).sort((a, b) => catIx(a) - catIx(b))};
+  return {t, strict, pre:pre || (prev && strict === prev.strict ? prev.pre : null), rules:pRules(t, strict, pre, force), created};
+}
+function pRender(p){
+  const {t, strict, pre, rules, created} = p, s = strainOf(rules), [sl] = strainLbl(s);
+  const [, arch, archTxt] = ARCH.find(a => t.p >= a[0]), nr = NILRANK.indexOf(t.n) + 1;
+  const pl = t.pl.filter(x => x[1] > 0).sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 3);
+  const hc = (t.st || []).find(c => c[0] === "HC"), sld = SLDIFF[strict === "hard" ? "heis" : "aa"];
+  const label = pre ? presetOf(pre).n : HSTRICT[strict].n;
+  const coach = created
+    ? `You replace ${hc ? `${esc(hc[1])} (level ${hc[2]}, ${esc(hc[4])}, pipeline ${esc(hc[5] || "none")})` : "the current head coach"}. A created coach doesn't inherit that level or pipeline, so the program's own pipelines carry recruiting early on. Pair it with the Earn the headset rule if you want to start as a coordinator.`
+    : hc ? `You coach as ${esc(hc[1])}: level ${hc[2]}, ${esc(hc[4])}, grade ${esc(hc[3])}${hc[5] ? `, pipeline ${esc(hc[5])}` : ""}.` : "";
+  const html = `<div class="pai-txt" hidden></div>
+    <p><b>${esc(t.n)} ${esc(t.nk)}</b> · ${esc(t.c)} · ${t.p}★ prestige · ${t.o} overall (${t.of} off / ${t.df} def) · NIL #${nr} of ${DATA.length} (${fmt(t.nt)})</p>
+    <div class="pcard"><h4>House rules · ${esc(label)} · strain ${esc(sl)}</h4><ol>${rules.map(id => `<li><b>${HR[id].n}.</b> ${HR[id].x(t)}</li>`).join("")}</ol></div>
+    <div class="pcard"><h4>Recruiting · ${esc(arch)}</h4><p>${esc(archTxt)}</p><p>Top pipelines: ${pl.length ? esc(and(pl.map(x => `${x[0]} (${TIERN[x[1]]})`))) : "none"}.</p></div>
+    ${coach ? `<div class="pcard"><h4>${created ? "Created coach" : "Your coach"}</h4><p>${coach}</p></div>` : ""}
+    <div class="pcard"><h4>Sliders</h4><p>Matt10's ${sld.n} set${strict === "hard" ? " fits a tough run" : ""}.</p></div>
+    <div class="pacts"><button type="button" class="go" data-a="apply">Apply house rules</button><button type="button" data-a="rec">Recruiting plan</button>
+      <button type="button" data-a="slide">Sliders</button><button type="button" data-a="team">Team dossier</button></div>
+    ${pSug(["Make it harder", "Make it easier", created ? "Use the real coach" : "With a created coach", "No transfers"])}`;
+  P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)} ranked ${nr} of ${DATA.length}.`,
+    `Challenge: ${label}, strain ${sl}. House rules: ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
+    `Recruiting band ${arch}: ${archTxt} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
+    coach.replace(/<[^>]+>/g, ""), `Sliders: Matt10's ${sld.n} set.`].join("\n");
+  return html;
+}
+async function pAsk(q){
+  q = q.trim(); if (!q || P.busy) return;
+  pSay("me", esc(q));
+  const plan = /^(use the real coach|real coach)$/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q);
+  let msg;
+  if (plan) { P.team = plan.t; P.plan = plan; msg = pSay("bot", pRender(plan)); }
+  else if (!P.aiOn) { pSay("bot", `<p>I didn't catch a program${P.team ? " or a change to the plan" : ""} in that.</p>` + PHELP); return; }
+  else msg = pSay("bot", `<div class="pai-txt"></div>`);
+  if (P.aiOn && P.ai) await pWrite(q, msg.querySelector(".pai-txt"), !plan);
+}
+async function pWrite(q, el, free){
+  el.hidden = false; el.textContent = "…"; P.busy = true;
+  const sys = "You are the Dynasty Board planner for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
+    + "If the facts don't answer the question, say the board doesn't have that. Reply in 2 to 4 plain sentences, no lists.\n\nFACTS:\n" + (P.facts || "No program chosen yet.");
+  try {
+    const chunks = await P.ai.chat.completions.create({stream:true, temperature:.3, max_tokens:220,
+      messages:[{role:"system", content:sys}, ...P.hist.slice(-4), {role:"user", content:free ? q : `Summarize this plan for: "${q}"`}]});
+    let out = "";
+    for await (const c of chunks) { out += c.choices[0]?.delta?.content || ""; el.textContent = out; }
+    P.hist.push({role:"user", content:q}, {role:"assistant", content:out});
+  } catch (e) { el.textContent = "The AI model stopped responding. The plan below is still accurate."; }
+  P.busy = false;
+}
+const PMODEL = "Qwen2.5-1.5B-Instruct-q4f16_1-MLC";   // ~880 MB; beat Llama 3.2 1B at refusing facts it lacks, 3B was 2x the download
+async function pAiToggle(){
+  const b = $("#pAi"), st = $("#pStat");
+  if (P.aiOn) { P.aiOn = false; b.setAttribute("aria-pressed", "false"); b.textContent = "AI chat: off"; return; }
+  if (!navigator.gpu) { st.hidden = false; st.textContent = "This browser can't run the AI model (needs WebGPU). The planner still works without it."; return; }
+  if (!P.ai) {
+    if (!confirm("AI chat downloads a ~880 MB model once and runs it on your device. Nothing you type leaves your browser. Continue?")) return;
+    b.disabled = true; st.hidden = false; st.textContent = "Loading AI model…";
+    try {
+      const w = await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/+esm");
+      P.ai = await w.CreateMLCEngine(PMODEL, {initProgressCallback:r => st.textContent = r.text});
+    } catch (e) { b.disabled = false; st.textContent = "Couldn't load the AI model on this device. The planner still works without it."; return; }
+    b.disabled = false;
+  }
+  st.hidden = true; P.aiOn = true; b.setAttribute("aria-pressed", "true"); b.textContent = "AI chat: on";
+}
+function pToggle(on){
+  $("#pChat").hidden = !on; $("#pOpen").hidden = on; $("#pOpen").setAttribute("aria-expanded", on);
+  if (on) { if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus(); }
+}
+$("#pOpen").addEventListener("click", () => pToggle(true));
+$("#pClose").addEventListener("click", () => pToggle(false));
+$("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
+$("#pAi").addEventListener("click", pAiToggle);
+$("#pForm").addEventListener("submit", e => { e.preventDefault(); const v = $("#pIn").value; $("#pIn").value = ""; pAsk(v); });
+pLog.addEventListener("click", e => {
+  const s = e.target.closest("[data-q]"); if (s) return pAsk(s.dataset.q);
+  const a = e.target.closest("[data-a]"), p = P.plan; if (!a || !p) return;
+  if (a.dataset.a === "apply") {
+    hSetTeam(p.t.n); Object.assign(H, {mode:"preset", pre:"", rules:[...p.rules], src:"Planner · " + (p.pre ? presetOf(p.pre).n : HSTRICT[p.strict].n), edited:false, note:""});
+    H.lock.clear(); hSave(); hDraw(); showTab("house");
+  } else if (a.dataset.a === "rec") { recPick(p.t.n); showTab("rec"); }
+  else if (a.dataset.a === "slide") { slD = p.strict === "hard" ? "heis" : "aa"; slDraw(); showTab("slide"); }
+  else if (a.dataset.a === "team") { pToggle(false); openTeam(p.t.n); return; }
+  pToggle(false); window.scrollTo({top:0});
+});
 
 draw();
 </script>
