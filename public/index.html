@@ -476,11 +476,39 @@ textarea.hfi{resize:vertical; line-height:1.45}
 @media (max-width:720px){
   .counts{width:100%; margin-left:0; gap:18px}
 }
+
+/* ---------- sliders ---------- */
+.sl{max-width:1500px; margin:0 auto; padding:24px 22px 80px}
+.sl .hh{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 120;
+  font-weight:800; text-transform:uppercase; font-size:20px; letter-spacing:-.005em; margin:0 0 4px}
+.sl .hint{color:var(--dim); font-size:12.5px; margin:0; max-width:70ch}
+.sl .hint a{color:var(--accent-ink); font-weight:600}
+.sl-v{color:var(--accent)}
+.sl-head{display:flex; flex-wrap:wrap; gap:14px 24px; align-items:flex-end; justify-content:space-between}
+.sl-new{font-size:12.5px; color:var(--dim); margin:16px 0 20px; padding:10px 12px;
+  background:var(--panel); border-left:3px solid var(--accent); max-width:100ch}
+.sl-new b{color:var(--text)}
+.sl-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; align-items:start}
+.sl-card{background:var(--panel); border:1px solid var(--line)}
+.sl-card h3{margin:0; padding:10px 12px 8px; font-size:10.5px; letter-spacing:.085em; text-transform:uppercase;
+  color:var(--faint); font-weight:600; border-bottom:1px solid var(--line); display:flex; justify-content:space-between}
+.sl-card h3 span{letter-spacing:.02em; text-transform:none; font-weight:400}
+.sl table{min-width:0}
+.sl th{position:static; cursor:default; padding:8px 12px 6px; background:transparent}
+.sl th:hover{color:var(--faint)}
+.sl tbody tr{cursor:default}
+.sl tbody tr:hover{background:transparent}
+.sl td{padding:6px 12px}
+.sl td.l{color:var(--text)}
+.sl td.mono{font-size:13px}
+.sl td.chg{color:var(--accent-ink); font-weight:600; background:var(--accent-soft)}
+.sl-was{font-weight:400; font-size:11px; color:var(--dim); margin-left:4px}
+td .sl-was{margin-left:6px}
 </style>
 
 <div class="masthead">
   <h1 class="wordmark">Dynasty<br><em>Board</em></h1>
-  <p class="standfirst">Every FBS program in College Football 27, ranked by team rating &mdash; with prestige, NIL budget, national titles, and the full 85-man roster behind each one. Pick a row, roll a random program, look up any coach, or map a program&rsquo;s recruiting pipelines, or set house rules for your dynasty.</p>
+  <p class="standfirst">Every FBS program in College Football 27, ranked by team rating &mdash; with prestige, NIL budget, national titles, and the full 85-man roster behind each one. Pick a row, roll a random program, look up any coach, or map a program&rsquo;s recruiting pipelines, set house rules for your dynasty, or grab tested gameplay sliders.</p>
   <div class="counts">
     <div class="count"><b id="cTeams">138</b><span>Programs</span></div>
     <div class="count"><b id="cPlayers">11,730</b><span>Players</span></div>
@@ -494,6 +522,7 @@ textarea.hfi{resize:vertical; line-height:1.45}
   <button class="tab" role="tab" id="tabCoach" aria-controls="viewCoach" aria-selected="false" tabindex="-1" type="button">Coach Database</button>
   <button class="tab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
   <button class="tab" role="tab" id="tabHouse" aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
+  <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
 </div>
 
 <div id="viewBoard" role="tabpanel" aria-labelledby="tabBoard">
@@ -633,6 +662,19 @@ textarea.hfi{resize:vertical; line-height:1.45}
 <div class="foot">
   Team ratings, prestige and NIL from a CFB&nbsp;27 Year&nbsp;1 Week&nbsp;0 preseason save; rosters, player ratings, conferences, identity and coaching staffs decoded from the dynasty save file (UCLA dynasty, Year&nbsp;1 preseason). National titles per NCAA.com, 1869&ndash;2025, shared titles counted. Pipeline influence from the dynasty save&rsquo;s school pipeline table. Map outlines from Wikimedia Commons (public domain). Stadium names and capacities per Wikipedia&rsquo;s list of FBS stadiums, September 2026.
 </div>
+
+<section id="viewSlide" class="sl" role="tabpanel" aria-labelledby="tabSlide" hidden>
+  <header class="sl-head">
+    <div>
+      <h2 class="hh">Matt10's CFB27 Sliders <span class="sl-v">v5.5</span></h2>
+      <p class="hint">By Matt10, with MrHurriicane and Cam. Posted 9/25/26 for the latest patch. Set them in the main menu first, then import into your dynasty.
+        <a href="https://forums.operationsports.com/forums/forum/football/ea-sports-college-football-and-ncaa-football/ea-sports-college-football-sliders/26925397-matt10-s-cfb27-sliders" target="_blank" rel="noopener">Source thread</a></p>
+    </div>
+    <div class="chips" id="slDiff" role="group" aria-label="Difficulty"></div>
+  </header>
+  <p class="sl-new"><b>New in 5.5:</b> <span id="slNew"></span> <span class="sl-was">was</span> marks the old value.</p>
+  <div class="sl-grid" id="slGrid"></div>
+</section>
 
 <div class="scrim" id="scrim"></div>
 <aside class="dossier" id="dossier" role="dialog" aria-modal="true" aria-labelledby="dname" hidden>
@@ -862,7 +904,7 @@ $("#scrim").addEventListener("click", closeTeam);
 addEventListener("keydown", e => { if (e.key === "Escape" && picked) closeTeam(); });
 
 /* ---- tabs ---- */
-const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"]];
+const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["slide","#tabSlide","#viewSlide"]];
 let curTab = "board";
 function showTab(which){
   curTab = which;
@@ -1653,6 +1695,52 @@ $("#hbook").addEventListener("submit", e => {
   H.note = `Saved “${esc(n)}” to your presets.`;
   hDraw();
 });
+
+/* ---- sliders (Matt10 v5.5, transcribed from his 9/25/26 image) ---- */
+// Each row: [name, value] or [name, value, previous value]. Skill rows: [name, user, cpu, prevUser, prevCpu].
+const SLPEN = [["Offside",50],["False Start",50],["Offensive Holding",52,50],["Facemask",40],["Block in the Back",70,50],
+  ["Roughing the Passer",40,48],["Defensive PI",95],["Offensive PI","On"],["Kick Catch Interference","On"],
+  ["Intentional Grounding","On"],["Roughing the Kicker","On"],["Running into Kicker","On"],["Illegal Contact","On"]];
+const SLDIFF = {
+  heis:{n:"Heisman", skill:[["QB Accuracy",38,32,null,38],["Pass Blocking",50,50],["WR Catching",52,50,50],["Run Blocking",45,45],
+    ["Ball Security",55,55],["Interceptions",20,20],["Pass Coverage",50,50],["Tackling",42,42],["FG Power",40,40],
+    ["FG Accuracy",40,40],["Punt Power",35,35],["Punt Accuracy",40,40],["Kickoff Power",50,50]]},
+  aa:{n:"All-American", skill:[["QB Accuracy",38,45],["Pass Blocking",45,50],["WR Catching",50,60],["Run Blocking",35,50],
+    ["Ball Security",55,55],["Interceptions",15,25],["Pass Coverage",50,50],["Tackling",42,50],["FG Power",40,40],
+    ["FG Accuracy",40,40],["Punt Power",35,35],["Punt Accuracy",40,50],["Kickoff Power",45,50]]}
+};
+const SLFIX = [
+  ["Game options", "Both difficulties", [["Quarter Length","12 min"],["Accelerated Clock","On"],["Min Play Clock","15 sec"],["Injuries",25],
+    ["Fatigue",40],["Speed Parity",75],["Auto-Subs","Default"]]],
+  ["Wear and tear", "Impact and recovery", [["Normal Tackle",30],["Catch Tackle",35],["Hit Stick",40],["Cut Stick",40],
+    ["Defender Tackle Advantage",45],["Sack",35],["Block",25],["Impact Block",40],["Per-Play Recovery",60],["Per-Timeout Recovery",60],
+    ["Between-Quarter Recovery",65],["Halftime Recovery",70],["Week-to-Week / In-Game Healing","90 / 85"]]],
+  ["Weather", "Precipitation impact", [["Catch Chance",50],["Pass Accuracy",50],["Pass Strength",50],["Broken Tackle",50],
+    ["Kicking Accuracy",50],["Kicking Strength",50],["Movement Penalty",50]]],
+  ["Preferences", "Optional", [["Kicking","Tap & Hold"],["Passing Type","Revamped"],["Pass Slowdown","Off"],["Pass Lead Increase","Small"],
+    ["Reticle Speed",7],["Reticle Visibility","User Only"],["Meter Visibility","User Only"],["AI WR for User","On"],["Ball Hawk","On"],
+    ["Heat Seeker","Off"],["Defensive Switch","Off"],["Passing Cam","On"]]]
+];
+let slD = "heis";
+const slCell = (v, was) => was == null ? `<td class="mono">${v}</td>`
+  : `<td class="mono chg">${v}<span class="sl-was">was ${was}</span></td>`;
+const slCard = (h, sub, rows) => `<section class="sl-card"><h3>${h}<span>${sub}</span></h3><table><tbody>${
+  rows.map(([n, v, w]) => `<tr><td class="l">${n}</td>${slCell(v, w)}</tr>`).join("")}</tbody></table></section>`;
+function slDraw(){
+  const d = SLDIFF[slD];
+  $("#slDiff").innerHTML = Object.entries(SLDIFF).map(([k, x]) =>
+    `<button type="button" class="chip" data-d="${k}" aria-pressed="${k === slD}">${x.n}</button>`).join("");
+  $("#slNew").textContent = slD === "heis"
+    ? "CPU QB accuracy drops to 32 so CPU quarterbacks take more shots downfield. Block in the back goes up to give QBs a cleaner pocket, and roughing the passer comes down so they have to decide faster."
+    : "The All-American set was already playing well, so only penalties changed. Block in the back goes up and roughing the passer comes down, adding aggression on both sides of the line.";
+  $("#slGrid").innerHTML = `<section class="sl-card"><h3>${d.n} sliders<span>You vs CPU</span></h3><table>
+    <thead><tr><th class="l">Slider</th><th>You</th><th>CPU</th></tr></thead><tbody>${
+    d.skill.map(([n, u, c, pu, pc]) => `<tr><td class="l">${n}</td>${slCell(u, pu)}${slCell(c, pc)}</tr>`).join("")}</tbody></table></section>`
+    + slCard("Penalties", "Both difficulties", SLPEN)
+    + SLFIX.map(([h, sub, rows]) => slCard(h, sub, rows)).join("");
+}
+$("#slDiff").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (b) { slD = b.dataset.d; slDraw(); } });
+slDraw();
 
 function hOpenFor(n){ hSetTeam(n); showTab("house"); window.scrollTo({top:0}); }
 huLoad();

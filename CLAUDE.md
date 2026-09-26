@@ -13,7 +13,7 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 ## Layout of the file
 
 - Lines ~7-476: one `<style>` block. Colors are CSS tokens on `:root`, with dark mode under `prefers-color-scheme` and `[data-theme]` overrides.
-- Lines ~477-645: static HTML for the five tabs (`#viewBoard`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`) plus the team dossier drawer (`#dossier`, `#scrim`).
+- Lines ~477-645: static HTML for the six tabs (`#viewBoard`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`, `#viewSlide`) plus the team dossier drawer (`#dossier`, `#scrim`).
 - Lines ~646-1661: one `<script>`, plain JS with no framework. UI is rendered by building HTML strings into `innerHTML`.
 
 **Line 650 (`const DATA = [...]`) is ~540 KB on one line and line 1044 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 650p public/index.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
@@ -35,6 +35,7 @@ Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS`
 | Coaches | Sortable staff table (`CCOLS`) | `cDraw` |
 | Pipelines | Recruiting pipeline map per team | `buildMap`, `paintMap`, `pDraw`, `pSet` |
 | House rules | Generates self-imposed challenge rules for a team | `hDraw`, `hDeal`, `hApplyPreset`, `hToggleRule`, `hText` |
+| Sliders | Matt10's slider sets, hand-transcribed from his forum image (`SLDIFF`, `SLPEN`, `SLFIX`). Rows with a third value show what changed from the previous version. Update the version, date and `#slNew` notes when he posts a new set | `slDraw` |
 
 House rules are the most intricate part: `HRULES` (built-in rules, each with category `c` from `HCATS` and strain level `l` 1-3), `HPRE` presets, `HSTRICT` difficulty weights, `HTOK` text tokens filled per team by `fillTok`, and `HMAPS` region helpers. User-created rules/presets live in `HU` and merge in via `huSync`.
 
@@ -48,7 +49,7 @@ Changing the shape of either object breaks saved data for existing users. Bump t
 
 ## Verifying changes
 
-`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all five tabs, opens a dossier, searches, rolls, steps the pipeline map, and deals house rules. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
+`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all six tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
 
 ```bash
 node check.mjs

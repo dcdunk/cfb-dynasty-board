@@ -38,7 +38,7 @@ const inPage = async () => {
   const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const fails = [], ok = (cond, msg) => { if (!cond) fails.push(msg); };
-  const views = { tabBoard: "viewBoard", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse" };
+  const views = { tabBoard: "viewBoard", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabSlide: "viewSlide" };
   const open = async tab => {
     $("#" + tab).click(); await wait(50);
     for (const [t, v] of Object.entries(views)) ok($("#" + v).hidden === (t !== tab), `${tab}: #${v} visibility wrong`);
@@ -72,6 +72,14 @@ const inPage = async () => {
   $("#hdeal").click(); await wait(50);
   ok($("#hbook").innerText.trim().length > 0, "House rules: dealing produced no rules");
   ok(localStorage.getItem("house-v1"), "House rules: state was not saved");
+
+  await open("tabSlide");
+  const row = name => [...$$("#slGrid tr")].find(r => r.cells[0]?.innerText === name)?.innerText.replace(/\s+/g, " ");
+  ok(row("QB Accuracy") === "QB Accuracy 38 32was 38", `Sliders: Heisman QB accuracy wrong: ${row("QB Accuracy")}`);
+  ok($$("#slGrid .sl-card").length === 6, "Sliders: expected 6 cards");
+  $('#slDiff [data-d="aa"]').click(); await wait(50);
+  ok(row("WR Catching") === "WR Catching 50 60", `Sliders: All-American WR catching wrong: ${row("WR Catching")}`);
+  ok($('#slDiff [data-d="aa"]').getAttribute("aria-pressed") === "true", "Sliders: difficulty chip not selected");
   return fails;
 };
 const r = await send("Runtime.evaluate", { expression: `(${inPage})()`, awaitPromise: true, returnByValue: true });
@@ -87,5 +95,5 @@ if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboa
 if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log("PASS: all 5 tabs, dossier, search, roll, pipelines, house rules, www redirect. No JS errors.");
+console.log("PASS: all 6 tabs, dossier, search, roll, pipelines, house rules, sliders, www redirect. No JS errors.");
 process.exit(0);
