@@ -9,4 +9,5 @@ A companion site for College Football 27 dynasty mode. Live at **[cfbdynastyboar
 - **Coaches**: searchable database of head coaches and coordinators.
 - **Pipelines**: each team's recruiting pipelines on a US map.
 - **House rules**: generates self-imposed challenge rules for your dynasty, from casual to hardcore. Build your own rules and presets too. Your setup is saved in your browser.
+- **Recruiting & NIL**: a game plan for any program: budget, which grades to pitch, where to recruit, which positions are graduating, and how to spend NIL.
 - **Sliders**: Matt10's tested gameplay slider sets for Heisman and All-American, with what changed in the latest version.

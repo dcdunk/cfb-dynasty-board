@@ -38,7 +38,7 @@ const inPage = async () => {
   const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const fails = [], ok = (cond, msg) => { if (!cond) fails.push(msg); };
-  const views = { tabBoard: "viewBoard", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabSlide: "viewSlide" };
+  const views = { tabBoard: "viewBoard", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabRec: "viewRec", tabSlide: "viewSlide" };
   const open = async tab => {
     $("#" + tab).click(); await wait(50);
     for (const [t, v] of Object.entries(views)) ok($("#" + v).hidden === (t !== tab), `${tab}: #${v} visibility wrong`);
@@ -108,6 +108,17 @@ const inPage = async () => {
   ok($("#hbook").innerText.trim().length > 0, "House rules: dealing produced no rules");
   ok(localStorage.getItem("house-v1"), "House rules: state was not saved");
 
+  await open("tabRec");
+  ok($("#rq").value === "UCLA", `Recruiting: should start on the saved House rules team (UCLA on a fresh profile), got ${$("#rq").value}`);
+  const recTitles = [...$$("#recGrid .sl-card h3")].map(h => h.firstChild.textContent);
+  ok(["Budget","Target level","Pitch plan","Class needs","Where to recruit","NIL plan","Hour costs"].every(x => recTitles.includes(x)), `Recruiting: missing sections, got ${recTitles}`);
+  type("#rq", "georgia"); $("#rq").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+  ok($("#rq").value === "Georgia", `Recruiting: picker should switch to Georgia, got ${$("#rq").value}`);
+  ok($("#recGrid").innerText.includes("5★ prestige") && $("#recGrid").innerText.includes("~1,000"), "Recruiting: Georgia (5★) should show 5★ prestige and ~1,000 hours");
+  const seniors = +$("#recGrid").innerText.match(/(\d+) seniors leave/)[1];
+  ok(seniors > 0 && seniors < 85, `Recruiting: implausible senior count ${seniors}`);
+  ok($$("#recGrid .hmap .on").length > 0, "Recruiting: pipeline map has no shaded regions");
+
   await open("tabSlide");
   const row = name => [...$$("#slGrid tr")].find(r => r.cells[0]?.innerText === name)?.innerText.replace(/\s+/g, " ");
   ok(row("QB Accuracy") === "QB Accuracy 38 32was 38", `Sliders: Heisman QB accuracy wrong: ${row("QB Accuracy")}`);
@@ -130,5 +141,5 @@ if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboa
 if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log("PASS: all 6 tabs, dossier, search, roll, pipelines, house rules, program picker, sliders, www redirect. No JS errors.");
+console.log("PASS: all 7 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, sliders, www redirect. No JS errors.");
 process.exit(0);

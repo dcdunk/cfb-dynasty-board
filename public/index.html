@@ -492,6 +492,35 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px}
 .cb li.cb-none{cursor:default; color:var(--faint); font-size:12.5px}
 
+/* ---------- recruiting & NIL ---------- */
+.rec-q{flex:0 1 300px}
+.rec-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; align-items:start; margin-top:20px; grid-auto-flow:dense}
+.rec-grid .span2{grid-column:span 2}
+.rec .span2{overflow-x:auto}
+@media (max-width:720px){.rec-grid .span2{grid-column:auto}}
+.rec .body{padding:12px}
+.rec .big{font-family:"IBM Plex Mono",monospace; font-size:26px; font-weight:600; line-height:1.1}
+.rec .kpis{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.rec .kpis span{display:block; font-size:10.5px; letter-spacing:.085em; text-transform:uppercase; color:var(--faint); margin-top:3px}
+.rec .note{font-size:12.5px; color:var(--dim); margin:12px 0 0; line-height:1.5}
+.rec .note b{color:var(--text)}
+.rec .bar{height:6px; background:var(--pip-off); margin-top:10px}
+.rec .bar i{display:block; height:100%; background:var(--accent)}
+.rec .grp{padding:10px 12px; border-top:1px solid var(--hair)}
+.rec .grp:first-child{border-top:0}
+.rec .grp h4{margin:0 0 6px; font-size:12px; font-weight:600}
+.rec .grp h4 small{font-weight:400; color:var(--faint); margin-left:6px}
+.rec .gr{display:inline-flex; gap:6px; align-items:baseline; margin:0 12px 4px 0; font-size:13px}
+.rec .gr b{font-family:"IBM Plex Mono",monospace}
+.rec ul.tips{margin:0; padding:12px 12px 12px 28px; font-size:12.5px; color:var(--dim); line-height:1.55}
+.rec ul.tips li + li{margin-top:6px}
+.rec ul.tips b{color:var(--text)}
+.rec .hmap{max-width:none; margin:0}
+.rec .hmap figcaption{font-size:11.5px; color:var(--faint); margin-top:6px}
+.rec td.need{color:var(--accent-ink); font-weight:600}
+.rec-src{font-size:11.5px; color:var(--faint); margin:22px 0 0; max-width:100ch}
+.rec-src a{color:var(--dim)}
+
 /* ---------- sliders ---------- */
 .sl{max-width:1500px; margin:0 auto; padding:24px 22px 80px}
 .sl .hh{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 120;
@@ -523,7 +552,7 @@ td .sl-was{margin-left:6px}
 
 <div class="masthead">
   <h1 class="wordmark">Dynasty<br><em>Board</em></h1>
-  <p class="standfirst">Every FBS program in College Football 27, ranked by team rating &mdash; with prestige, NIL budget, national titles, and the full 85-man roster behind each one. Pick a row, roll a random program, look up any coach, or map a program&rsquo;s recruiting pipelines, set house rules for your dynasty, or grab tested gameplay sliders.</p>
+  <p class="standfirst">Every FBS program in College Football 27, ranked by team rating &mdash; with prestige, NIL budget, national titles, and the full 85-man roster behind each one. Pick a row, roll a random program, look up any coach, or map a program&rsquo;s recruiting pipelines, set house rules, plan recruiting and NIL, or grab tested gameplay sliders.</p>
   <div class="counts">
     <div class="count"><b id="cTeams">138</b><span>Programs</span></div>
     <div class="count"><b id="cPlayers">11,730</b><span>Players</span></div>
@@ -537,6 +566,7 @@ td .sl-was{margin-left:6px}
   <button class="tab" role="tab" id="tabCoach" aria-controls="viewCoach" aria-selected="false" tabindex="-1" type="button">Coach Database</button>
   <button class="tab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
   <button class="tab" role="tab" id="tabHouse" aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
+  <button class="tab" role="tab" id="tabRec" aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
   <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
 </div>
 
@@ -676,6 +706,25 @@ td .sl-was{margin-left:6px}
 <div class="foot">
   Team ratings, prestige and NIL from a CFB&nbsp;27 Year&nbsp;1 Week&nbsp;0 preseason save; rosters, player ratings, conferences, identity and coaching staffs decoded from the dynasty save file (UCLA dynasty, Year&nbsp;1 preseason). National titles per NCAA.com, 1869&ndash;2025, shared titles counted. Pipeline influence from the dynasty save&rsquo;s school pipeline table. Map outlines from Wikimedia Commons (public domain). Stadium names and capacities per Wikipedia&rsquo;s list of FBS stadiums, September 2026.
 </div>
+
+<section id="viewRec" class="sl rec" role="tabpanel" aria-labelledby="tabRec" hidden>
+  <header class="sl-head">
+    <div>
+      <h2 class="hh">Recruiting &amp; NIL plan</h2>
+      <p class="hint">A game plan built from your program's grades, budget, pipelines and roster. Recruiting NIL and keeping your own players draw on the same budget, so plan both together.</p>
+    </div>
+    <label class="search rec-q">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+      <input id="rq" type="text" placeholder="Search a program" aria-label="Program for the recruiting plan" autocomplete="off" spellcheck="false">
+    </label>
+  </header>
+  <div class="rec-grid" id="recGrid"></div>
+  <p class="rec-src">Mechanics from launch-window guides (June and July 2026); patches may have changed some numbers. Sources:
+    <a href="https://dynastycentral.gg/college-football-27/dynasty-guides/recruiting-guide" target="_blank" rel="noopener">Dynasty Central</a>,
+    <a href="https://gamerant.com/college-football-cfb-27-dynasty-recruiting-guide/" target="_blank" rel="noopener">Game Rant</a>,
+    <a href="https://cfb27.com/article/cfb-27-dynasty-recruiting-guide" target="_blank" rel="noopener">CFB27.com</a>.
+    Team data from the same preseason save as the rest of the board.</p>
+</section>
 
 <section id="viewSlide" class="sl" role="tabpanel" aria-labelledby="tabSlide" hidden>
   <header class="sl-head">
@@ -918,7 +967,7 @@ $("#scrim").addEventListener("click", closeTeam);
 addEventListener("keydown", e => { if (e.key === "Escape" && picked) closeTeam(); });
 
 /* ---- tabs ---- */
-const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["slide","#tabSlide","#viewSlide"]];
+const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["rec","#tabRec","#viewRec"],["slide","#tabSlide","#viewSlide"]];
 let curTab = "board";
 function showTab(which){
   curTab = which;
@@ -1790,11 +1839,66 @@ function slDraw(){
 $("#slDiff").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (b) { slD = b.dataset.d; slDraw(); } });
 slDraw();
 
+/* ---- recruiting & NIL plan ---- */
+// Hours: sources give only the endpoints (1-star ~350, 5-star ~1,000 preseason hours); in between is a straight-line estimate.
+const recHours = p => Math.round((350 + (Math.min(5, Math.max(1, p)) - 1) * 650 / 4) / 10) * 10;
+const STARTERS = {QB:1, RB:1, WR:3, TE:1, OL:5, DL:4, LB:3, CB:2, S:2, "K/P":2};
+const RCOST = [["Offer scholarship",5],["Search social media",5],["DM the player",10],["Scout (per session)",10],["Schedule visit","10–20"],
+  ["Soft sell",20],["Contact friends and family",25],["Sway",30],["Hard sell",50],["Send the house",50]];
+let rTeam = "";
+function recNeeds(t){
+  return POSG.slice(1).map(([g, pos]) => {
+    const all = t.r.filter(p => pos.includes(p[1])).sort((a, b) => b[3] - a[3]);
+    const out = all.filter(p => p[2].startsWith("SR")), top = all.slice(0, STARTERS[g]);
+    return {g, out, st:top.filter(p => p[2].startsWith("SR")).length, left:all.length - out.length};
+  }).sort((a, b) => b.st - a.st || b.out.length - a.out.length);
+}
+function recDraw(){
+  const t = DATA.find(x => x.n === rTeam), gr = GRADES.map((n, i) => [n, t.g[i]]).sort((a, b) => GVAL[b[1]] - GVAL[a[1]]);
+  let hard = gr.filter(x => GVAL[x[1]] >= 9); if (!hard.length) hard = gr.slice(0, 2);
+  const soft = gr.filter(x => !hard.includes(x) && GVAL[x[1]] >= 5), weak = gr.filter(x => !hard.includes(x) && GVAL[x[1]] < 5);
+  const grs = (h, sub, xs) => `<div class="grp"><h4>${h}<small>${sub}</small></h4>${xs.length
+    ? xs.map(([n, g]) => `<span class="gr">${n} <b>${g}</b></span>`).join("") : '<span class="gr" style="color:var(--faint)">None</span>'}</div>`;
+  const pct = t.nt ? Math.round(t.na / t.nt * 100) : 0, target = Math.min(5, Math.floor(t.p) + 1), needs = recNeeds(t);
+  const leaving = needs.reduce((s, n) => s + n.out.length, 0), [tier, regs] = purist(t);
+  const pl = t.pl.filter(p => p[1] > 0).sort((a, b) => b[2] - a[2]);
+  const map = hMap(regs).replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions)</figcaption>`);
+  $("#rq").value = document.activeElement === $("#rq") ? $("#rq").value : t.n;
+  $("#recGrid").innerHTML = `
+  <section class="sl-card"><h3>Budget<span>${esc(t.n)}</span></h3><div class="body">
+    <div class="kpis"><div><div class="big">${fmt(t.na)}</div><span>NIL available of ${fmt(t.nt)}</span></div>
+      <div><div class="big">~${fmt(recHours(t.p))}</div><span>Preseason recruiting hours</span></div></div>
+    <div class="bar" role="img" aria-label="${pct}% of NIL budget available"><i style="width:${pct}%"></i></div>
+    <p class="note">${pct}% of the NIL budget is uncommitted. Hours scale with prestige (${t.p}★); each recruit takes at most <b>50 hours a week</b> from you, or 70 with the Always Be Crootin coach ability.</p></div></section>
+  <section class="sl-card"><h3>Target level<span>${t.p}★ prestige</span></h3><div class="body">
+    <div class="big">${target}★</div><span class="sub">recruits and transfers to chase</span>
+    <p class="note">Aim about <b>one star above your prestige</b>. Carry <b>2 to 4 long shots</b> above that, and drop them early if you fall behind. Put most of your hours on priority targets you can realistically land.</p></div></section>
+  <section class="sl-card"><h3>Pitch plan<span>From your 8 school grades</span></h3>
+    ${grs("Hard sell", "big swing, worth the risk", hard)}${grs("Soft sell", "steady, smaller gains", soft)}${grs("Avoid", "skip recruits whose dealbreaker is here", weak)}
+    <p class="note" style="padding:0 12px 12px;margin:0">Target recruits whose top motivations match your hard-sell grades. Breaking a promise on a dealbreaker is a top reason players enter the portal.</p></section>
+  <section class="sl-card span2"><h3>Class needs<span>${leaving} seniors leave after this season</span></h3><table>
+    <thead><tr><th class="l">Pos</th><th>Starters out</th><th>Seniors out</th><th>Returning</th><th class="l">Best departing</th></tr></thead><tbody>${
+    needs.map(n => `<tr><td class="l">${n.g}</td><td class="mono${n.st ? " need" : ""}">${n.st} of ${STARTERS[n.g]}</td><td class="mono">${n.out.length}</td><td class="mono">${n.left}</td>
+      <td class="l sub">${n.out[0] ? `${esc(n.out[0][0])} · ${n.out[0][3]}` : "–"}</td></tr>`).join("")}</tbody></table>
+    <p class="note" style="padding:0 12px 12px">Starters are the top-rated players at each position (5 OL, 4 DL, 3 WR and LB, 2 CB and S). Seniors include redshirt seniors; early NFL departures aren't known yet.</p></section>
+  <section class="sl-card"><h3>Where to recruit<span>${pl.length} active pipelines</span></h3><div class="body">${map}</div><table><tbody>${
+    pl.slice(0, 6).map(p => `<tr><td class="l">${esc(p[0])}</td><td class="sub">${TIERN[p[1]]}</td><td class="mono">${p[2]}</td></tr>`).join("")}</tbody></table></section>
+  <section class="sl-card"><h3>NIL plan<span>Rules of thumb</span></h3><ul class="tips">
+    <li><b>Keep before you chase.</b> Retaining your own players and recruiting share one budget. When it's tight, pay the starters you can't replace first.</li>
+    <li><b>Offers set the baseline.</b> What you pay a recruit becomes their floor, and it rises as they produce. Cutting it later costs you the bonus plus a penalty.</li>
+    <li><b>Offers are refundable.</b> NIL comes back if the recruit signs elsewhere or you drop them from your board.</li>
+    <li><b>Seniors free up money.</b> Graduating players' NIL returns to the pool${leaving ? `, and ${leaving} seniors leave after this season` : ""}.</li>
+    <li><b>Overpaying to fix a weak grade is a trap.</b> If a recruit's dealbreaker is a grade you can't meet, the NIL it takes to land them compounds every year.</li></ul></section>
+  <section class="sl-card"><h3>Hour costs<span>Per recruiting action</span></h3><table><tbody>${
+    RCOST.map(([n, h]) => `<tr><td class="l">${n}</td><td class="mono">${h} hrs</td></tr>`).join("")}</tbody></table>
+    <p class="note" style="padding:0 12px 12px">Scheduling a visit uses only your hours, not the recruit's 50-hour cap. Scouting takes 3 to 5 sessions to reveal a player fully, so do it in the preseason when hours aren't needed for pitches.</p></section>`;
+}
 function hOpenFor(n){ hSetTeam(n); showTab("house"); window.scrollTo({top:0}); }
 huLoad();
 if (!hLoad()) hApplyPreset("purist");
 if (H.pre && !presetOf(H.pre)) H.pre = "";
 hDraw();
+rTeam = H.team; combo($("#rq"), n => { rTeam = n; recDraw(); }, () => rTeam); recDraw();
 
 draw();
 </script>
