@@ -587,11 +587,17 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl-was{font-weight:400; font-size:11px; color:var(--dim); margin-left:4px}
 td .sl-was{margin-left:6px}
 /* ---------- dynasty planner (chat) ---------- */
-.pfab{position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom,0px)); z-index:35; background:var(--text); color:var(--panel);
-  border:0; padding:11px 16px; font:600 13px/1 "IBM Plex Sans",sans-serif; letter-spacing:.02em; cursor:pointer; box-shadow:var(--shadow)}
-.pfab:hover{background:var(--accent-ink)}
-.pchat{position:fixed; right:18px; bottom:calc(18px + env(safe-area-inset-bottom,0px)); z-index:60; width:min(430px,calc(100vw - 32px));
-  height:min(640px,calc(100vh - 36px)); background:var(--panel); border:1px solid var(--line); box-shadow:var(--shadow); display:flex; flex-direction:column}
+.masthead{position:relative}
+.coachbtn{position:absolute; top:22px; right:22px; display:flex; align-items:center; gap:7px; background:var(--panel); color:var(--text);
+  border:1px solid var(--line); padding:8px 12px 8px 10px; font:600 13px "IBM Plex Sans",sans-serif; cursor:pointer}
+.coachbtn:hover,.coachbtn[aria-expanded="true"]{border-color:var(--accent); color:var(--accent-ink)}
+.coachbtn svg{display:block}
+body{transition:margin-right .24s cubic-bezier(.4,0,.2,1)}
+body.coach-on{margin-right:400px}
+.pchat{position:fixed; top:0; right:0; bottom:0; z-index:45; width:400px; background:var(--panel); border-left:1px solid var(--line);
+  display:flex; flex-direction:column; transform:translateX(100%); visibility:hidden;
+  transition:transform .24s cubic-bezier(.4,0,.2,1), visibility 0s .24s; padding-bottom:env(safe-area-inset-bottom,0px)}
+.pchat.on{transform:none; visibility:visible; transition:transform .24s cubic-bezier(.4,0,.2,1)}
 .phead{display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
 .phead h2{margin:0; flex:1; font:800 15px/1 "Archivo",sans-serif; font-variation-settings:"wdth" 118; text-transform:uppercase; letter-spacing:.01em}
 .pai{font:500 12px "IBM Plex Sans",sans-serif; background:transparent; color:var(--dim); border:1px solid var(--line); padding:5px 9px; cursor:pointer}
@@ -606,7 +612,13 @@ td .sl-was{margin-left:6px}
 .pform{display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid var(--line)}
 .pform input{flex:1; min-width:0; font:14px "IBM Plex Sans",sans-serif; padding:9px 10px; border:1px solid var(--line); background:var(--ground); color:var(--text)}
 .pform button{font:600 13px "IBM Plex Sans",sans-serif; border:0; background:var(--accent); color:#fff; padding:0 14px; cursor:pointer}
-@media (max-width:600px){.pchat{right:0; bottom:0; width:100vw; height:100dvh; border:0}}
+/* Phones: no room to push the page, so Coach takes the full screen and the page behind stops scrolling. */
+@media (max-width:900px){
+  body.coach-on{margin-right:0; overflow:hidden}
+  .pchat{width:100vw; border-left:0; padding-top:env(safe-area-inset-top,0px)}
+  .coachbtn{top:18px; right:16px; padding:7px 10px}
+  .pform input{font-size:16px}
+}
 </style>
 
 <div class="masthead">
@@ -617,6 +629,7 @@ td .sl-was{margin-left:6px}
     <div class="count"><b id="cPlayers">11,730</b><span>Players</span></div>
     <div class="count"><b id="cTitles">144</b><span>Titles</span></div>
   </div>
+  <button class="coachbtn" id="pOpen" type="button" aria-controls="pChat" aria-expanded="false" title="Plan a dynasty with Coach"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1"/><rect x="17.5" y="13" width="4" height="6" rx="1"/><path d="M19.5 19v.5a2.5 2.5 0 0 1-2.5 2.5h-4"/></svg>Coach</button>
 </div>
 
 <div class="tabs" role="tablist" aria-label="Views">
@@ -805,15 +818,14 @@ td .sl-was{margin-left:6px}
   <div class="sl-grid" id="slGrid"></div>
 </section>
 
-<button class="pfab" id="pOpen" type="button" aria-controls="pChat" aria-expanded="false">Plan a dynasty</button>
-<section class="pchat" id="pChat" role="dialog" aria-labelledby="pTitle" hidden>
-  <div class="phead"><h2 id="pTitle">Dynasty planner</h2>
+<aside class="pchat" id="pChat" aria-labelledby="pTitle">
+  <div class="phead"><h2 id="pTitle">Coach</h2>
     <button class="pai" id="pAi" type="button" aria-pressed="false" title="Downloads a small AI model (about 1.8 GB) that runs on your device. Nothing is sent to a server.">AI chat: off</button>
-    <button class="dclose" id="pClose" type="button" aria-label="Close planner" style="position:static">×</button></div>
+    <button class="dclose" id="pClose" type="button" aria-label="Close Coach" style="position:static">×</button></div>
   <div class="plog" id="pLog" aria-live="polite"></div>
   <div class="pstat" id="pStat" hidden></div>
-  <form class="pform" id="pForm"><input id="pIn" autocomplete="off" placeholder="e.g. Tough Florida dynasty with a created coach" aria-label="Ask the planner"><button type="submit">Send</button></form>
-</section>
+  <form class="pform" id="pForm"><input id="pIn" autocomplete="off" placeholder="e.g. Tough Florida dynasty with a created coach" aria-label="Ask Coach"><button type="submit">Send</button></form>
+</aside>
 <div class="scrim" id="scrim"></div>
 <aside class="dossier" id="dossier" role="dialog" aria-modal="true" aria-labelledby="dname" hidden>
   <div class="dhead">
@@ -2064,7 +2076,7 @@ function pRules(t, strict, pre, force){
 const P = {team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
-const PHELP = `<p>Tell me a program and how you want to play it, like "tough Florida dynasty with a created coach" or "casual Oregon rebuild". I'll suggest house rules, a recruiting approach and sliders from this site's data. Then you can say "make it harder", "no transfers" and so on.</p>`;
+const PHELP = `<p>I'm Coach. Tell me a program and how you want to play it, like "tough Florida dynasty with a created coach" or "casual Oregon rebuild". I'll suggest house rules, a recruiting approach and sliders from this site's data. Then you can say "make it harder", "no transfers" and so on.</p>`;
 function pPlan(q){
   const s = norm(q), teams = pFindTeams(q);
   if (/\b(random|surprise|any team|pick (a|one) for me)\b/.test(s)) teams.unshift(DATA[Math.floor(Math.random() * DATA.length)]);
@@ -2116,7 +2128,7 @@ async function pAsk(q){
 }
 async function pWrite(q, el, free){
   el.textContent = "…"; P.busy = true;
-  const sys = "You are the Dynasty Board planner for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
+  const sys = "You are Coach, the Dynasty Board assistant for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
     + "If the facts don't answer the question, say the board doesn't have that. Reply in 2 to 4 plain sentences, no lists.\n\nFACTS:\n" + (P.facts || "No program chosen yet.");
   try {
     const chunks = await P.ai.chat.completions.create({stream:true, temperature:.3, max_tokens:220,
@@ -2144,10 +2156,10 @@ async function pAiToggle(){
   st.hidden = true; P.aiOn = true; b.setAttribute("aria-pressed", "true"); b.textContent = "AI chat: on";
 }
 function pToggle(on){
-  $("#pChat").hidden = !on; $("#pOpen").hidden = on; $("#pOpen").setAttribute("aria-expanded", on);
-  if (on) { if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus(); }
+  $("#pChat").classList.toggle("on", on); document.body.classList.toggle("coach-on", on); $("#pOpen").setAttribute("aria-expanded", on);
+  if (on) { if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus({preventScroll:true}); } else $("#pOpen").focus();
 }
-$("#pOpen").addEventListener("click", () => pToggle(true));
+$("#pOpen").addEventListener("click", () => pToggle(!$("#pChat").classList.contains("on")));
 $("#pClose").addEventListener("click", () => pToggle(false));
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
 $("#pAi").addEventListener("click", pAiToggle);

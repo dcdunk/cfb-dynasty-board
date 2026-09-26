@@ -150,7 +150,9 @@ const inPage = async () => {
 
   // Dynasty planner: plain chat. Parses team/difficulty/extras from text and replies in prose only.
   $("#pOpen").click(); await wait(50);
-  ok(!$("#pChat").hidden && $("#pLog .pm.bot"), "Planner: panel didn't open with a greeting");
+  ok($("#pChat").classList.contains("on") && $("#pLog .pm.bot"), "Coach: sidebar didn't open with a greeting");
+  // Desktop: the sidebar pushes the page instead of covering it.
+  if (innerWidth > 900) { await wait(300); ok($("#pChat").getBoundingClientRect().left >= $(".masthead").getBoundingClientRect().right - 1, "Coach: sidebar covers the page"); }
   const ask = async q => { $("#pIn").value = q; $("#pForm").requestSubmit(); await wait(50); return [...$$("#pLog .pm.bot")].pop().textContent; };
   ok(/didn't catch a program/.test(await ask("hello")), "Planner: text with no program should get the help reply");
   let m = await ask("plan a tough Florida dynasty with a created coach");
@@ -160,6 +162,8 @@ const inPage = async () => {
   m = await ask("no transfers");
   ok(/Closed portal/.test(m) && /Georgia Tech/.test(m), "Planner: follow-up didn't keep team and add Closed portal");
   ok(!$("#pLog button, #pLog ol"), "Planner: chat should be plain messages, no cards or buttons");
+  $("#pOpen").click(); await wait(50);
+  ok(!$("#pChat").classList.contains("on") && !document.body.classList.contains("coach-on"), "Coach: headset button should close the sidebar");
   return fails;
 };
 const r = await send("Runtime.evaluate", { expression: `(${inPage})()`, awaitPromise: true, returnByValue: true });
