@@ -148,20 +148,18 @@ const inPage = async () => {
   ok(row("WR Catching") === "WR Catching 50 60", `Sliders: All-American WR catching wrong: ${row("WR Catching")}`);
   ok($('#slDiff [data-d="aa"]').getAttribute("aria-pressed") === "true", "Sliders: difficulty chip not selected");
 
-  // Dynasty planner: parses team/difficulty/extras from plain text and applies to House rules.
+  // Dynasty planner: plain chat. Parses team/difficulty/extras from text and replies in prose only.
   $("#pOpen").click(); await wait(50);
   ok(!$("#pChat").hidden && $("#pLog .pm.bot"), "Planner: panel didn't open with a greeting");
-  const ask = async q => { $("#pIn").value = q; $("#pForm").requestSubmit(); await wait(50); return [...$$("#pLog .pm.bot")].pop(); };
-  ok(/didn't catch a program/.test((await ask("hello")).textContent), "Planner: text with no program should get the help reply");
+  const ask = async q => { $("#pIn").value = q; $("#pForm").requestSubmit(); await wait(50); return [...$$("#pLog .pm.bot")].pop().textContent; };
+  ok(/didn't catch a program/.test(await ask("hello")), "Planner: text with no program should get the help reply");
   let m = await ask("plan a tough Florida dynasty with a created coach");
-  ok(/Florida Gators/.test(m.textContent) && /Hardcore/.test(m.textContent) && /Created coach/.test(m.textContent), "Planner: tough Florida plan missing team, Hardcore or created coach");
-  ok(m.querySelectorAll(".pcard ol li").length === 8, "Planner: Hardcore should deal 8 rules");
-  ok(/Georgia Tech/.test((await ask("casual georgia tech")).innerText), "Planner: longest team name should win (Georgia Tech)");
+  ok(/Florida Gators/.test(m) && /hardcore run/.test(m) && /You replace/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
+  ok(P.plan.rules.length === 8, "Planner: Hardcore should deal 8 rules");
+  ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: longest team name should win (Georgia Tech)");
   m = await ask("no transfers");
-  ok(/Closed portal/.test(m.innerText) && /Georgia Tech/.test(m.innerText), "Planner: follow-up didn't keep team and add Closed portal");
-  m.querySelector('[data-a="apply"]').click(); await wait(50);
-  ok(!$("#viewHouse").hidden && H.team === "Georgia Tech" && H.rules.includes("port-none"), "Planner: Apply didn't load the plan into House rules");
-  ok($("#pChat").hidden, "Planner: panel should close after Apply");
+  ok(/Closed portal/.test(m) && /Georgia Tech/.test(m), "Planner: follow-up didn't keep team and add Closed portal");
+  ok(!$("#pLog button, #pLog ol"), "Planner: chat should be plain messages, no cards or buttons");
   return fails;
 };
 const r = await send("Runtime.evaluate", { expression: `(${inPage})()`, awaitPromise: true, returnByValue: true });

@@ -11,4 +11,4 @@ A companion site for College Football 27 dynasty mode. Live at **[cfbdynastyboar
 - **House rules**: generates self-imposed challenge rules for your dynasty, from casual to hardcore. Build your own rules and presets too. Your setup is saved in your browser.
 - **Recruiting & NIL**: a strategy for any program, whether you start there or take the job years in: its tier, budget, which strengths to pitch, where to recruit, and how to spend NIL.
 - **Sliders**: Matt10's tested gameplay slider sets for Heisman and All-American, with what changed in the latest version.
-- **Dynasty planner**: tell it a program and how you want to play ("tough Florida dynasty with a created coach") and it builds a plan from the board's data, then applies it to House rules, Recruiting and Sliders in one click. Optional AI chat runs a small model on your own device; nothing is sent to a server.
+- **Dynasty planner**: tell it a program and how you want to play ("tough Florida dynasty with a created coach") and it suggests house rules, a recruiting approach and sliders from the board's data. Optional AI chat runs a small model on your own device; nothing is sent to a server.

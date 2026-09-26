@@ -602,16 +602,6 @@ td .sl-was{margin-left:6px}
 .pm.me{align-self:flex-end; background:var(--accent-soft); color:var(--text); padding:8px 11px}
 .pm.bot{align-self:flex-start}
 .pm.bot p{margin:0 0 8px}
-.pm .pai-txt{border-left:2px solid var(--accent); padding-left:9px; color:var(--text)}
-.pcard{border:1px solid var(--line); background:var(--raise); padding:10px 12px; margin:0 0 8px}
-.pcard h4{margin:0 0 6px; font:600 11px "IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.06em; color:var(--dim)}
-.pcard ol{margin:0; padding-left:18px}
-.pcard li{margin:0 0 5px}
-.pcard .mono{font-family:"IBM Plex Mono",monospace}
-.pacts,.psug{display:flex; flex-wrap:wrap; gap:6px}
-.pacts button,.psug button{font:500 12px "IBM Plex Sans",sans-serif; background:var(--panel); color:var(--text); border:1px solid var(--line); padding:6px 9px; cursor:pointer}
-.pacts button:hover,.psug button:hover{border-color:var(--accent)}
-.pacts button.go{background:var(--text); color:var(--panel); border-color:var(--text)}
 .pstat{padding:0 14px 6px; font:12px "IBM Plex Mono",monospace; color:var(--dim)}
 .pform{display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid var(--line)}
 .pform input{flex:1; min-width:0; font:14px "IBM Plex Sans",sans-serif; padding:9px 10px; border:1px solid var(--line); background:var(--ground); color:var(--text)}
@@ -2074,9 +2064,7 @@ function pRules(t, strict, pre, force){
 const P = {team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
-const pSug = xs => `<div class="psug">${xs.map(s => `<button type="button" data-q="${esc(s)}">${esc(s)}</button>`).join("")}</div>`;
-const PHELP = `<p>Tell me a program and how you want to play it. I build a plan from this site's data: house rules, recruiting approach, NIL standing, the coach you'd replace and a slider set.</p>`
-  + pSug(["Tough Florida dynasty with a created coach", "Casual Oregon rebuild", "Random team, no transfers", "Moneyball at Temple"]);
+const PHELP = `<p>Tell me a program and how you want to play it, like "tough Florida dynasty with a created coach" or "casual Oregon rebuild". I'll suggest house rules, a recruiting approach and sliders from this site's data. Then you can say "make it harder", "no transfers" and so on.</p>`;
 function pPlan(q){
   const s = norm(q), teams = pFindTeams(q);
   if (/\b(random|surprise|any team|pick (a|one) for me)\b/.test(s)) teams.unshift(DATA[Math.floor(Math.random() * DATA.length)]);
@@ -2106,15 +2094,10 @@ function pRender(p){
   const coach = created
     ? `You replace ${hc ? `${esc(hc[1])} (level ${hc[2]}, ${esc(hc[4])}, pipeline ${esc(hc[5] || "none")})` : "the current head coach"}. A created coach doesn't inherit that level or pipeline, so the program's own pipelines carry recruiting early on. Pair it with the Earn the headset rule if you want to start as a coordinator.`
     : hc ? `You coach as ${esc(hc[1])}: level ${hc[2]}, ${esc(hc[4])}, grade ${esc(hc[3])}${hc[5] ? `, pipeline ${esc(hc[5])}` : ""}.` : "";
-  const html = `<div class="pai-txt" hidden></div>
-    <p><b>${esc(t.n)} ${esc(t.nk)}</b> · ${esc(t.c)} · ${t.p}★ prestige · ${t.o} overall (${t.of} off / ${t.df} def) · NIL #${nr} of ${DATA.length} (${fmt(t.nt)})</p>
-    <div class="pcard"><h4>House rules · ${esc(label)} · strain ${esc(sl)}</h4><ol>${rules.map(id => `<li><b>${HR[id].n}.</b> ${HR[id].x(t)}</li>`).join("")}</ol></div>
-    <div class="pcard"><h4>Recruiting · ${esc(arch)}</h4><p>${esc(archTxt)}</p><p>Top pipelines: ${pl.length ? esc(and(pl.map(x => `${x[0]} (${TIERN[x[1]]})`))) : "none"}.</p></div>
-    ${coach ? `<div class="pcard"><h4>${created ? "Created coach" : "Your coach"}</h4><p>${coach}</p></div>` : ""}
-    <div class="pcard"><h4>Sliders</h4><p>Matt10's ${sld.n} set${strict === "hard" ? " fits a tough run" : ""}.</p></div>
-    <div class="pacts"><button type="button" class="go" data-a="apply">Apply house rules</button><button type="button" data-a="rec">Recruiting plan</button>
-      <button type="button" data-a="slide">Sliders</button><button type="button" data-a="team">Team dossier</button></div>
-    ${pSug(["Make it harder", "Make it easier", created ? "Use the real coach" : "With a created coach", "No transfers"])}`;
+  const html = `<p>${esc(t.n)} ${esc(t.nk)}: ${esc(t.c)}, ${t.p}★ prestige, ${t.o} overall, NIL budget #${nr} of ${DATA.length}.</p>
+    <p>For a ${esc(label.toLowerCase())} run, play with ${rules.length} house rules: ${esc(and(rules.map(id => unesc(HR[id].n))))}.</p>
+    <p>As a ${esc(arch.toLowerCase())} program: ${esc(archTxt)} Your best pipelines are ${pl.length ? esc(and(pl.map(x => x[0]))) : "thin, so recruit close to home"}.</p>
+    ${coach ? `<p>${coach}</p>` : ""}<p>Use Matt10's ${sld.n} sliders.</p>`;
   P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)} ranked ${nr} of ${DATA.length}.`,
     `Challenge: ${label}, strain ${sl}. House rules: ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
     `Recruiting band ${arch}: ${archTxt} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
@@ -2124,24 +2107,24 @@ function pRender(p){
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q));
-  const plan = /^(use the real coach|real coach)$/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q);
-  let msg;
-  if (plan) { P.team = plan.t; P.plan = plan; msg = pSay("bot", pRender(plan)); }
-  else if (!P.aiOn) { pSay("bot", `<p>I didn't catch a program${P.team ? " or a change to the plan" : ""} in that.</p>` + PHELP); return; }
-  else msg = pSay("bot", `<div class="pai-txt"></div>`);
-  if (P.aiOn && P.ai) await pWrite(q, msg.querySelector(".pai-txt"), !plan);
+  const plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q);
+  let html = "";
+  if (plan) { P.team = plan.t; P.plan = plan; html = pRender(plan); }
+  // AI on: its reply replaces the templated one; the template still builds P.facts for it.
+  if (P.aiOn && P.ai) return pWrite(q, pSay("bot", "<p></p>").firstChild, !plan);
+  pSay("bot", html || `<p>I didn't catch a program${P.team ? " or a change to the plan" : ""} in that.</p>` + PHELP);
 }
 async function pWrite(q, el, free){
-  el.hidden = false; el.textContent = "…"; P.busy = true;
+  el.textContent = "…"; P.busy = true;
   const sys = "You are the Dynasty Board planner for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
     + "If the facts don't answer the question, say the board doesn't have that. Reply in 2 to 4 plain sentences, no lists.\n\nFACTS:\n" + (P.facts || "No program chosen yet.");
   try {
     const chunks = await P.ai.chat.completions.create({stream:true, temperature:.3, max_tokens:220,
-      messages:[{role:"system", content:sys}, ...P.hist.slice(-4), {role:"user", content:free ? q : `Summarize this plan for: "${q}"`}]});
+      messages:[{role:"system", content:sys}, ...P.hist.slice(-4), {role:"user", content:free ? q : `Reply to: "${q}". Name the house rules and say why they fit.`}]});
     let out = "";
     for await (const c of chunks) { out += c.choices[0]?.delta?.content || ""; el.textContent = out; }
     P.hist.push({role:"user", content:q}, {role:"assistant", content:out});
-  } catch (e) { el.textContent = "The AI model stopped responding. The plan below is still accurate."; }
+  } catch (e) { el.textContent = "The AI model stopped responding. Turn AI chat off to get the standard reply."; }
   P.busy = false;
 }
 const PMODEL = "Llama-3.2-3B-Instruct-q4f16_1-MLC";   // ~1.8 GB; best grounded answers of the 1B/1.5B/3B models tested
@@ -2169,18 +2152,6 @@ $("#pClose").addEventListener("click", () => pToggle(false));
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
 $("#pAi").addEventListener("click", pAiToggle);
 $("#pForm").addEventListener("submit", e => { e.preventDefault(); const v = $("#pIn").value; $("#pIn").value = ""; pAsk(v); });
-pLog.addEventListener("click", e => {
-  const s = e.target.closest("[data-q]"); if (s) return pAsk(s.dataset.q);
-  const a = e.target.closest("[data-a]"), p = P.plan; if (!a || !p) return;
-  if (a.dataset.a === "apply") {
-    hSetTeam(p.t.n); Object.assign(H, {mode:"preset", pre:"", rules:[...p.rules], src:"Planner · " + (p.pre ? presetOf(p.pre).n : HSTRICT[p.strict].n), edited:false, note:""});
-    H.lock.clear(); hSave(); hDraw(); showTab("house");
-  } else if (a.dataset.a === "rec") { recPick(p.t.n); showTab("rec"); }
-  else if (a.dataset.a === "slide") { slD = p.strict === "hard" ? "heis" : "aa"; slDraw(); showTab("slide"); }
-  else if (a.dataset.a === "team") { pToggle(false); openTeam(p.t.n); return; }
-  pToggle(false); window.scrollTo({top:0});
-});
-
 draw();
 </script>
 
