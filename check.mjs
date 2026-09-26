@@ -160,6 +160,8 @@ const inPage = async () => {
   ok(P.plan.rules.length === 8, "Planner: Hardcore should deal 8 rules");
   ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: longest team name should win (Georgia Tech)");
   ok(/Minnesota/.test(await ask("i want to take a former powerhouse program back to glory, what are 3 options?")), "Coach: back-to-glory should answer from board data (Minnesota has 6 titles)");
+  ok(/1960/.test([...$$("#pLog .pm.bot")].pop().textContent), "Coach: glory reply should name Minnesota's last title (1960, NCAA.com)");
+  ok(tYears(DATA.find(t => t.n === "USC")).includes("2004") && DATA.every(t => (TYEARS[t.n] || []).length === t.ti), "Titles: NCAA years must match each team's title count");
   ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: re-pick Georgia Tech");
   $("#pIn").value = "x ".repeat(200); $("#pIn").dispatchEvent(new Event("input"));
   ok($("#pIn").tagName === "TEXTAREA" && $("#pIn").offsetHeight > 60, "Coach: long input should wrap and grow");

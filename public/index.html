@@ -1001,7 +1001,7 @@ function body(t){
     <div class="lede">
       <div><span class="lbl">Prestige</span>
         <span class="pair">${stars(t.p)}<span class="mono mut">${t.p.toFixed(1)}</span></span></div>
-      <div><span class="lbl">National titles</span><b class="mono big">${t.ti || "–"}</b></div>
+      <div><span class="lbl">National titles</span><b class="mono big">${t.ti || "–"}</b>${tYears(t).length ? `<span class="sub">${tYears(t).join(", ")}</span>` : ""}</div>
       <div><span class="lbl">Roster avg</span><b class="mono big">${t.ap.toFixed(1)}</b>
         <span class="sub">off ${t.ao.toFixed(1)} / def ${t.ad.toFixed(1)}</span></div>
     </div>
@@ -1609,6 +1609,10 @@ const IC = {
 };
 const tiersOf = t => Object.fromEntries(t.pl.filter(p => p[1] > 0).map(p => [p[0], p[1]]));
 const STNAME = {AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",DC:"Washington, D.C.",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming"};
+// National title seasons from NCAA.com FBS championship history (https://www.ncaa.com/history/football/fbs). USC 2004 is counted as won (site owner's call; NCAA.com marks it vacated).
+// Counts match the game's t.ti for every team; update both when a new champion is crowned.
+const TYEARS = {"Texas A&M":[1919,1939],"Indiana":[2025],"Ohio State":[1942,1954,1957,1961,1968,1970,2002,2014,2024],"Michigan":[1901,1902,1903,1904,1918,1923,1933,1948,1997,2023],"Georgia":[1980,2021,2022],"Alabama":[1925,1926,1930,1961,1964,1965,1973,1978,1979,1992,2009,2011,2012,2015,2017,2020],"LSU":[1908,1958,2003,2007,2019],"Clemson":[1981,2016,2018],"Florida State":[1993,1999,2013],"Auburn":[1957,2010],"Florida":[1996,2006,2008],"Texas":[1963,1969,1970,2005],"USC":[1931,1932,1962,1967,1972,1974,1978,2003,2004],"Miami":[1983,1987,1989,1991,2001],"Oklahoma":[1950,1955,1956,1974,1975,1985,2000],"Tennessee":[1951,1998],"Nebraska":[1970,1971,1994,1995,1997],"Washington":[1991],"Colorado":[1990],"Georgia Tech":[1917,1928,1990],"Notre Dame":[1919,1924,1929,1930,1943,1946,1947,1949,1964,1966,1973,1977,1988],"Penn State":[1911,1912,1982,1986],"BYU":[1984],"Pittsburgh":[1910,1916,1918,1937,1976],"Michigan State":[1952,1965,1966],"Arkansas":[1964],"Minnesota":[1934,1935,1936,1940,1941,1960],"Ole Miss":[1960],"Syracuse":[1959],"Iowa":[1958],"UCLA":[1954],"Maryland":[1953],"Army":[1914,1944,1945],"TCU":[1938],"Illinois":[1919,1923,1927],"Stanford":[1926],"California":[1920,1921,1922],"Rutgers":[1869]};
+const tYears = t => (TYEARS[t.n] || []).map(String);
 let hMapN = 0;
 function hMap(regs, tiers){
   const on = new Set(regs), k = ++hMapN, fill = r => !tiers ? "" : ` style="fill:${tiers[r] != null ? `var(--t${tiers[r]})` : "var(--accent-soft)"}"`;
@@ -2111,7 +2115,7 @@ function pRender(p){
     <p>For a ${esc(label.toLowerCase())} run, play with ${rules.length} house rules: ${esc(and(rules.map(id => unesc(HR[id].n))))}.</p>
     <p>As a ${esc(arch.toLowerCase())} program: ${esc(archTxt)} Your best pipelines are ${pl.length ? esc(and(pl.map(x => x[0]))) : "thin, so recruit close to home"}.</p>
     ${coach ? `<p>${coach}</p>` : ""}<p>Use Matt10's ${sld.n} sliders.</p>`;
-  P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)} ranked ${nr} of ${DATA.length}.`,
+  P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)} ranked ${nr} of ${DATA.length}. National titles: ${tYears(t).join(", ") || "none"}.`,
     `Challenge: ${label}, strain ${sl}. House rules: ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
     `Recruiting band ${arch}: ${archTxt} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
     coach.replace(/<[^>]+>/g, ""), `Sliders: Matt10's ${sld.n} set.`].join("\n");
@@ -2120,12 +2124,11 @@ function pRender(p){
 // Fallen powerhouses: 3+ titles in the game's data but prestige 4★ or lower. Most titles first, then lowest prestige.
 function pGlory(){
   const xs = DATA.filter(t => t.ti >= 3 && t.p <= 4).sort((a, b) => b.ti - a.ti || a.p - b.p).slice(0, 3);
-  P.facts = "Former powerhouses on the board (national titles, current prestige, overall):\n" + xs.map(t => `${t.n} ${t.nk} (${t.c}): ${t.ti} titles, ${t.p} stars, ${t.o} overall`).join("\n")
-    + "\nThe board has title counts only, not the years they were won.";
-  return `<p>Three fallen powerhouses on the board: ${esc(and(xs.map(t => `${t.n} (${t.ti} national titles, now ${t.p}★ and ${t.o} overall)`)))}.</p>
+  P.facts = "Former powerhouses on the board (national titles, current prestige, overall):\n" + xs.map(t => `${t.n} ${t.nk} (${t.c}): ${t.ti} titles (${tYears(t).join(", ")}), ${t.p} stars, ${t.o} overall`).join("\n");
+  return `<p>Three fallen powerhouses on the board: ${esc(and(xs.map(t => `${t.n} (${t.ti} national titles, last in ${tYears(t).slice(-1)[0]}, now ${t.p}★ and ${t.o} overall)`)))}.</p>
     <p>Name one, like "${esc(xs[0].n)} back to glory", and I'll build the plan.</p>`;
 }
-const PLEAGUE = "Every program (name | conference | prestige stars | overall | national titles):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${t.ti}`).join("\n");
+const PLEAGUE = "Every program (name | conference | prestige stars | overall | national title seasons):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${tYears(t).join(" ") || "none"}`).join("\n");
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q));
@@ -2142,7 +2145,7 @@ async function pAsk(q){
 async function pWrite(q, el, free, open){
   el.textContent = "…"; P.busy = true;
   const sys = "You are Coach, the Dynasty Board assistant for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
-    + "Do not use your own memory of real college football: no years, records, coaches or history unless they appear below. The board has national title counts but not the years they were won. "
+    + "Do not use your own memory of real college football: no years, records, coaches or history unless they appear below. National title seasons below come from NCAA.com. "
     + "If the facts don't answer the question, say the board doesn't have that. Reply in 2 to 4 plain sentences, no lists.\n\nFACTS:\n" + (P.facts || "") + (open ? "\n\n" + PLEAGUE : "");
   try {
     const chunks = await P.ai.chat.completions.create({stream:true, temperature:.2, max_tokens:220,
