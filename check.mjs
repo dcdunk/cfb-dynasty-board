@@ -161,6 +161,15 @@ const inPage = async () => {
   const last = [...$$("#pLog .pm.bot")].pop();
   ok(last.querySelectorAll("h4").length >= 4 && last.querySelectorAll("li").length >= 10, "Coach: reply should be titles and bullets, not a wall of text");
   ok(pMd("### A\n- **b:** <i>x</i>\ntext") === "<h4>A</h4><ul><li><b>b:</b> &lt;i&gt;x&lt;/i&gt;</li></ul><p>text</p>", "Coach: markdown renderer wrong or not escaping");
+  ok(pMd("-\nhi") === "<p>hi</p>", "Coach: empty bullet should be dropped");
+  // Player questions answer from the roster, not with a plan.
+  { const osu = DATA.find(t => t.n === "Ohio State"), best = [...osu.r].sort((a, b) => b[3] - a[3] || b[5] - a[5])[0];
+    m = await ask("who is the best player on ohio state?");
+    ok(m.includes(best[0]) && !/House rules/.test(m), `Coach: best Ohio State player should be ${best[0]}: ${m}`);
+    const qb = osu.r.filter(p => p[1] === "QB").sort((a, b) => b[3] - a[3] || b[5] - a[5])[0];
+    ok((await ask("best QB?")).includes(qb[0]), "Coach: follow-up 'best QB?' should use the last team's roster");
+    ok((await ask(`tell me about ${best[0]}`)).includes("Ohio State"), "Coach: player lookup by name failed");
+    ok((await ask("top 5 players at Texas")).match(/OVR/g).length === 5, "Coach: top 5 should list 5 players"); }
   // Recruiting advice must not contradict the house rules (e.g. No blue-chips vs "chase 5★").
   { const t = DATA.find(x => x.n === "Michigan"), tips = pRecTips(t, ["ter-top3", "star-none", "nil-zero", "port-none"], ARCH[0][2]).join(" ");
     ok(!/[45]★ talent|long shots|NIL keeping|nationally/.test(tips) && /3★ and below/.test(tips) && /No NIL/.test(tips) && /Allowed regions/.test(tips), "Coach: recruiting advice contradicts house rules: " + tips); }

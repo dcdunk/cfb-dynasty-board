@@ -2117,7 +2117,7 @@ function pMd(s){
   for (const raw of s.split("\n")) {
     const l = raw.trim(), b = l.match(/^(?:[-*•]|\d+\.)\s+(.*)/), hd = l.match(/^#{1,6}\s*(.*)|^\*\*([^*]+)\*\*:?$/);
     if (!b && ul) { out.push("</ul>"); ul = false; }
-    if (!l) continue;
+    if (!l || /^([-*•]|\d+\.)$/.test(l)) continue;
     if (hd) out.push(`<h4>${inl(hd[1] ?? hd[2])}</h4>`);
     else if (b) { if (!ul) { out.push("<ul>"); ul = true; } out.push(`<li>${inl(b[1])}</li>`); }
     else out.push(`<p>${inl(l)}</p>`);
@@ -2177,13 +2177,38 @@ function pGlory(){
     `Name one, like "${xs[0].n} back to glory", and I'll build the plan.`].join("\n"));
 }
 const PLEAGUE = "Every program (name | conference | prestige stars | overall | national title seasons):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${tYears(t).join(" ") || "none"}`).join("\n");
+// Player questions answer straight from the roster (t.r rows: [name, pos, year, ovr, dev 0-3, speed]).
+const PPOS = [["QB", /\b(qbs?|quarterbacks?)\b/], ["RB", /\b(rbs?|hbs?|running backs?|halfbacks?)\b/], ["WR", /\b(wrs?|receivers?|wideouts?)\b/],
+  ["TE", /\b(tes?|tight ends?)\b/], ["OL", /\b(ol|o-line|offensive line\w*|tackles?|guards?|centers?|linem[ae]n)\b/], ["DL", /\b(dl|d-line|defensive line\w*|edge|pass rushers?|dts?|defensive ends?)\b/],
+  ["LB", /\b(lbs?|linebackers?)\b/], ["CB", /\b(cbs?|corners?|cornerbacks?)\b/], ["S", /\b(safet(y|ies))\b/], ["K/P", /\b(kickers?|punters?|k|p)\b/]];
+const pRow = (p, t) => `**${p[0]}**${t ? ` (${t.n})` : ""} · ${p[1]} · ${p[2]} · ${p[3]} OVR · ${p[5]} speed${p[4] ? ` · ${DEVN[p[4]]} dev` : ""}`;
+function pPlayers(q, t){
+  const s = norm(q), pos = PPOS.find(([, re]) => re.test(s)), grp = pos && POSG.find(g => g[0] === pos[0])[1];
+  const fast = /fastest|quickest|speed/.test(s), n = Math.min(15, +(s.match(/\btop (\d+)/) || [])[1] || (/players|guys|stars\b|roster/.test(s) ? 5 : 1));
+  const xs = (grp ? t.r.filter(p => grp.includes(p[1])) : t.r.slice()).sort((a, b) => fast ? b[5] - a[5] || b[3] - a[3] : b[3] - a[3] || b[5] - a[5]).slice(0, n);
+  const what = `${n > 1 ? `Top ${n}` : fast ? "Fastest" : "Best"}${pos ? " " + pos[0] : n > 1 ? " players" : " player"}${n > 1 && fast ? " by speed" : ""}`;
+  P.team = t;
+  P.facts = `${t.n} ${t.nk} roster, ${what.toLowerCase()} (name, position, class year, overall rating, speed, development trait):\n` + xs.map(p => pRow(p).replace(/\*\*/g, "")).join("\n")
+    + `\nTop 10 overall on the roster: ` + [...t.r].sort((a, b) => b[3] - a[3]).slice(0, 10).map(p => `${p[0]} ${p[1]} ${p[3]}`).join(", ");
+  return pMd([`### ${t.n} · ${what}`, ...xs.map(p => `- ${pRow(p)}`), ...(xs.length ? [] : ["- No players at that position on the roster."])].join("\n"));
+}
+// A full player name anywhere in the question ("tell me about Jadan Baugh").
+function pFindPlayer(q){
+  const v = " " + norm(q).replace(/[^a-z0-9' .-]+/g, " ") + " ";
+  for (const t of DATA) for (const p of t.r) if (v.includes(" " + norm(p[0]) + " ") || v.includes(" " + norm(p[0]) + "?")) return [t, p];
+  return null;
+}
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q));
-  const plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q);
-  let html = "";
-  if (plan) { P.team = plan.t; P.plan = plan; html = pRender(plan); }
+  // Order: a named player, then roster questions ("best QB at Ohio State"), then fallen powerhouses, then a dynasty plan.
+  const fp = pFindPlayer(q), rq = /\b(best|top|fastest|highest.rated|starting|starter)\b/i.test(q) && !/dynasty|rebuild|house rules|challenge|\bplan\b/i.test(q);
+  const tp = pFindTeams(q)[0] || P.team;
+  let html = "", plan = null;
+  if (fp) { P.team = fp[0]; P.facts = `Player on the board: ${pRow(fp[1], fp[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
+  else if (rq && tp) html = pPlayers(q, tp);
   else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
+  else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { P.team = plan.t; P.plan = plan; html = pRender(plan); }
   // AI on: its reply replaces the templated one; the template still builds P.facts for it.
   // A direct question ("when did Nebraska...?") is answered as asked, not turned into a plan pitch.
   const question = /\?\s*$|^(who|what|when|where|why|how|is|are|does|do|did|can|which)\b/i.test(q);
