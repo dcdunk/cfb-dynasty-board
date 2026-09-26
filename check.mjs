@@ -169,6 +169,9 @@ const inPage = async () => {
   m = await ask("no transfers");
   ok(/Closed portal/.test(m) && /Georgia Tech/.test(m), "Planner: follow-up didn't keep team and add Closed portal");
   ok(!$("#pLog button, #pLog ol"), "Planner: chat should be plain messages, no cards or buttons");
+  if (innerWidth > 900) { openTeam("Florida"); await wait(400);
+    ok($("#dossier").getBoundingClientRect().right <= $("#pChat").getBoundingClientRect().left + 1, "Coach: dossier covers the Coach sidebar");
+    closeTeam(); await wait(300); }
   $("#pOpen").click(); await wait(50);
   ok(!$("#pChat").classList.contains("on") && !document.body.classList.contains("coach-on"), "Coach: headset button should close the sidebar");
   return fails;

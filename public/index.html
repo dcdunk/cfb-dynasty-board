@@ -613,9 +613,12 @@ body.coach-on{margin-right:400px}
 .pform{align-items:flex-end}
 .pform textarea{flex:1; min-width:0; resize:none; overflow-y:auto; max-height:140px; line-height:1.4; font:14px "IBM Plex Sans",sans-serif; padding:9px 10px; border:1px solid var(--line); background:var(--ground); color:var(--text)}
 .pform button{font:600 13px "IBM Plex Sans",sans-serif; border:0; background:var(--accent); color:#fff; padding:0 14px; height:38px; cursor:pointer}
+/* With Coach open, the dossier docks to Coach's left edge and slides out from under it. */
+body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-index:44}
 /* Phones: no room to push the page, so Coach takes the full screen and the page behind stops scrolling. */
 @media (max-width:900px){
   body.coach-on{margin-right:0; overflow:hidden}
+  body.coach-on .dossier{right:0; width:100vw; z-index:50}
   .pchat{width:100vw; border-left:0; padding-top:env(safe-area-inset-top,0px)}
   .coachbtn{top:18px; right:16px; padding:7px 10px}
   .pform textarea{font-size:16px}
