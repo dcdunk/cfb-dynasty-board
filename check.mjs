@@ -156,8 +156,9 @@ const inPage = async () => {
   const ask = async q => { $("#pIn").value = q; $("#pForm").requestSubmit(); await wait(50); return [...$$("#pLog .pm.bot")].pop().textContent; };
   ok(/didn't catch a program/.test(await ask("hello")), "Planner: text with no program should get the help reply");
   let m = await ask("plan a tough Florida dynasty with a created coach");
-  ok(/Florida Gators/.test(m) && /House rules · Hardcore/.test(m) && /NIL rank #\d+ of 138/.test(m) && /NIL rank: #/.test(P.facts) && /You replace/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
+  ok(/Florida Gators/.test(m) && /House rules · Hardcore/.test(m) && /NIL rank #\d+ of 138/.test(m) && /NIL rank: #/.test(P.facts) && /You replace|created coach starts/.test(m), "Planner: tough Florida reply missing team, hardcore or created coach");
   ok(P.plan.rules.length === 8, "Planner: Hardcore should deal 8 rules");
+  ok(P.plan.rules.every(id => m.includes(unesc(HR[id].n) + ":") && m.includes(unesc(HR[id].x(P.plan.t).replace(/<[^>]+>/g, "")).slice(0, 20))), "Coach: every house rule should show its title and its rule text");
   const last = [...$$("#pLog .pm.bot")].pop();
   ok(last.querySelectorAll("h4").length >= 4 && last.querySelectorAll("li").length >= 10, "Coach: reply should be titles and bullets, not a wall of text");
   ok(pMd("### A\n- **b:** <i>x</i>\ntext") === "<h4>A</h4><ul><li><b>b:</b> &lt;i&gt;x&lt;/i&gt;</li></ul><p>text</p>", "Coach: markdown renderer wrong or not escaping");
@@ -170,6 +171,15 @@ const inPage = async () => {
     ok((await ask("best QB?")).includes(qb[0]), "Coach: follow-up 'best QB?' should use the last team's roster");
     ok((await ask(`tell me about ${best[0]}`)).includes("Ohio State"), "Coach: player lookup by name failed");
     ok((await ask("top 5 players at Texas")).match(/OVR/g).length === 5, "Coach: top 5 should list 5 players"); }
+  // A plan must not contradict itself: territory rules hide "Best pipelines", Earn the headset means coordinator, not head coach.
+  { const t = DATA.find(x => x.n === "Oregon"); P.plan = null; P.team = null;
+    const txt = pRender({t, strict:"hard", pre:null, rules:["ter-home", "star-none", "job-coord"], created:false}).replace(/<[^>]+>/g, " ");
+    ok(!/Best pipelines/.test(txt) && /coordinator on Dan Lanning/.test(txt) && !/You coach as/.test(txt), "Coach: plan contradicts its own rules: " + txt); }
+  // Coaching staff from t.st.
+  { const ore = DATA.find(t => t.n === "Oregon"), hc = ore.st.find(c => c[0] === "HC"), oc = ore.st.find(c => c[0] === "OC");
+    ok((await ask("who is oregon's head coach?")).includes(hc[1]), "Coach: Oregon head coach wrong");
+    m = await ask("and the OC?"); ok(m.includes(oc[1]) && !m.includes(hc[1]), "Coach: follow-up OC should use the last team");
+    ok((await ask(`tell me about ${hc[1]}`)).includes("Oregon"), "Coach: coach lookup by name failed"); }
   // Recruiting advice must not contradict the house rules (e.g. No blue-chips vs "chase 5★").
   { const t = DATA.find(x => x.n === "Michigan"), tips = pRecTips(t, ["ter-top3", "star-none", "nil-zero", "port-none"], ARCH[0][2]).join(" ");
     ok(!/[45]★ talent|long shots|NIL keeping|nationally/.test(tips) && /3★ and below/.test(tips) && /No NIL/.test(tips) && /Allowed regions/.test(tips), "Coach: recruiting advice contradicts house rules: " + tips); }

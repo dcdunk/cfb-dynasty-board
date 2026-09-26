@@ -2155,18 +2155,21 @@ function pRender(p){
   const pl = t.pl.filter(x => x[1] > 0).sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 3);
   const hc = (t.st || []).find(c => c[0] === "HC"), sld = SLDIFF[strict === "hard" ? "heis" : "aa"];
   const label = pre ? presetOf(pre).n : HSTRICT[strict].n;
-  const coach = created
+  const hcS = hc ? `${hc[1]} (level ${hc[2]}, ${hc[4]})` : "the head coach";
+  const coach = rules.includes("job-coord")   // Earn the headset: you're a coordinator, not the head coach
+    ? `${created ? "Your created coach starts" : "You start"} as a coordinator on ${hcS}'s staff. No head coaching job until your fourth season.`
+    : created
     ? `You replace ${hc ? `${hc[1]} (level ${hc[2]}, ${hc[4]}, pipeline ${hc[5] || "none"})` : "the current head coach"}. A created coach doesn't inherit that level or pipeline, so the program's own pipelines carry recruiting early on. Pair it with the Earn the headset rule if you want to start as a coordinator.`
     : hc ? `You coach as ${hc[1]}: level ${hc[2]}, ${hc[4]}, grade ${hc[3]}${hc[5] ? `, pipeline ${hc[5]}` : ""}.` : "";
   const recT = pRecTips(t, rules, archTxt);
   const html = pMd([`### ${t.n} ${t.nk}`, `- ${t.c} · ${t.p}★ prestige · ${t.o} overall · NIL rank #${nr} of ${DATA.length}`,
     `### House rules · ${label}`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
-    `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), `- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`,
-    ...(coach ? [`### ${created ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set`].join("\n"));
+    `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => HR[id].c === "ter" && HR[id].reg) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
+    ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set`].join("\n"));
   P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)}. NIL rank: #${nr} of ${DATA.length} (always call it "NIL rank"). National titles: ${tYears(t).join(", ") || "none"}.`,
-    `Challenge: ${label}, strain ${sl}. House rules: ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
+    `Challenge: ${label}. House rules (list all ${rules.length}): ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
     `Recruiting (already adjusted to the house rules, which always win): ${recT.join(" ").replace(/\*\*/g, "")} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
-    coach.replace(/<[^>]+>/g, ""), `Sliders: Matt10's ${sld.n} set.`].join("\n");
+    coach.replace(/<[^>]+>/g, ""), `Coaching staff: ${staffLine(t)}`, `Sliders: Matt10's ${sld.n} set.`].join("\n");
   return html;
 }
 // Fallen powerhouses: 3+ titles in the game's data but prestige 4★ or lower. Most titles first, then lowest prestige.
@@ -2192,6 +2195,18 @@ function pPlayers(q, t){
     + `\nTop 10 overall on the roster: ` + [...t.r].sort((a, b) => b[3] - a[3]).slice(0, 10).map(p => `${p[0]} ${p[1]} ${p[3]}`).join(", ");
   return pMd([`### ${t.n} · ${what}`, ...xs.map(p => `- ${pRow(p)}`), ...(xs.length ? [] : ["- No players at that position on the roster."])].join("\n"));
 }
+// Coaching staff (t.st rows: [role, name, level, grade, archetype, pipeline, ...]).
+const PROLE = {HC:"Head coach", OC:"Offensive coordinator", DC:"Defensive coordinator"};
+const sRow = (c, t) => `**${PROLE[c[0]]}:** ${c[1]}${t ? ` (${t.n})` : ""} · level ${c[2]} · ${c[3]} grade · ${c[4]}${c[5] ? ` · pipeline ${c[5]}` : ""}`;
+const staffLine = t => (t.st || []).map(c => sRow(c).replace(/\*\*/g, "")).join("; ");
+function pStaff(q, t){
+  const s = norm(q), role = /\b(oc|offensive coordinator)\b/.test(s) ? "OC" : /\b(dc|defensive coordinator)\b/.test(s) ? "DC" : /\bhead coach\b|\bhc\b/.test(s) ? "HC" : null;
+  const xs = (t.st || []).filter(c => !role || c[0] === role);
+  P.team = t; P.facts = `${t.n} ${t.nk} coaching staff: ${staffLine(t)}`;
+  return pMd([`### ${t.n} · ${role ? PROLE[role] : "Coaching staff"}`, ...xs.map(c => `- ${sRow(c)}`), ...(xs.length ? [] : ["- No staff listed for this program."])].join("\n"));
+}
+const pFindCoach = q => { const v = " " + norm(q).replace(/[^a-z0-9' .-]+/g, " ") + " ";
+  for (const t of DATA) for (const c of t.st || []) if (v.includes(" " + norm(c[1]) + " ")) return [t, c]; return null; };
 // A full player name anywhere in the question ("tell me about Jadan Baugh").
 function pFindPlayer(q){
   const v = " " + norm(q).replace(/[^a-z0-9' .-]+/g, " ") + " ";
@@ -2205,14 +2220,16 @@ async function pAsk(q){
   const fp = pFindPlayer(q), rq = /\b(best|top|fastest|highest.rated|starting|starter)\b/i.test(q) && !/dynasty|rebuild|house rules|challenge|\bplan\b/i.test(q);
   const tp = pFindTeams(q)[0] || P.team;
   let html = "", plan = null;
-  if (fp) { P.team = fp[0]; P.facts = `Player on the board: ${pRow(fp[1], fp[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
+  const fc = !fp && pFindCoach(q), sq = /\b(head coach|coaches|coaching staff|staff|coordinators?|oc|dc|hc)\b|who coaches/i.test(q) && !/dynasty|created|custom|own coach|real coach/i.test(q);
+  if (fc) { P.team = fc[0]; P.facts = `Coach on the board: ${sRow(fc[1], fc[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
+  else if (sq && tp) html = pStaff(q, tp);
+  else if (fp) { P.team = fp[0]; P.facts = `Player on the board: ${pRow(fp[1], fp[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
   else if (rq && tp) html = pPlayers(q, tp);
   else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
   else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { P.team = plan.t; P.plan = plan; html = pRender(plan); }
-  // AI on: its reply replaces the templated one; the template still builds P.facts for it.
-  // A direct question ("when did Nebraska...?") is answered as asked, not turned into a plan pitch.
-  const question = /\?\s*$|^(who|what|when|where|why|how|is|are|does|do|did|can|which)\b/i.test(q);
-  if (P.aiOn && P.ai) return pWrite(q, pSay("bot", ""), !plan || question, !html || question);
+  // Plans, rosters and staff come from the templated reply even with AI on: the model dropped and renamed rules when it rewrote them.
+  // The AI only answers what the template can't, using the facts from the last answer plus the league table.
+  if (!html && P.aiOn && P.ai) return pWrite(q, pSay("bot", ""), true, true);
   pSay("bot", html || `<p>I didn't catch a program${P.team ? " or a change to the plan" : ""} in that.</p>` + PHELP);
 }
 async function pWrite(q, el, free, open){
