@@ -477,6 +477,21 @@ textarea.hfi{resize:vertical; line-height:1.45}
   .counts{width:100%; margin-left:0; gap:18px}
 }
 
+/* ---------- program picker ---------- */
+.search{position:relative}
+input[type=search]::-webkit-search-cancel-button{display:none}
+.cb{position:absolute; z-index:60; top:calc(100% + 6px); left:-1px; right:-1px; min-width:260px;
+  max-height:min(360px,60vh); overflow-y:auto; margin:0; padding:4px 0; list-style:none;
+  background:var(--panel); border:1px solid var(--line); box-shadow:var(--shadow)}
+.cb li{display:flex; align-items:baseline; gap:10px; padding:8px 12px; cursor:pointer; border-left:2px solid transparent}
+.cb li[aria-selected="true"]{background:var(--raise); border-left-color:var(--accent)}
+.cb li.cur .cb-n::after{content:"current"; margin-left:8px; font-size:10px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--accent); font-weight:500}
+.cb-n{font-weight:600; font-size:13.5px; color:var(--text); white-space:nowrap}
+.cb-s{margin-left:auto; font-size:11.5px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.cb mark{background:none; color:var(--accent-ink); text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px}
+.cb li.cb-none{cursor:default; color:var(--faint); font-size:12.5px}
+
 /* ---------- sliders ---------- */
 .sl{max-width:1500px; margin:0 auto; padding:24px 22px 80px}
 .sl .hh{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 120;
@@ -602,9 +617,8 @@ td .sl-was{margin-left:6px}
     <div class="rail-in">
       <label class="search">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
-        <input id="pq" type="search" list="pteams" placeholder="Search a program" aria-label="Search a program" autocomplete="off">
+        <input id="pq" type="text" placeholder="Search a program" aria-label="Search a program" autocomplete="off" spellcheck="false">
       </label>
-      <datalist id="pteams"></datalist>
       <div class="pnav"><button class="ghost" id="pprev" type="button" aria-label="Previous program">&larr;</button><button class="ghost" id="pnext" type="button" aria-label="Next program">&rarr;</button></div>
       <span class="spacer"></span>
       <div class="pmode"><label class="sub" for="ppipe">Rank by pipeline</label><select id="ppipe"><option value="">Choose a pipeline&hellip;</option></select></div>
@@ -631,7 +645,7 @@ td .sl-was{margin-left:6px}
       <div class="hprog">
         <span class="search">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
-          <input id="hq" type="search" list="pteams" placeholder="Search a program" autocomplete="off">
+          <input id="hq" type="text" placeholder="Search a program" autocomplete="off" spellcheck="false">
         </span>
         <button class="ghost" id="hteamr" type="button">Random program</button>
       </div>
@@ -935,6 +949,51 @@ let cKey = "lvl", cDir = -1, cRole = "All", cQuery = "";
 const cVal = (c, k) => k === "gr" ? (GVAL[c.gr] ?? -1) : k === "role" ? ROLEORD[c.role] : c[k];
 const norm = x => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+/* ---- program picker: one combobox shared by every "Search a program" box ---- */
+// Ranking: name starts with query, then a word in the name starts with it, then name/nickname/abbrev contains it.
+function teamMatches(q){
+  const v = norm(q.trim()), byName = [...DATA].sort((a, b) => a.n.localeCompare(b.n));
+  if (!v) return byName;
+  const score = t => { const n = norm(t.n);
+    return n.startsWith(v) ? 0 : n.split(/[\s-]+/).some(w => w.startsWith(v)) ? 1
+      : n.includes(v) || norm(t.nk).includes(v) || norm(t.ab).startsWith(v) ? 2 : 9; };
+  return byName.map(t => [score(t), t]).filter(x => x[0] < 9).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+}
+let comboN = 0;
+function combo(inp, pick, current){
+  const box = inp.closest(".search"), id = "cb" + ++comboN, list = document.createElement("ul");
+  list.className = "cb"; list.id = id; list.setAttribute("role", "listbox"); list.hidden = true; box.append(list);
+  Object.entries({role:"combobox", "aria-autocomplete":"list", "aria-expanded":"false", "aria-controls":id})
+    .forEach(([k, v]) => inp.setAttribute(k, v));
+  let hits = [], act = -1;
+  const mark = (s, q) => { const i = norm(s).indexOf(norm(q.trim()));
+    return q.trim() && i >= 0 ? esc(s.slice(0, i)) + "<mark>" + esc(s.slice(i, i + q.trim().length)) + "</mark>" + esc(s.slice(i + q.trim().length)) : esc(s); };
+  const move = i => { act = i; [...list.children].forEach((li, j) => li.setAttribute("aria-selected", j === i));
+    if (i >= 0 && list.children[i]) { inp.setAttribute("aria-activedescendant", list.children[i].id); list.children[i].scrollIntoView({block:"nearest"}); }
+    else inp.removeAttribute("aria-activedescendant"); };
+  const open = () => {
+    const q = inp.value === current() ? "" : inp.value;
+    hits = teamMatches(q);
+    list.innerHTML = hits.length ? hits.map((t, i) => `<li role="option" id="${id}-${i}" data-n="${esc(t.n)}"${t.n === current() ? ' class="cur"' : ""}>
+      <span class="cb-n">${mark(t.n, q)}</span><span class="cb-s">${mark(t.nk, q)} · ${esc(t.c)}</span></li>`).join("")
+      : `<li class="cb-none">No program matches “${esc(q.trim())}”</li>`;
+    list.hidden = false; inp.setAttribute("aria-expanded", "true");
+    move(q ? 0 : hits.findIndex(t => t.n === current()));
+  };
+  const close = () => { list.hidden = true; inp.setAttribute("aria-expanded", "false"); inp.removeAttribute("aria-activedescendant"); };
+  const choose = n => { close(); pick(n); inp.value = current(); };
+  inp.addEventListener("focus", () => { inp.select(); open(); });
+  inp.addEventListener("input", open);
+  inp.addEventListener("blur", () => { close(); inp.value = current(); });
+  inp.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (list.hidden) return open();
+      if (hits.length) move((act + (e.key === "ArrowDown" ? 1 : hits.length - 1)) % hits.length); }
+    else if (e.key === "Enter" && !list.hidden && hits[Math.max(act, 0)]) { e.preventDefault(); choose(hits[Math.max(act, 0)].n); inp.blur(); }
+    else if (e.key === "Escape") { if (!list.hidden) { e.stopPropagation(); close(); } inp.value = current(); inp.blur(); }
+  });
+  list.addEventListener("mousedown", e => { e.preventDefault(); const li = e.target.closest("[data-n]"); if (li) { choose(li.dataset.n); inp.blur(); } });
+}
+
 $("#cchips").innerHTML = ["All","HC","OC","DC"].map(r =>
   `<button class="chip" type="button" data-r="${r}" aria-pressed="${r === "All"}">${r === "All" ? "All roles" : r}</button>`).join("");
 $("#cchips").addEventListener("click", e => {
@@ -1101,7 +1160,6 @@ let pTeam = "UCLA", pPipe = "";
     return `<g class="lbl" data-lab="${p}" hidden><rect x="${(x - w / 2).toFixed(1)}" y="${y - 8}" width="${w.toFixed(1)}" height="16" rx="2"/><text x="${x}" y="${y + 3.5}" text-anchor="middle">${p}</text></g>`;
   }).join("");
   $("#pmap").innerHTML = `<svg viewBox="0 0 959 593" role="img" aria-label="Map of pipeline regions"><g id="pshapes">${shapes}</g><g class="bd">${MAP.borders}</g><g id="plabels">${labels}</g></svg>`;
-  $("#pteams").innerHTML = PORDER.map(n => `<option value="${n}">`).join("");
   $("#ppipe").innerHTML += PIPES.map(p => `<option value="${p}">${p}</option>`).join("");
   $("#ptiers").innerHTML = [5,4,3,2,1,0].map(i => `<div><i style="background:var(--t${i})"></i>Tier ${i} &middot; ${TIERN[i]}</div>`).join("") +
     `<div><i style="background:var(--pip-off);opacity:.55"></i>No pipeline</div>`;
@@ -1134,13 +1192,7 @@ function pDraw(){
   } else { rk.hidden = true; rk.innerHTML = ""; }
 }
 function pSet(n){ if (!DATA.some(t => t.n === n)) return; pTeam = n; $("#pq").value = n; pDraw(); }
-$("#pq").addEventListener("input", e => { const v = e.target.value.trim(); if (DATA.some(t => t.n === v)) pSet(v); });
-$("#pq").addEventListener("keydown", e => {
-  if (e.key !== "Enter") return;
-  const v = norm($("#pq").value.trim()); if (!v) return;
-  const hit = DATA.find(t => norm(t.n).startsWith(v)) || DATA.find(t => norm(t.n).includes(v) || norm(t.nk).includes(v));
-  if (hit) pSet(hit.n);
-});
+combo($("#pq"), pSet, () => pTeam);
 $("#pprev").addEventListener("click", () => pSet(PORDER[(PORDER.indexOf(pTeam) + PORDER.length - 1) % PORDER.length]));
 $("#pnext").addEventListener("click", () => pSet(PORDER[(PORDER.indexOf(pTeam) + 1) % PORDER.length]));
 $("#ppipe").addEventListener("change", e => { pPipe = e.target.value; pDraw(); });
@@ -1516,14 +1568,7 @@ $("#hrprog").addEventListener("click", () => { H.rprog = !H.rprog; hDraw(); $("#
 $("#hdeal").addEventListener("click", () => { hDeal(); hDraw();
   if (matchMedia("(max-width:860px)").matches) $("#hbook").scrollIntoView({behavior:"smooth", block:"start"}); });
 $("#hteamr").addEventListener("click", () => hSetTeam(DATA.filter(x => x.n !== H.team)[Math.floor(Math.random() * (DATA.length - 1))].n));
-$("#hq").addEventListener("input", e => { const v = e.target.value.trim(); if (DATA.some(t => t.n === v)) hSetTeam(v); });
-$("#hq").addEventListener("keydown", e => {
-  if (e.key !== "Enter") return;
-  const v = norm($("#hq").value.trim()); if (!v) return;
-  const hit = DATA.find(t => norm(t.n).startsWith(v)) || DATA.find(t => norm(t.n).includes(v) || norm(t.nk).includes(v));
-  if (hit) hSetTeam(hit.n);
-});
-$("#hq").addEventListener("blur", () => { $("#hq").value = H.team; });
+combo($("#hq"), hSetTeam, () => H.team);
 $("#hbook").addEventListener("click", e => {
   if (e.target.closest("#hclear")) { H.rules = []; H.lock.clear(); H.pre = ""; H.src = ""; H.edited = false; H.note = ""; hDraw(); return; }
   if (e.target.closest("#hcopy")) {

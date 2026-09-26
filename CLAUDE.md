@@ -22,6 +22,8 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 
 `DATA` is an array of ~138 teams with short keys, e.g. `n` name, `nk` nickname, `ab` abbrev, `c` conference, `o/of/df` overall/offense/defense ratings, `p` prestige, `sl` "City, ST" location, `pl` recruiting pipelines as `[state, tier, weight]`, `st` coaching staff (flattened into `COACHES`), `h` hashtags. Look at a record before assuming a key's meaning. `MAP` holds US state SVG paths (`states`) plus recruiting regions (`reg`, `split`).
 
+Every "Search a program" box uses the shared `combo(input, pick, current)` picker (ranking in `teamMatches`); don't reintroduce `<datalist>`.
+
 Everything else is derived from `DATA` at load (`confs`, `COACHES`, `PIPES`, `PORDER`), so adding a team only means editing `DATA`.
 
 ## Tabs and their code

@@ -68,7 +68,26 @@ const inPage = async () => {
   ok($("#pq").value !== before, "Pipelines: next team button did nothing");
   ok($$("#pmap path").length > 40, "Pipelines: map did not draw");
 
+  // Program picker (shared by Pipelines and House rules)
+  const type = (sel, text) => { const i = $(sel); i.focus(); i.value = text; i.dispatchEvent(new Event("input")); };
+  const opts = sel => [...$(sel).closest(".search").querySelectorAll(".cb [data-n]")].map(li => li.dataset.n);
+  type("#pq", "ore");
+  ok(opts("#pq")[0] === "Oregon" && opts("#pq")[1] === "Oregon State", `Picker: "ore" should list Oregon first, got ${opts("#pq").slice(0, 3)}`);
+  ok(!opts("#pq").includes("Air Force"), "Picker: unrelated teams in results");
+  $("#pq").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+  $("#pq").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+  ok($("#pq").value === "Oregon State", `Picker: arrow + Enter should pick Oregon State, got ${$("#pq").value}`);
+  ok($("#pq").closest(".search").querySelector(".cb").hidden, "Picker: list did not close after picking");
+  type("#pq", "zzqx");
+  ok($("#pq").closest(".search").querySelector(".cb-none"), "Picker: no empty-state message");
+  $("#pq").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  ok($("#pq").value === "Oregon State", "Picker: Escape should restore current team");
+
   await open("tabHouse");
+  type("#hq", "tide");
+  ok(opts("#hq")[0] === "Alabama", `Picker: nickname search "tide" should find Alabama, got ${opts("#hq")[0]}`);
+  $("#hq").closest(".search").querySelector('.cb [data-n="Alabama"]').dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+  ok($("#hq").value === "Alabama", "Picker: clicking a team did not select it in House rules");
   $("#hdeal").click(); await wait(50);
   ok($("#hbook").innerText.trim().length > 0, "House rules: dealing produced no rules");
   ok(localStorage.getItem("house-v1"), "House rules: state was not saved");
@@ -95,5 +114,5 @@ if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboa
 if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log("PASS: all 6 tabs, dossier, search, roll, pipelines, house rules, sliders, www redirect. No JS errors.");
+console.log("PASS: all 6 tabs, dossier, search, roll, pipelines, house rules, program picker, sliders, www redirect. No JS errors.");
 process.exit(0);
