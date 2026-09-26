@@ -107,6 +107,9 @@ const inPage = async () => {
   $("#hdeal").click(); await wait(50);
   ok($("#hbook").innerText.trim().length > 0, "House rules: dealing produced no rules");
   ok(localStorage.getItem("house-v1"), "House rules: state was not saved");
+  const hm = $("#hbook .hmap");
+  if (hm) ok([...hm.querySelectorAll(".on")].some(e => /--t\d/.test(e.getAttribute("style") || "")) && hm.querySelector(".hleg .sw"),
+    "House rules: map should be colored by pipeline tier with a legend");
 
   await open("tabRec");
   ok($("#rq").value === $("#hq").value, `Recruiting: linked by default, should show House rules team ${$("#hq").value}, got ${$("#rq").value}`);

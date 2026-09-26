@@ -506,7 +506,9 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .tgl[aria-checked="true"] .trk{background:var(--accent)}
 .tgl[aria-checked="true"] .trk i{transform:translateX(14px)}
 @media (prefers-reduced-motion:reduce){.tgl .trk, .tgl .trk i{transition:none}}
-.rec .sw{width:12px; height:12px; display:inline-block; vertical-align:-1px; border:1px solid var(--line)}
+.sw{width:12px; height:12px; display:inline-block; vertical-align:-1px; border:1px solid var(--line); flex:none}
+.hleg{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px; font-size:11.5px; color:var(--dim)}
+.hleg span{display:inline-flex; align-items:center; gap:6px}
 .rec td.swc{width:12px; padding-right:0}
 .rec .arch{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 118; font-weight:800; text-transform:uppercase; font-size:22px; letter-spacing:-.005em}
 .rec-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:18px; align-items:start; margin-top:20px; grid-auto-flow:dense}
@@ -1534,9 +1536,10 @@ const IC = {
   roll:`<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.6"/><path d="M12 1.5v3h-3"/></svg>`,
   x:`<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13"/></svg>`
 };
+const tiersOf = t => Object.fromEntries(t.pl.filter(p => p[1] > 0).map(p => [p[0], p[1]]));
 let hMapN = 0;
 function hMap(regs, tiers){
-  const on = new Set(regs), k = ++hMapN, fill = r => tiers && tiers[r] != null ? ` style="fill:var(--t${tiers[r]})"` : "";
+  const on = new Set(regs), k = ++hMapN, fill = r => !tiers ? "" : ` style="fill:${tiers[r] != null ? `var(--t${tiers[r]})` : "var(--accent-soft)"}"`;
   const shapes = Object.entries(MAP.states).map(([s, d]) => {
     const split = Object.entries(MAP.split).filter(([, v]) => v.s === s);
     if (!split.length) {
@@ -1546,7 +1549,10 @@ function hMap(regs, tiers){
     return `<path class="hs" d="${d}"/><clipPath id="hcp${k}-${s}"><path d="${d}"/></clipPath><g clip-path="url(#hcp${k}-${s})">` +
       split.map(([p, v]) => `<polygon class="hp${on.has(p) ? " on" : ""}"${on.has(p) ? fill(p) : ""} points="${v.pts.map(q => q.join(",")).join(" ")}"/>`).join("") + `</g>`;
   }).join("");
-  return `<figure class="hmap" style="margin:12px 0 0"><svg viewBox="0 0 959 593" role="img" aria-label="Map of allowed recruiting regions">${shapes}<g class="bd">${MAP.borders}</g></svg><figcaption>Shaded: where you may recruit (${on.size} of 42 regions)</figcaption></figure>`;
+  const shown = [...new Set([...on].map(r => tiers && tiers[r] != null ? tiers[r] : -1))].sort((a, b) => b - a);
+  const legend = tiers ? `<div class="hleg">${shown.map(x => x < 0 ? `<span><i class="sw" style="background:var(--accent-soft)"></i>No pipeline</span>`
+    : `<span><i class="sw" style="background:var(--t${x})"></i>${TIERN[x]}</span>`).join("")}</div>` : "";
+  return `<figure class="hmap" style="margin:12px 0 0"><svg viewBox="0 0 959 593" role="img" aria-label="Map of allowed recruiting regions">${shapes}<g class="bd">${MAP.borders}</g></svg><figcaption>Shaded: where you may recruit (${on.size} of 42 regions)</figcaption>${legend}</figure>`;
 }
 function preBtn(p, ok, ps){
   const on = H.pre === p.id && !H.edited && /^(Preset|Your preset) · /.test(H.src);
@@ -1579,7 +1585,7 @@ function hDraw(){
     return `<li class="rule" data-id="${id}">
       <div><span class="rcat">${HCATN[r.c]}</span>
         <div class="rttl">${r.n} ${pips(r.l)}${r.u ? `<span class="ctag">Custom</span>` : ""}${lk ? `<span class="lkt">Locked</span>` : ""}</div>
-        <p>${r.x(t)}</p>${reg && reg.length ? hMap(reg) : ""}</div>
+        <p>${r.x(t)}</p>${reg && reg.length ? hMap(reg, tiersOf(t)) : ""}</div>
       <div class="racts">
         <button class="ib" type="button" data-act="lock" aria-pressed="${lk}" aria-label="${lk ? "Unlock" : "Lock"} ${r.n}" title="${lk ? "Unlock" : "Lock so dealing again keeps it"}">${lk ? IC.lock : IC.open}</button>
         <button class="ib" type="button" data-act="roll" aria-label="Reroll ${r.n}" title="Swap for another ${HCATN[r.c].toLowerCase()} rule"${alt ? "" : " disabled"}>${IC.roll}</button>
@@ -1724,7 +1730,7 @@ function hfPreview(){
   document.querySelectorAll("#hf [data-l]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.l === HF.l));
   $("#hfPl").textContent = `Preview for ${t.n}`;
   $("#hfP").innerHTML = `<li class="rule"><div><span class="rcat">${HCATN[r.c]}</span>
-    <div class="rttl">${r.n} ${pips(r.l)}<span class="ctag">Custom</span></div><p>${r.x(t)}</p>${reg && reg.length ? hMap(reg) : ""}</div></li>`;
+    <div class="rttl">${r.n} ${pips(r.l)}<span class="ctag">Custom</span></div><p>${r.x(t)}</p>${reg && reg.length ? hMap(reg, tiersOf(t)) : ""}</div></li>`;
   $("#hfE").textContent = HF.err || "";
 }
 $("#hnew").addEventListener("click", () => hfOpen(null));
@@ -1884,7 +1890,7 @@ function recDraw(){
   const grs = (h, sub, xs) => `<div class="grp"><h4>${h}<small>${sub}</small></h4>${xs.length
     ? xs.map(([n, g]) => `<span class="gr">${n} <b>${g}</b></span>`).join("") : '<span class="gr" style="color:var(--faint)">None</span>'}</div>`;
   const [tier, regs] = purist(t), pl = t.pl.filter(p => p[1] > 0).sort((a, b) => b[2] - a[2]);
-  const map = hMap(regs, Object.fromEntries(pl.map(p => [p[0], p[1]])))
+  const map = hMap(regs, tiersOf(t))
     .replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions), colored by tier</figcaption>`);
   $("#rLink").setAttribute("aria-checked", rLink);
   if (document.activeElement !== $("#rq")) $("#rq").value = t.n;
