@@ -143,6 +143,9 @@ const inPage = async () => {
   await open("tabSlide");
   const row = name => [...$$("#slGrid tr")].find(r => r.cells[0]?.innerText === name)?.innerText.replace(/\s+/g, " ");
   ok(row("QB Accuracy") === "QB Accuracy 38 32was 38", `Sliders: Heisman QB accuracy wrong: ${row("QB Accuracy")}`);
+  ok(row("Tackling") === "Tackling 48was 42 48was 42", `Sliders: Heisman tackling wrong: ${row("Tackling")}`);
+  ok(row("WR Catching") === "WR Catching 52was 50 52was 50", `Sliders: Heisman WR catching wrong: ${row("WR Catching")}`);
+  ok(row("Roughing the Passer") === "Roughing the Passer 42was 48", `Sliders: roughing the passer wrong: ${row("Roughing the Passer")}`);
   ok($$("#slGrid .sl-card").length === 6, "Sliders: expected 6 cards");
   $('#slDiff [data-d="aa"]').click(); await wait(50);
   ok(row("WR Catching") === "WR Catching 50 60", `Sliders: All-American WR catching wrong: ${row("WR Catching")}`);

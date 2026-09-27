@@ -817,7 +817,7 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   <header class="sl-head">
     <div>
       <h2 class="hh">Matt10's CFB27 Sliders <span class="sl-v">v5.5</span></h2>
-      <p class="hint">By Matt10, with MrHurriicane and Cam. Posted 9/25/26 for the latest patch. Set them in the main menu first, then import into your dynasty.
+      <p class="hint">By Matt10, with MrHurriicane, Cam and D9. First posted 9/25/26 and revised since for the latest patch. Set them in the main menu first, then import into your dynasty.
         <a href="https://forums.operationsports.com/forums/forum/football/ea-sports-college-football-and-ncaa-football/ea-sports-college-football-sliders/26925397-matt10-s-cfb27-sliders" target="_blank" rel="noopener">Source thread</a></p>
     </div>
     <div class="chips" id="slDiff" role="group" aria-label="Difficulty"></div>
@@ -1899,14 +1899,14 @@ $("#hbook").addEventListener("submit", e => {
   hDraw();
 });
 
-/* ---- sliders (Matt10 v5.5, transcribed from his 9/25/26 image) ---- */
+/* ---- sliders (Matt10 v5.5, transcribed from his revised image; first posted 9/25/26) ---- */
 // Each row: [name, value] or [name, value, previous value]. Skill rows: [name, user, cpu, prevUser, prevCpu].
 const SLPEN = [["Offside",50],["False Start",50],["Offensive Holding",52,50],["Facemask",40],["Block in the Back",70,50],
-  ["Roughing the Passer",40,48],["Defensive PI",95],["Offensive PI","On"],["Kick Catch Interference","On"],
+  ["Roughing the Passer",42,48],["Defensive PI",95],["Offensive PI","On"],["Kick Catch Interference","On"],
   ["Intentional Grounding","On"],["Roughing the Kicker","On"],["Running into Kicker","On"],["Illegal Contact","On"]];
 const SLDIFF = {
-  heis:{n:"Heisman", skill:[["QB Accuracy",38,32,null,38],["Pass Blocking",50,50],["WR Catching",52,50,50],["Run Blocking",45,45],
-    ["Ball Security",55,55],["Interceptions",20,20],["Pass Coverage",50,50],["Tackling",42,42],["FG Power",40,40],
+  heis:{n:"Heisman", skill:[["QB Accuracy",38,32,null,38],["Pass Blocking",50,50],["WR Catching",52,52,50,50],["Run Blocking",45,45],
+    ["Ball Security",55,55],["Interceptions",20,20],["Pass Coverage",50,50],["Tackling",48,48,42,42],["FG Power",40,40],
     ["FG Accuracy",40,40],["Punt Power",35,35],["Punt Accuracy",40,40],["Kickoff Power",50,50]]},
   aa:{n:"All-American", skill:[["QB Accuracy",38,45],["Pass Blocking",45,50],["WR Catching",50,60],["Run Blocking",35,50],
     ["Ball Security",55,55],["Interceptions",15,25],["Pass Coverage",50,50],["Tackling",42,50],["FG Power",40,40],
@@ -1934,7 +1934,7 @@ function slDraw(){
   $("#slDiff").innerHTML = Object.entries(SLDIFF).map(([k, x]) =>
     `<button type="button" class="chip" data-d="${k}" aria-pressed="${k === slD}">${x.n}</button>`).join("");
   $("#slNew").textContent = slD === "heis"
-    ? "CPU QB accuracy drops to 32 so CPU quarterbacks take more shots downfield. Block in the back goes up to give QBs a cleaner pocket, and roughing the passer comes down so they have to decide faster."
+    ? "CPU QB accuracy drops to 32 so CPU quarterbacks take more shots downfield, and WR catching goes up to 52 for both sides. Tackling rises to 48 for both sides so missed tackles are less common. Block in the back goes up to give QBs a cleaner pocket, and roughing the passer comes down so they have to decide faster."
     : "The All-American set was already playing well, so only penalties changed. Block in the back goes up and roughing the passer comes down, adding aggression on both sides of the line.";
   $("#slGrid").innerHTML = `<section class="sl-card"><h3>${d.n} sliders<span>You vs CPU</span></h3><table>
     <thead><tr><th class="l">Slider</th><th>You</th><th>CPU</th></tr></thead><tbody>${
