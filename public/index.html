@@ -583,9 +583,8 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl td{padding:6px 12px}
 .sl td.l{color:var(--text)}
 .sl td.mono{font-size:13px}
+.sl-chg{color:var(--accent-ink); font-weight:600; background:var(--accent-soft); padding:0 4px}
 .sl td.chg{color:var(--accent-ink); font-weight:600; background:var(--accent-soft)}
-.sl-was{font-weight:400; font-size:11px; color:var(--dim); margin-left:4px}
-td .sl-was{margin-left:6px}
 /* ---------- dynasty planner (chat) ---------- */
 .masthead{position:relative}
 .coachbtn{position:absolute; top:22px; right:22px; display:flex; align-items:center; gap:7px; background:var(--panel); color:var(--text);
@@ -822,7 +821,7 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
     </div>
     <div class="chips" id="slDiff" role="group" aria-label="Difficulty"></div>
   </header>
-  <p class="sl-new"><b>New in 5.5:</b> <span id="slNew"></span> <span class="sl-was">was</span> marks the old value.</p>
+  <p class="sl-new"><b>New in 5.5:</b> <span id="slNew"></span> <span class="sl-chg">Highlighted</span> values changed in this version.</p>
   <div class="sl-grid" id="slGrid"></div>
 </section>
 
@@ -1926,7 +1925,7 @@ const SLFIX = [
 ];
 let slD = "heis";
 const slCell = (v, was) => was == null ? `<td class="mono">${v}</td>`
-  : `<td class="mono chg">${v}<span class="sl-was">was ${was}</span></td>`;
+  : `<td class="mono chg" title="Was ${was}">${v}</td>`;
 const slCard = (h, sub, rows) => `<section class="sl-card"><h3>${h}<span>${sub}</span></h3><table><tbody>${
   rows.map(([n, v, w]) => `<tr><td class="l">${n}</td>${slCell(v, w)}</tr>`).join("")}</tbody></table></section>`;
 function slDraw(){
