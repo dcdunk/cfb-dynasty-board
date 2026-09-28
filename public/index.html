@@ -571,7 +571,6 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .ab-list li{display:grid; grid-template-columns:minmax(110px,34%) 1fr; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px}
 .ab-list li:first-child{border-top:0}
 .ab-list li span{color:var(--dim)}
-.ab-list li i{font-style:normal; opacity:.7}
 .ab-ment{padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); column-gap:24px; max-width:1500px}
 .ab-ment li:first-child{border-top:1px solid var(--line)}
 @media (max-width:420px){.ab-ment{grid-template-columns:1fr}}
@@ -2062,7 +2061,7 @@ const abWho = n => ABARCH.filter(a => a[2].includes(n)).map(a => `${a[1]} ${a[0]
 const abNorm = s => " " + s.toLowerCase().replace(/[^a-z0-9/!]+/g, " ").trim() + " ";
 const abFind = q => { const s = abNorm(q); return Object.keys({...ABPHYS, ...ABMENT}).filter(n => s.includes(abNorm(n))).sort((a, b) => b.length - a.length)[0]; };
 let abP = "QB";
-const abRow = n => `<li><b>${esc(n)}</b><span>${esc(abDesc(n))}${ABPHYS[n]?.[0] === "?" ? ` <i title="Only this ability's icon was readable in the game files">(best guess)</i>` : ""}</span></li>`;
+const abRow = n => `<li><b>${esc(n)}</b><span>${esc(abDesc(n))}</span></li>`;
 function abDraw(){
   const q = $("#abQ").value.trim().toLowerCase();
   $("#abPos").innerHTML = ABPOS.map(p => `<button type="button" class="chip" data-p="${p}" aria-pressed="${!q && p === abP}">${p}</button>`).join("");
