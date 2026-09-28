@@ -13,7 +13,7 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 ## Layout of the file
 
 - Lines ~7-476: one `<style>` block. Colors are CSS tokens on `:root`, with dark mode under `prefers-color-scheme` and `[data-theme]` overrides.
-- Lines ~477-645: static HTML for the seven tabs (`#viewBoard`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`, `#viewRec`, `#viewSlide`) plus the team dossier drawer (`#dossier`, `#scrim`).
+- Lines ~477-645: static HTML for the eight tabs (`#viewBoard`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`, `#viewRec`, `#viewSlide`, `#viewAb`) plus the team dossier drawer (`#dossier`, `#scrim`).
 - Lines ~646-1661: one `<script>`, plain JS with no framework. UI is rendered by building HTML strings into `innerHTML`.
 
 **Line 650 (`const DATA = [...]`) is ~540 KB on one line and line 1044 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 650p public/index.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
@@ -38,6 +38,7 @@ Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS`
 | Pipelines | Recruiting pipeline map per team | `buildMap`, `paintMap`, `pDraw`, `pSet` |
 | House rules | Generates self-imposed challenge rules for a team | `hDraw`, `hDeal`, `hApplyPreset`, `hToggleRule`, `hText` |
 | Recruiting & NIL | Program-level, year-agnostic strategy (users may take a job in year 5): prestige band (`ARCH`), NIL rank, lasting vs earned grades (`GLAST`), tier-colored pipelines, checklist. Deliberately avoids this save's roster/uncommitted NIL. Follows the House rules team unless the `#rLink` toggle is off (saved in `rec-v1`). Mechanics cited on the page; `recHours` interpolates between the only two published points | `recDraw`, `recPick` |
+| Player Abilities | Physical abilities by position and archetype (`ABARCH`, descriptions in `ABPHYS`), plus the 16 mental abilities (`ABMENT`). Ability names, the mental list and Field Flip were verified against the CFB 27 game files (Sept 2026); archetype lists come from CollegeFootball.gg minus Battering Ram (not in the game). A leading `?` in an `ABPHYS` description means only the icon was found in the game files. Unlock ratings are deliberately left out until confirmed for CFB 27. Descriptions are our own writing. Coach answers ability questions from this data via `pAbil`, checked before players and plans | `abDraw`, `pAbil` |
 | Coach (headset button in the masthead opens a right sidebar, not a tab; above 900px it pushes the page via `body.coach-on` margin instead of covering it, below it goes full screen) | Chat named Coach that turns plain text ("tough Florida dynasty, created coach") into a plain-prose reply from site data: house rules (`pRules`), recruiting band, coach, sliders. Chat only: no cards, buttons or tab changes (user asked). Keyword parsing only (`PDIFF`, `PPRE`, `PRULE`, `pFindTeams`, longest team name wins). Optional "AI chat" loads WebLLM + Llama 3.2 3B (~1.8 GB, from jsDelivr/Hugging Face, runs on the visitor's GPU, no API) only on click; it rephrases `P.facts` and must not add facts. Roster questions (best/top N/fastest/by position, or a player named) answer from `t.r` via `pPlayers`/`pFindPlayer`; staff questions from `t.st` via `pStaff`/`pFindCoach`. Plans, roster and staff answers always use the templated reply even with AI on (the model dropped and renamed rules); the AI only answers what the template cannot. `TYEARS` holds national title seasons from NCAA.com (counts must equal `t.ti`; check.mjs enforces it; USC 2004 counted as won by owner decision). check.mjs never loads the model | `pPlan`, `pRender`, `pAsk`, `pWrite` |
 | Sliders | Matt10's slider sets, hand-transcribed from his forum image (`SLDIFF`, `SLPEN`, `SLFIX`). Rows with a third value are highlighted as changed from the previous version (old value only in the cell's hover title). Update the version, date and `#slNew` notes when he posts a new set | `slDraw` |
 
@@ -53,7 +54,7 @@ Changing the shape of either object breaks saved data for existing users. Bump t
 
 ## Verifying changes
 
-`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all seven tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
+`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all eight tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
 
 ```bash
 node check.mjs

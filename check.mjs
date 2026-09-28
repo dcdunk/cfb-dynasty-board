@@ -38,7 +38,7 @@ const inPage = async () => {
   const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const fails = [], ok = (cond, msg) => { if (!cond) fails.push(msg); };
-  const views = { tabBoard: "viewBoard", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabRec: "viewRec", tabSlide: "viewSlide" };
+  const views = { tabBoard: "viewBoard", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabRec: "viewRec", tabSlide: "viewSlide", tabAb: "viewAb" };
   const open = async tab => {
     $("#" + tab).click(); await wait(50);
     for (const [t, v] of Object.entries(views)) ok($("#" + v).hidden === (t !== tab), `${tab}: #${v} visibility wrong`);
@@ -152,6 +152,22 @@ const inPage = async () => {
   ok(row("WR Catching") === "WR Catching 50 60", `Sliders: All-American WR catching wrong: ${row("WR Catching")}`);
   ok($('#slDiff [data-d="aa"]').getAttribute("aria-pressed") === "true", "Sliders: difficulty chip not selected");
 
+  // Player abilities: position chips, archetype cards, ability detail, search, mental list.
+  await open("tabAb");
+  ok($$("#abGrid .sl-card").length === 4 && /Backfield Creator/.test($("#abGrid").textContent), "Abilities: QB should show 4 archetypes");
+  $('#abPos [data-p="DL"]').click(); await wait(50);
+  ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
+  $('#abGrid [data-a="Duress"]').click(); await wait(50);
+  ok(!$("#abDet").hidden && /Power Rusher DL/.test($("#abDet").textContent) && /Speed Rusher DL/.test($("#abDet").textContent), "Abilities: Duress detail should list its archetypes");
+  find("#abQ", "sure hands");
+  ok($$("#abGrid .sl-card").length === 6, `Abilities: Sure Hands should be in 6 archetypes, got ${$$("#abGrid .sl-card").length}`);
+  find("#abQ", "");
+  ok($$("#abMent .ab-a").length === 16 && !/Hot Head/.test($("#abMent").textContent), "Abilities: expected the 16 mental abilities, without Hot Head");
+  ok(!/Battering Ram/.test(JSON.stringify(ABARCH)) && ABARCH.every(a => a[2].every(n => n in ABPHYS)), "Abilities: every archetype ability needs a description, and no Battering Ram");
+  $('#abPos [data-p="K/P"]').click(); await wait(50);
+  ok(/Field Flip/.test($("#abGrid").textContent), "Abilities: Field Flip should show under K/P");
+  ok(!/—/.test($("#viewAb").innerText), "Abilities: no em dashes in copy");
+
   // Dynasty planner: plain chat. Parses team/difficulty/extras from text and replies in prose only.
   $("#pOpen").click(); await wait(50);
   ok($("#pChat").classList.contains("on") && $("#pLog .pm.bot"), "Coach: sidebar didn't open with a greeting");
@@ -187,6 +203,13 @@ const inPage = async () => {
   // Recruiting advice must not contradict the house rules (e.g. No blue-chips vs "chase 5★").
   { const t = DATA.find(x => x.n === "Michigan"), tips = pRecTips(t, ["ter-top3", "star-none", "nil-zero", "port-none"], ARCH[0][2]).join(" ");
     ok(!/[45]★ talent|long shots|NIL keeping|nationally/.test(tips) && /3★ and below/.test(tips) && /No NIL/.test(tips) && /Allowed regions/.test(tips), "Coach: recruiting advice contradicts house rules: " + tips); }
+  // Ability questions answer from the abilities data, not with a plan.
+  m = await ask("what abilities does a speed rusher get?");
+  ok(/Speed Rusher DL/.test(m) && /Quick Jump/.test(m) && !/House rules/.test(m), "Coach: Speed Rusher abilities wrong: " + m);
+  m = await ask("how do I unlock Dot!?");
+  ok(/Dot!/.test(m) && /Pocket Passer QB/.test(m) && /Gadget WR/.test(m) && /Bronze/.test(m), "Coach: Dot! unlock answer wrong: " + m);
+  ok(/any player/.test(await ask("what does Road Dog do?")), "Coach: mental ability answer wrong");
+  ok(/Physical Route Runner WR/.test(await ask("physical route runner WR abilities")) && !/Physical Route Runner TE/.test([...$$("#pLog .pm.bot")].pop().textContent), "Coach: position should narrow a shared archetype name");
   ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: longest team name should win (Georgia Tech)");
   ok(/Minnesota/.test(await ask("i want to take a former powerhouse program back to glory, what are 3 options?")), "Coach: back-to-glory should answer from board data (Minnesota has 6 titles)");
   ok(/1960/.test([...$$("#pLog .pm.bot")].pop().textContent), "Coach: glory reply should name Minnesota's last title (1960, NCAA.com)");
@@ -218,5 +241,5 @@ if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboa
 if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log("PASS: all 7 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, sliders, planner, www redirect. No JS errors.");
+console.log("PASS: all 8 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, sliders, player abilities, planner, www redirect. No JS errors.");
 process.exit(0);

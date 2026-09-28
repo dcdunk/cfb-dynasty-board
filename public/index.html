@@ -566,6 +566,18 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl .hint{color:var(--dim); font-size:12.5px; margin:0; max-width:70ch}
 .sl .hint a{color:var(--accent-ink); font-weight:600}
 .sl-v{color:var(--accent)}
+.ab-q{font:inherit; font-size:13px; padding:8px 10px; min-width:240px; max-width:100%; background:var(--panel); color:var(--text); border:1px solid var(--line)}
+.ab-list{display:flex; flex-wrap:wrap; gap:6px; padding:4px 12px 12px}
+.ab-ment{display:flex; flex-wrap:wrap; gap:6px}
+.ab-a{font:inherit; font-size:12.5px; padding:5px 9px; cursor:pointer; background:transparent; color:var(--text); border:1px solid var(--line)}
+.ab-a:hover{border-color:var(--dim)}
+.ab-a.on{border-color:var(--accent); color:var(--accent-ink); font-weight:600}
+.ab-det{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); padding:10px 14px; margin:0 0 18px; max-width:760px}
+.ab-det h3{margin:0 0 4px; font-size:15px}
+.ab-det h3 span{font-size:10.5px; letter-spacing:.085em; text-transform:uppercase; color:var(--dim); font-weight:400; padding-left:6px}
+.ab-det p{margin:4px 0}
+.sl .ab-src{margin-top:30px}
+
 .sl-head{display:flex; flex-wrap:wrap; gap:14px 24px; align-items:flex-end; justify-content:space-between}
 .sl-new{font-size:12.5px; color:var(--dim); margin:16px 0 20px; padding:10px 12px;
   background:var(--panel); border-left:3px solid var(--accent); max-width:100ch}
@@ -647,6 +659,7 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   <button class="tab" role="tab" id="tabHouse" aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
   <button class="tab" role="tab" id="tabRec" aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
   <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
+  <button class="tab" role="tab" id="tabAb" aria-controls="viewAb" aria-selected="false" tabindex="-1" type="button">Player Abilities</button>
 </div>
 
 <div id="viewBoard" role="tabpanel" aria-labelledby="tabBoard">
@@ -823,6 +836,23 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   </header>
   <p class="sl-new"><b>New in 5.5:</b> <span id="slNew"></span> <span class="sl-chg">Highlighted</span> values changed in this version.</p>
   <div class="sl-grid" id="slGrid"></div>
+</section>
+
+<section id="viewAb" class="sl ab" role="tabpanel" aria-labelledby="tabAb" hidden>
+  <header class="sl-head">
+    <div>
+      <h2 class="hh">Player Abilities</h2>
+      <p class="hint">Physical abilities come from a player's archetype and unlock as the player's ratings climb, in Bronze, Silver, Gold and Platinum tiers. Mental abilities aren't tied to an archetype. Pick a position, then click an ability to see what it does and who gets it.</p>
+    </div>
+    <input class="ab-q" id="abQ" type="search" placeholder="Search an ability, e.g. Sure Hands" aria-label="Search abilities" autocomplete="off">
+  </header>
+  <div class="chips" id="abPos" role="group" aria-label="Position" style="margin:16px 0"></div>
+  <div class="ab-det" id="abDet" aria-live="polite"></div>
+  <div class="sl-grid" id="abGrid"></div>
+  <h2 class="hh" style="margin:34px 0 6px">Mental abilities</h2>
+  <p class="hint" style="margin-bottom:16px">Any player can have these. In Road to Glory you pick three, and each stays active only while its meter stays high.</p>
+  <div class="ab-ment" id="abMent"></div>
+  <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files. Archetype lists come from <a href="https://collegefootball.gg/abilities/" target="_blank" rel="noopener">CollegeFootball.gg</a>, cross-checked with <a href="https://www.teamcrafters.net/rosters/CFB27/cfb27-beta/abilities" target="_blank" rel="noopener">TeamCrafters</a> and <a href="https://www.cfblabs.com/ability-descriptions" target="_blank" rel="noopener">CFB Labs</a>. How abilities work: <a href="https://www.ea.com/games/ea-sports-college-football/college-football-27/news/college-football-27-road-to-glory" target="_blank" rel="noopener">EA</a>. Descriptions are our own. Unlock ratings are left out until they're confirmed for CFB 27.</p>
 </section>
 
 <aside class="pchat" id="pChat" aria-labelledby="pTitle">
@@ -1061,7 +1091,7 @@ $("#scrim").addEventListener("click", closeTeam);
 addEventListener("keydown", e => { if (e.key === "Escape" && picked) closeTeam(); });
 
 /* ---- tabs ---- */
-const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["rec","#tabRec","#viewRec"],["slide","#tabSlide","#viewSlide"]];
+const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["rec","#tabRec","#viewRec"],["slide","#tabSlide","#viewSlide"],["ab","#tabAb","#viewAb"]];
 let curTab = "board";
 function showTab(which){
   curTab = which;
@@ -1944,6 +1974,135 @@ function slDraw(){
 $("#slDiff").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (b) { slD = b.dataset.d; slDraw(); } });
 slDraw();
 
+/* ---- player abilities ---- */
+// Names checked against the CFB 27 game files (ability records in FootballAbilitiesDSub). Archetype lists: CollegeFootball.gg,
+// minus Battering Ram (not in the game files). A leading "?" marks abilities whose game record wasn't readable, only their icon.
+const ABPHYS = {
+  "Off Platform":"More accurate throws off the back foot or across the body.", "Pull Down":"Fewer fumbles when tucking the ball and running behind the line.",
+  "On Time":"Anticipation throws get an accuracy boost.", "Magician":"?Makes plays out of a broken pocket.", "Mobile Deadeye":"More accurate passes on the run.",
+  "Downhill":"Breaks more tackles when running at full speed.", "Extender":"Breaks more sacks when moving in the pocket.", "Option King":"Cleaner, more reliable option pitches.",
+  "Dot!":"Accuracy bonus when throwing to an open receiver.", "Mobile Resistance":"Holds up under pressure when throwing on the run.", "Resistance":"Holds up under pressure in the pocket.",
+  "Step Up":"Better passing from inside the pocket.", "Sleight Of Hand":"Play action fakes fool defenders more often.", "Shifty":"?Sharper, harder to tackle cuts in the open field.",
+  "Side Step":"?Quicker lateral moves to slip defenders.", "Workhorse":"Takes less wear and tear over a game.", "360":"?More effective spin moves.",
+  "Safety Valve":"Higher chance to secure a catch out of the backfield.", "Takeoff":"Faster release into the route.", "Recoup":"Recovers from fatigue faster.",
+  "Ball Security":"Lower fumble chance anywhere on the field.", "Balanced":"Resists hit stick strips.", "Arm Bar":"More effective stiff arms.",
+  "Headfirst":"?Tougher to bring down when lowering the shoulder.", "Sidekick":"Better cut blocks.", "Strong Grip":"Holds blocks longer before a defender disengages.",
+  "Second Level":"Better blocks on linebackers and safeties downfield.", "Pocket Shield":"Harder to shed in pass protection.", "Screen Enforcer":"Better blocks on screen plays.",
+  "50/50":"Wins more jump balls.", "Cutter":"Sharper route cuts.", "Double Dip":"Sharper double move routes.", "Outside Shield":"Better run blocks on outside runs.",
+  "Sure Hands":"Fewer drops, and fewer knockouts when catching.", "Press Pro":"Beats press coverage more often.", "Lay Out":"Better diving catches.",
+  "Wear Down":"Wears out pass rushers who lose to the block.", "Quick Drop":"Faster movement in pass sets.", "Quick Step":"Faster movement when pulling.",
+  "Option Shield":"Better run blocks on option plays.", "PA Shield":"Harder to shed on play action.", "Inside Shield":"Better run blocks on inside runs.",
+  "Ground N Pound":"Wears out defenders who lose to the block on runs.", "Grip Breaker":"Disengages from blocks at wider angles.", "Inside Disruptor":"Sheds blocks better on inside runs.",
+  "Outside Disruptor":"Sheds blocks better on outside runs.", "Option Disruptor":"Sheds blocks better on option runs.", "Pocket Disruptor":"Sheds blocks better on pass plays.",
+  "Duress":"Puts more pressure on the quarterback.", "Take Down":"Finishes more sack attempts.", "Quick Jump":"Bigger bonus for jumping the snap.",
+  "Hammer":"Better hit sticks.", "House Call":"Makes more interceptions.", "Knockout":"Knocks out more passes in coverage.", "Bouncer":"Zone jams tire out receivers.",
+  "Robber":"Moves better in pass coverage.", "Wrap Up":"Better standard tackles.", "Blow Up":"Sheds blocks better on impact.", "Aftershock":"Hits add more wear and tear.",
+  "Jammer":"Better press in man coverage.", "Blanket Coverage":"Wins more cuts in man coverage.", "Ballhawk":"Breaks on the throw faster.",
+  "Chip Shot":"Easier accuracy timing on short field goals.", "Deep Range":"Easier accuracy timing on long kicks.", "Mega Leg":"Avoids kicking it too far.",
+  "Coffin Corner":"Easier accuracy timing on coffin corner punts.", "Field Flip":"Easier accuracy timing when punting from deep in your own end."
+};
+const ABMENT = {
+  "Best Friend":"The QB gains composure when this player makes a first down catch on 3rd or 4th down.", "Clearheaded":"Protects against losing composure.",
+  "Clutch Kicker":"Easier accuracy timing on field goals in the last two minutes.", "Defensive Rally":"Sacks raise the composure of the other defensive linemen.",
+  "Fan Favorite":"Gains composure faster at home.", "Field General":"Can spot blitzers and the coverage shell before the snap.",
+  "Headstrong":"Pre-snap adjustments hold up against crowd noise.", "Legion":"Picks and pass breakups raise the composure of the other DBs.",
+  "Offensive Rally":"Pancake blocks raise the composure of the other linemen.", "Road Dog":"Gains composure faster on the road.",
+  "Team Player":"Smaller ratings hit when playing out of position.", "The Natural":"Resists bad weather.",
+  "Winning Time":"More composure late in close games.", "Instinct":"Reacts faster to run plays.",
+  "Adrenaline":"Recovers wear and tear faster while off the field.", "Rollercoaster":"Composure swings bigger in both directions."
+};
+const ABARCH = [
+  ["QB","Backfield Creator",["Off Platform","Pull Down","On Time","Magician","Mobile Deadeye"]],
+  ["QB","Dual Threat",["Downhill","Extender","Option King","Dot!","Mobile Resistance"]],
+  ["QB","Pocket Passer",["Resistance","Step Up","Sleight Of Hand","Dot!","On Time"]],
+  ["QB","Pure Runner",["Downhill","Option King","Shifty","Side Step","Workhorse"]],
+  ["HB","Backfield Threat",["360","Safety Valve","Takeoff","Side Step","Recoup"]],
+  ["HB","Contact Seeker",["Downhill","Workhorse","Ball Security","Balanced"]],
+  ["HB","East/West Playmaker",["Recoup","Shifty","Side Step","360","Arm Bar"]],
+  ["HB","Elusive Bruiser",["Shifty","Headfirst","Side Step","Downhill","Arm Bar"]],
+  ["HB","North/South Receiver",["Balanced","Arm Bar","Safety Valve","Headfirst","Downhill"]],
+  ["HB","North/South Blocker",["Headfirst","Balanced","Sidekick","Ball Security","Strong Grip"]],
+  ["FB","Blocking",["Strong Grip","Second Level","Pocket Shield","Sidekick","Screen Enforcer"]],
+  ["FB","Utility",["Safety Valve","Balanced","Screen Enforcer","Sidekick","Recoup"]],
+  ["WR","Contested Specialist",["50/50","Workhorse","Balanced","Headfirst","Downhill"]],
+  ["WR","Elusive Route Runner",["360","Cutter","Double Dip","Recoup","Side Step"]],
+  ["WR","Gadget",["Side Step","Shifty","Dot!","Cutter","Extender"]],
+  ["WR","Gritty Possession",["Second Level","Outside Shield","Strong Grip","Workhorse","Sure Hands"]],
+  ["WR","Physical Route Runner",["Downhill","Press Pro","Sure Hands","50/50","Cutter"]],
+  ["WR","Route Artist",["Cutter","Lay Out","Recoup","Double Dip","Sure Hands"]],
+  ["WR","Speedster",["Side Step","Double Dip","Takeoff","Recoup","Shifty"]],
+  ["TE","Gritty Possession",["Workhorse","Strong Grip","Sure Hands","Outside Shield"]],
+  ["TE","Physical Route Runner",["Balanced","50/50","Cutter","Downhill","Sure Hands"]],
+  ["TE","Pure Possession",["Sure Hands","Wear Down","Strong Grip","Outside Shield","Balanced"]],
+  ["TE","Pure Blocker",["Strong Grip","Quick Drop","Outside Shield","Pocket Shield","Second Level"]],
+  ["TE","Vertical Threat",["Workhorse","Balanced","Takeoff","Recoup","50/50"]],
+  ["OL","Agile",["Screen Enforcer","Quick Step","Option Shield","Outside Shield","Quick Drop"]],
+  ["OL","Pass Protector",["Pocket Shield","Quick Drop","PA Shield","Strong Grip","Wear Down"]],
+  ["OL","Raw Strength",["Strong Grip","Workhorse","Second Level","Inside Shield","Ground N Pound"]],
+  ["OL","Well Rounded",["Pocket Shield","Outside Shield","Strong Grip","Option Shield","Inside Shield"]],
+  ["DL","Edge Setter",["Grip Breaker","Inside Disruptor","Outside Disruptor","Option Disruptor","Workhorse"]],
+  ["DL","Gap Specialist",["Grip Breaker","Inside Disruptor","Outside Disruptor","Option Disruptor","Workhorse"]],
+  ["DL","Power Rusher",["Pocket Disruptor","Duress","Grip Breaker","Workhorse","Take Down"]],
+  ["DL","Pure Power",["Grip Breaker","Pocket Disruptor","Inside Disruptor","Workhorse","Hammer"]],
+  ["DL","Speed Rusher",["Quick Jump","Duress","Take Down","Pocket Disruptor","Recoup"]],
+  ["LB","Lurker",["House Call","Knockout","Bouncer","Robber","Wrap Up"]],
+  ["LB","Signal Caller",["Take Down","Workhorse","Blow Up","Wrap Up","Hammer"]],
+  ["LB","Thumper",["Grip Breaker","Wrap Up","Aftershock","Blow Up","Hammer"]],
+  ["CB","Boundary",["Jammer","Blanket Coverage","Lay Out","Wrap Up","Quick Jump"]],
+  ["CB","Bump and Run",["Blanket Coverage","Jammer","House Call","Ballhawk","Knockout"]],
+  ["CB","Field",["Wrap Up","Robber","Knockout","Blanket Coverage","Ballhawk"]],
+  ["CB","Zone",["Knockout","Lay Out","House Call","Ballhawk","Bouncer"]],
+  ["S","Box Specialist",["Aftershock","Wrap Up","Hammer","Blow Up","Workhorse"]],
+  ["S","Coverage Specialist",["Ballhawk","Lay Out","House Call","Robber","Knockout"]],
+  ["S","Hybrid",["Wrap Up","Hammer","Knockout","Aftershock","Blow Up"]],
+  ["K/P","Accurate",["Chip Shot","Deep Range","Mega Leg"]],
+  ["K/P","Power",["Deep Range","Mega Leg","Coffin Corner"]]
+];
+const ABPOS = [...new Set(ABARCH.map(a => a[0]))];
+const abDesc = n => (ABPHYS[n] || ABMENT[n] || "").replace(/^\?/, "");
+const abWho = n => ABARCH.filter(a => a[2].includes(n)).map(a => `${a[1]} ${a[0]}`);
+const abNorm = s => " " + s.toLowerCase().replace(/[^a-z0-9/!]+/g, " ").trim() + " ";
+const abFind = q => { const s = abNorm(q); return Object.keys({...ABPHYS, ...ABMENT}).filter(n => s.includes(abNorm(n))).sort((a, b) => b.length - a.length)[0]; };
+let abP = "QB", abSel = null;
+function abDraw(){
+  const q = $("#abQ").value.trim().toLowerCase();
+  $("#abPos").innerHTML = ABPOS.map(p => `<button type="button" class="chip" data-p="${p}" aria-pressed="${!q && p === abP}">${p}</button>`).join("");
+  const btn = n => `<button type="button" class="ab-a${n === abSel ? " on" : ""}" data-a="${esc(n)}" aria-pressed="${n === abSel}">${esc(n)}</button>`;
+  const orph = ["K/P", "Archetype not confirmed", Object.keys(ABPHYS).filter(n => !abWho(n).length)];
+  const arch = (q ? [...ABARCH, orph].filter(a => a[2].some(n => n.toLowerCase().includes(q))) : [...ABARCH, orph].filter(a => a[0] === abP)).filter(a => a[2].length);
+  $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card"><h3>${esc(n)}<span>${p}${n === orph[1] ? "" : ` · ${ab.length} abilities`}</span></h3><div class="ab-list">${ab.map(btn).join("")}</div></section>`).join("")
+    : `<p class="hint">No archetype has a physical ability matching "${esc(q)}".</p>`;
+  $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(btn).join("");
+  if (!abSel) { $("#abDet").innerHTML = ""; $("#abDet").hidden = true; return; }
+  const who = abWho(abSel), ment = abSel in ABMENT;
+  $("#abDet").hidden = false;
+  $("#abDet").innerHTML = `<h3>${esc(abSel)} <span>${ment ? "Mental" : "Physical"}</span></h3><p>${esc(abDesc(abSel))}</p>`
+    + (ment ? `<p class="hint">Not tied to an archetype.</p>` : `<p class="hint">${who.length ? `Archetypes with it (${who.length}): ${esc(who.join(", "))}.` : "Confirmed in the game files, but which archetype gets it isn't confirmed yet."}</p>`)
+    + (ABPHYS[abSel]?.[0] === "?" ? `<p class="hint">Only this ability's icon was readable in the game files, so this description is our best guess.</p>` : "");
+}
+$("#abPos").addEventListener("click", e => { const b = e.target.closest("[data-p]"); if (b) { abP = b.dataset.p; $("#abQ").value = ""; abDraw(); } });
+$("#viewAb").addEventListener("click", e => { const b = e.target.closest("[data-a]"); if (b) { abSel = abSel === b.dataset.a ? null : b.dataset.a; abDraw(); } });
+$("#abQ").addEventListener("input", abDraw);
+abDraw();
+// Coach: templated answers for ability questions ("what abilities does a Speed Rusher get?", "what does Dot! do?").
+const ABPOSW = {QB:"quarterback", HB:"running back|halfback|rb", FB:"fullback", WR:"receiver|wideout", TE:"tight end", OL:"lineman|offensive line|ol",
+  DL:"defensive line|edge|dt|de", LB:"linebacker", CB:"corner", S:"safety", "K/P":"kicker|punter|k|p"};
+function pAbil(q){
+  const aq = /\babilit(y|ies)\b|archetype/i.test(q), s = abNorm(q);
+  const arch = ABARCH.filter(a => s.includes(abNorm(a[1])));
+  const ps = arch.filter(a => new RegExp(`\\b(${a[0].replace("/", "\\/")}|${ABPOSW[a[0]]})s?\\b`, "i").test(q));
+  const hit = ps.length ? ps : arch;
+  if (hit.length && (aq || /\b(get|have|has)\b/i.test(q)))
+    return pMd(hit.map(([p, n, ab]) => [`### ${n} ${p}`, ...ab.map(x => `- **${x}:** ${abDesc(x)}`)].join("\n")).join("\n"));
+  const n = abFind(q);
+  if (n && (aq || /what (is|does)|unlock|who gets|which/i.test(q))) {
+    const who = abWho(n);
+    return pMd([`### ${n}`, `- ${abDesc(n)}`, n in ABMENT ? "- Mental ability: any player can have it, it isn't tied to an archetype." : who.length ? `- Archetypes with it: ${who.join(", ")}.` : "- It's in the game files, but which archetype gets it isn't confirmed yet.",
+      ...(/unlock/i.test(q) && !(n in ABMENT) ? ["- It unlocks in Bronze, Silver, Gold and Platinum tiers as the player's key ratings rise. The board doesn't list the exact ratings yet."] : [])].join("\n"));
+  }
+  return "";
+}
+
 /* ---- recruiting & NIL plan ---- */
 // Program-level, year-agnostic: users may take a job in year 5, so nothing here depends on this save's roster or uncommitted NIL.
 // Hours: sources give only the endpoints (1-star ~350, 5-star ~1,000 preseason hours); in between is a straight-line estimate.
@@ -2220,7 +2379,9 @@ async function pAsk(q){
   const tp = pFindTeams(q)[0] || P.team;
   let html = "", plan = null;
   const fc = !fp && pFindCoach(q), sq = /\b(head coach|coaches|coaching staff|staff|coordinators?|oc|dc|hc)\b|who coaches/i.test(q) && !/dynasty|created|custom|own coach|real coach/i.test(q);
-  if (fc) { P.team = fc[0]; P.facts = `Coach on the board: ${sRow(fc[1], fc[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
+  const ah = pAbil(q);
+  if (ah) html = ah;
+  else if (fc) { P.team = fc[0]; P.facts = `Coach on the board: ${sRow(fc[1], fc[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
   else if (sq && tp) html = pStaff(q, tp);
   else if (fp) { P.team = fp[0]; P.facts = `Player on the board: ${pRow(fp[1], fp[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
   else if (rq && tp) html = pPlayers(q, tp);
