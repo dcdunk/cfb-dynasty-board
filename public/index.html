@@ -567,15 +567,14 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl .hint a{color:var(--accent-ink); font-weight:600}
 .sl-v{color:var(--accent)}
 .ab-q{font:inherit; font-size:13px; padding:8px 10px; min-width:240px; max-width:100%; background:var(--panel); color:var(--text); border:1px solid var(--line)}
-.ab-list{display:flex; flex-wrap:wrap; gap:6px; padding:4px 12px 12px}
-.ab-ment{display:flex; flex-wrap:wrap; gap:6px}
-.ab-a{font:inherit; font-size:12.5px; padding:5px 9px; cursor:pointer; background:transparent; color:var(--text); border:1px solid var(--line)}
-.ab-a:hover{border-color:var(--dim)}
-.ab-a.on{border-color:var(--accent); color:var(--accent-ink); font-weight:600}
-.ab-det{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); padding:10px 14px; margin:0 0 18px; max-width:760px}
-.ab-det h3{margin:0 0 4px; font-size:15px}
-.ab-det h3 span{font-size:10.5px; letter-spacing:.085em; text-transform:uppercase; color:var(--dim); font-weight:400; padding-left:6px}
-.ab-det p{margin:4px 0}
+.ab-list{list-style:none; margin:0; padding:2px 12px 10px}
+.ab-list li{display:grid; grid-template-columns:minmax(110px,34%) 1fr; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px}
+.ab-list li:first-child{border-top:0}
+.ab-list li span{color:var(--dim)}
+.ab-list li i{font-style:normal; opacity:.7}
+.ab-ment{padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); column-gap:24px; max-width:1500px}
+.ab-ment li:first-child{border-top:1px solid var(--line)}
+@media (max-width:420px){.ab-ment{grid-template-columns:1fr}}
 .sl .ab-src{margin-top:30px}
 
 .sl-head{display:flex; flex-wrap:wrap; gap:14px 24px; align-items:flex-end; justify-content:space-between}
@@ -842,17 +841,16 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   <header class="sl-head">
     <div>
       <h2 class="hh">Player Abilities</h2>
-      <p class="hint">Physical abilities come from a player's archetype and unlock as the player's ratings climb, in Bronze, Silver, Gold and Platinum tiers. Mental abilities aren't tied to an archetype. Pick a position, then click an ability to see what it does and who gets it.</p>
+      <p class="hint">Physical abilities come from a player's archetype and unlock as the player's ratings climb, in Bronze, Silver, Gold and Platinum tiers. Mental abilities aren't tied to an archetype. Pick a position to see its archetypes.</p>
     </div>
     <input class="ab-q" id="abQ" type="search" placeholder="Search an ability, e.g. Sure Hands" aria-label="Search abilities" autocomplete="off">
   </header>
   <div class="chips" id="abPos" role="group" aria-label="Position" style="margin:16px 0"></div>
-  <div class="ab-det" id="abDet" aria-live="polite"></div>
   <div class="sl-grid" id="abGrid"></div>
   <h2 class="hh" style="margin:34px 0 6px">Mental abilities</h2>
   <p class="hint" style="margin-bottom:16px">Any player can have these. In Road to Glory you pick three, and each stays active only while its meter stays high.</p>
-  <div class="ab-ment" id="abMent"></div>
-  <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files. Archetype lists come from <a href="https://collegefootball.gg/abilities/" target="_blank" rel="noopener">CollegeFootball.gg</a>, cross-checked with <a href="https://www.teamcrafters.net/rosters/CFB27/cfb27-beta/abilities" target="_blank" rel="noopener">TeamCrafters</a> and <a href="https://www.cfblabs.com/ability-descriptions" target="_blank" rel="noopener">CFB Labs</a>. How abilities work: <a href="https://www.ea.com/games/ea-sports-college-football/college-football-27/news/college-football-27-road-to-glory" target="_blank" rel="noopener">EA</a>. Descriptions are our own. Unlock ratings are left out until they're confirmed for CFB 27.</p>
+  <ul class="ab-list ab-ment" id="abMent"></ul>
+  <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files.</p>
 </section>
 
 <aside class="pchat" id="pChat" aria-labelledby="pTitle">
@@ -2063,25 +2061,18 @@ const abDesc = n => (ABPHYS[n] || ABMENT[n] || "").replace(/^\?/, "");
 const abWho = n => ABARCH.filter(a => a[2].includes(n)).map(a => `${a[1]} ${a[0]}`);
 const abNorm = s => " " + s.toLowerCase().replace(/[^a-z0-9/!]+/g, " ").trim() + " ";
 const abFind = q => { const s = abNorm(q); return Object.keys({...ABPHYS, ...ABMENT}).filter(n => s.includes(abNorm(n))).sort((a, b) => b.length - a.length)[0]; };
-let abP = "QB", abSel = null;
+let abP = "QB";
+const abRow = n => `<li><b>${esc(n)}</b><span>${esc(abDesc(n))}${ABPHYS[n]?.[0] === "?" ? ` <i title="Only this ability's icon was readable in the game files">(best guess)</i>` : ""}</span></li>`;
 function abDraw(){
   const q = $("#abQ").value.trim().toLowerCase();
   $("#abPos").innerHTML = ABPOS.map(p => `<button type="button" class="chip" data-p="${p}" aria-pressed="${!q && p === abP}">${p}</button>`).join("");
-  const btn = n => `<button type="button" class="ab-a${n === abSel ? " on" : ""}" data-a="${esc(n)}" aria-pressed="${n === abSel}">${esc(n)}</button>`;
   const orph = ["K/P", "Archetype not confirmed", Object.keys(ABPHYS).filter(n => !abWho(n).length)];
   const arch = (q ? [...ABARCH, orph].filter(a => a[2].some(n => n.toLowerCase().includes(q))) : [...ABARCH, orph].filter(a => a[0] === abP)).filter(a => a[2].length);
-  $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card"><h3>${esc(n)}<span>${p}${n === orph[1] ? "" : ` · ${ab.length} abilities`}</span></h3><div class="ab-list">${ab.map(btn).join("")}</div></section>`).join("")
+  $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card"><h3>${esc(n)}<span>${p}</span></h3><ul class="ab-list">${ab.map(abRow).join("")}</ul></section>`).join("")
     : `<p class="hint">No archetype has a physical ability matching "${esc(q)}".</p>`;
-  $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(btn).join("");
-  if (!abSel) { $("#abDet").innerHTML = ""; $("#abDet").hidden = true; return; }
-  const who = abWho(abSel), ment = abSel in ABMENT;
-  $("#abDet").hidden = false;
-  $("#abDet").innerHTML = `<h3>${esc(abSel)} <span>${ment ? "Mental" : "Physical"}</span></h3><p>${esc(abDesc(abSel))}</p>`
-    + (ment ? `<p class="hint">Not tied to an archetype.</p>` : `<p class="hint">${who.length ? `Archetypes with it (${who.length}): ${esc(who.join(", "))}.` : "Confirmed in the game files, but which archetype gets it isn't confirmed yet."}</p>`)
-    + (ABPHYS[abSel]?.[0] === "?" ? `<p class="hint">Only this ability's icon was readable in the game files, so this description is our best guess.</p>` : "");
+  $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(abRow).join("");
 }
 $("#abPos").addEventListener("click", e => { const b = e.target.closest("[data-p]"); if (b) { abP = b.dataset.p; $("#abQ").value = ""; abDraw(); } });
-$("#viewAb").addEventListener("click", e => { const b = e.target.closest("[data-a]"); if (b) { abSel = abSel === b.dataset.a ? null : b.dataset.a; abDraw(); } });
 $("#abQ").addEventListener("input", abDraw);
 abDraw();
 // Coach: templated answers for ability questions ("what abilities does a Speed Rusher get?", "what does Dot! do?").

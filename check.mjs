@@ -157,12 +157,11 @@ const inPage = async () => {
   ok($$("#abGrid .sl-card").length === 4 && /Backfield Creator/.test($("#abGrid").textContent), "Abilities: QB should show 4 archetypes");
   $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
-  $('#abGrid [data-a="Duress"]').click(); await wait(50);
-  ok(!$("#abDet").hidden && /Power Rusher DL/.test($("#abDet").textContent) && /Speed Rusher DL/.test($("#abDet").textContent), "Abilities: Duress detail should list its archetypes");
+  ok(/Puts more pressure on the quarterback/.test($("#abGrid").textContent), "Abilities: descriptions should show on the cards without clicking");
   find("#abQ", "sure hands");
   ok($$("#abGrid .sl-card").length === 6, `Abilities: Sure Hands should be in 6 archetypes, got ${$$("#abGrid .sl-card").length}`);
   find("#abQ", "");
-  ok($$("#abMent .ab-a").length === 16 && !/Hot Head/.test($("#abMent").textContent), "Abilities: expected the 16 mental abilities, without Hot Head");
+  ok($$("#abMent li").length === 16 && !/Hot Head/.test($("#abMent").textContent), "Abilities: expected the 16 mental abilities, without Hot Head");
   ok(!/Battering Ram/.test(JSON.stringify(ABARCH)) && ABARCH.every(a => a[2].every(n => n in ABPHYS)), "Abilities: every archetype ability needs a description, and no Battering Ram");
   $('#abPos [data-p="K/P"]').click(); await wait(50);
   ok(/Field Flip/.test($("#abGrid").textContent), "Abilities: Field Flip should show under K/P");
