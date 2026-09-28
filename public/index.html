@@ -574,6 +574,11 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .ab-ment{padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); column-gap:24px; max-width:1500px}
 .ab-ment li:first-child{border-top:1px solid var(--line)}
 @media (max-width:420px){.ab-ment{grid-template-columns:1fr}}
+.ab-meta dl{display:flex; flex-wrap:wrap; gap:8px 28px; margin:0 0 18px; font-size:12.5px}
+.ab-meta dt{font-size:10.5px; letter-spacing:.085em; text-transform:uppercase; color:var(--dim)}
+.ab-meta dd{margin:2px 0 0; max-width:48ch}
+.ab-each{margin:0; padding:8px 12px 0; font-size:11.5px}
+.ab-list b small{font-weight:400; color:var(--dim); font-size:10.5px}
 .sl .ab-src{margin-top:30px}
 
 .sl-head{display:flex; flex-wrap:wrap; gap:14px 24px; align-items:flex-end; justify-content:space-between}
@@ -657,7 +662,7 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   <button class="tab" role="tab" id="tabHouse" aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
   <button class="tab" role="tab" id="tabRec" aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
   <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
-  <button class="tab" role="tab" id="tabAb" aria-controls="viewAb" aria-selected="false" tabindex="-1" type="button">Player Abilities</button>
+  <button class="tab" role="tab" id="tabAb" aria-controls="viewAb" aria-selected="false" tabindex="-1" type="button">Abilities</button>
 </div>
 
 <div id="viewBoard" role="tabpanel" aria-labelledby="tabBoard">
@@ -839,17 +844,27 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
 <section id="viewAb" class="sl ab" role="tabpanel" aria-labelledby="tabAb" hidden>
   <header class="sl-head">
     <div>
-      <h2 class="hh">Player Abilities</h2>
-      <p class="hint">Physical abilities come from a player's archetype and unlock as the player's ratings climb, in Bronze, Silver, Gold and Platinum tiers. Mental abilities aren't tied to an archetype. Pick a position to see its archetypes.</p>
+      <h2 class="hh">Abilities</h2>
+      <div class="chips" id="abMode" role="group" aria-label="Player or coach abilities" style="margin-top:10px"></div>
     </div>
-    <input class="ab-q" id="abQ" type="search" placeholder="Search an ability, e.g. Sure Hands" aria-label="Search abilities" autocomplete="off">
+    <input class="ab-q" id="abQ" type="search" placeholder="Search an ability" aria-label="Search abilities" autocomplete="off">
   </header>
-  <div class="chips" id="abPos" role="group" aria-label="Position" style="margin:16px 0"></div>
-  <div class="sl-grid" id="abGrid"></div>
-  <h2 class="hh" style="margin:34px 0 6px">Mental abilities</h2>
-  <p class="hint" style="margin-bottom:16px">Any player can have these. In Road to Glory you pick three, and each stays active only while its meter stays high.</p>
-  <ul class="ab-list ab-ment" id="abMent"></ul>
-  <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files.</p>
+  <div id="abPlayer">
+    <p class="hint ab-intro">Physical abilities come from a player's archetype and unlock as the player's ratings climb, in Bronze, Silver, Gold and Platinum tiers. Mental abilities aren't tied to an archetype. Pick a position to see its archetypes.</p>
+    <div class="chips" id="abPos" role="group" aria-label="Position" style="margin:16px 0"></div>
+    <div class="sl-grid" id="abGrid"></div>
+    <h2 class="hh" style="margin:34px 0 6px">Mental abilities</h2>
+    <p class="hint" style="margin-bottom:16px">Any player can have these. In Road to Glory you pick three, and each stays active only while its meter stays high.</p>
+    <ul class="ab-list ab-ment" id="abMent"></ul>
+    <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files.</p>
+  </div>
+  <div id="abCoach" hidden>
+    <p class="hint ab-intro">Coaches earn coach points (CP) and spend them on abilities, tier by tier. Each archetype's perk earns extra coach XP. Base archetypes are open from the start; the rest unlock by hitting a goal and spending CP. Pick an archetype.</p>
+    <div class="chips" id="abArch" role="group" aria-label="Coach archetype" style="margin:16px 0"></div>
+    <div class="ab-meta" id="abMeta"></div>
+    <div class="sl-grid" id="abCGrid"></div>
+    <p class="hint ab-src">Costs and values come from CFB 27 game-file data.</p>
+  </div>
 </section>
 
 <aside class="pchat" id="pChat" aria-labelledby="pTitle">
@@ -2060,10 +2075,85 @@ const abDesc = n => (ABPHYS[n] || ABMENT[n] || "").replace(/^\?/, "");
 const abWho = n => ABARCH.filter(a => a[2].includes(n)).map(a => `${a[1]} ${a[0]}`);
 const abNorm = s => " " + s.toLowerCase().replace(/[^a-z0-9/!]+/g, " ").trim() + " ";
 const abFind = q => { const s = abNorm(q); return Object.keys({...ABPHYS, ...ABMENT}).filter(n => s.includes(abNorm(n))).sort((a, b) => b.length - a.length)[0]; };
-let abP = "QB";
+let abP = "QB", abM = "player", abC = "Recruiter";
 const abRow = n => `<li><b>${esc(n)}</b><span>${esc(abDesc(n))}</span></li>`;
+
+/* ---- coach abilities ---- */
+// Names and unlocks: CollegeFootball.gg. Costs, perks and values: prestonchoate.dev, mined from the CFB 27 game files (dynasty tuning data);
+// where the two disagree the game-file numbers win. Descriptions are our own. POS: branch bought once per position group.
+const CPOS = "QB, RB/FB, WR/TE, OL, DL, LB, DB and K/P";
+const CARCH = [
+  {n:"Recruiter", g:"Base", u:"Available from the start", perk:"Firm Handshakes: +100 coach XP for every recruit you sign", cost:"15, 20, 25, 30 CP per tier (K/P 10, 10, 15, 15)", pos:true,
+   br:[["Every position group", [["Advanced Look","Recruits at the position take less time to fully scout."],["Persuasive Personality","Better chance to sway recruits at the position."],["Magnetic Personality","High school recruits at the position start with more interest."],["Portal King","Transfers at the position start with more interest."]]]]},
+  {n:"Motivator", g:"Base", u:"Available from the start", perk:"Grow Together: +7 coach XP every time a player levels up", cost:"15, 20, 25, 30 CP per tier (K/P 10, 10, 15, 15)", pos:true,
+   br:[["Every position group", [["Extra Gear","Boosts Toughness, Stamina and Injury."],["Hot Hand","Players stay hot through timeouts, quarter breaks and into the next game."],["Put In Work","Bigger offseason training gains (+5% XP as head coach)."],["Locked In","Players start the 4th quarter hot in close games."]]]]},
+  {n:"Tactician", g:"Base", u:"Available from the start", perk:"Winner: +450 coach XP for every win", cost:"20 CP per tier",
+   br:[["Passing Game (QB)", [["Mobile QB Ratings Boost","Throw on the Run and Change of Direction."],["Passing QB Ratings Boost","Throw Under Pressure and Break Sack."],["Mobile QB Ratings Boost 2","Spin, Juke and Ball Carrier Vision."],["Passing QB Ratings Boost 2","Short and Medium Accuracy."]]],
+       ["Running Game (RB/FB)", [["RB Ratings Boost","Pass Block and Run Block."],["RB Ratings Boost 2","Trucking and Break Tackle."],["RB Ratings Boost 3","Spin, Juke and Ball Carrier Vision."],["RB Ratings Boost 4","Catching and Short Route."]]],
+       ["Receiving Game (WR/TE)", [["WR/TE Ratings Boost","Run Block Power and Run Block Finesse."],["WR/TE Ratings Boost 2","Juke and Spin."],["WR/TE Ratings Boost 3","Short and Medium Route."],["WR/TE Ratings Boost 4","Catching and Catch in Traffic."]]],
+       ["Blocking (OL)", [["Pass Blocking OL Ratings Boost","Pass Block and Impact Block."],["Run Blocking OL Ratings Boost","Run Block and Lead Block."],["Finesse OL Ratings Boost","Run Block Finesse and Pass Block Finesse."],["Power OL Ratings Boost","Pass Block Power and Run Block Power."]]],
+       ["Defensive Line (DL)", [["DL Ratings Boost","Change of Direction and Pursuit."],["DL Ratings Boost 2","Finesse Moves and Block Shedding."],["DL Ratings Boost 3","Power Moves and Hit Power."],["DL Ratings Boost 4","Tackle and Play Recognition."]]],
+       ["Linebackers (LB)", [["LB Ratings Boost","Finesse Moves and Block Shedding."],["LB Ratings Boost 2","Pursuit and Play Recognition."],["LB Ratings Boost 3","Man and Zone Coverage."],["LB Ratings Boost 4","Tackle and Hit Power."]]],
+       ["Secondary (DB)", [["DB Ratings Boost","Spin, Juke and Ball Carrier Vision."],["DB Ratings Boost 2","Catching and Jumping."],["DB Ratings Boost 3","Man Coverage and Pursuit."],["DB Ratings Boost 4","Zone Coverage and Play Recognition."]]],
+       ["Cross Training", [["Cross Train OL as DL","OL gain Power Moves, Block Shedding, Play Recognition and Pursuit."],["Cross Train DL as OL","DL gain Pass Block, Run Block, Run Block Power and Run Block Finesse."],["Cross Train WR as DB","WRs gain Man and Zone Coverage, Pursuit and Play Recognition."],["Cross Train DB as WR","DBs gain Short, Medium and Deep Route and Release."]]]]},
+  {n:"Elite Recruiter", g:"Elite", u:"Sign two top 5 recruiting classes and spend 200 CP in Recruiter", perk:"Firmer Handshakes: +200 coach XP for every recruit you sign", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+   br:[["Every position group", [["Ideal Situation","Raises your ideal pitch grades for recruits at the position."],["Upsell","Your My School grades carry more weight with recruits at the position."],["Most Influential","Every recruiting action earns a little more influence."],["Always Be Crootin'","More recruiting hours every week (+15 as head coach)."]]]]},
+  {n:"Master Motivator", g:"Elite", u:"Have 5 players drafted and spend 200 CP in Motivator", perk:"Let's Grow: +15 coach XP every time a player levels up", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+   br:[["Every position group", [["Quick Recovery","Players recover from wear and tear faster."],["Icy Veins","Players start games with a composure boost."],["Family Atmosphere","Players are less likely to transfer."],["Everybody Eats","More XP from everything outside practice (+5% as head coach)."]]]]},
+  {n:"Scheme Guru", g:"Elite", u:"Win 8 games against top 25 teams and spend 200 CP in Tactician", perk:"Winners Win: +900 coach XP for every win", cost:"30 CP per tier",
+   br:[["Fast Tempo (Offense)", [["Battery Pack","Your offense tires more slowly in hurry up."],["Caught Napping","Defenders take longer to look to the sideline at the snap."],["On Their Heels","Team composure boost for first downs gained in hurry up."],["Tipped Your Hand","Chance to see the coverage shell in hurry up."]]],
+       ["Pass Game (Offense)", [["Take What's There","Better catching on passes of 10 yards or less."],["Chew Up Yards","Better catching on passes up to 20 yards."],["Stretch The Field","Better catching on passes anywhere on the field."],["We See You","Chance to spot the blitz after the snap."]]],
+       ["Ground & Pound (Offense)", [["Wear 'Em Down","The DL tires every time you run for 4+ yards."],["Demoralizing","The DL and LBs tire every time you run for 4+ yards."],["Keep Blocks Longer","Defenders disengage from run blocks less often."],["To The Whistle","Defenders shed run blocks less often."]]],
+       ["Discipline (Offense)", [["Hater Blockers","Road crowd noise hurts your offense a little less."],["Teflon","Road crowd noise hurts your offense a lot less."],["Polished","Slightly fewer offensive penalties."],["Clean Sheet Offense","Far fewer offensive penalties."]]],
+       ["Fast Tempo (Defense)", [["Gas Tank","Your defense tires more slowly."],["Not So Fast","Defenders look to the sideline faster at the snap."],["Cardio Kings","The DL keeps its shed ability against hurry up."],["Camouflaged Coverage","Harder for hurry up offenses to read your coverage shell."]]],
+       ["Pass Game (Defense)", [["Puncher's Chance","More knockouts on passes of 10 yards or less."],["No Mid Here","More knockouts on passes up to 20 yards."],["Nothing Deep","More knockouts on passes anywhere on the field."],["Master Of Disguise","Protects your blitzes from being spotted after the snap."]]],
+       ["Ground & Pound (Defense)", [["Keep 'Em Coming","The DL tires more slowly on run plays."],["Fresh Legs","The DL and LBs tire more slowly on run plays."],["Hands Off","Defenders disengage from blocks better on runs."],["He Shed","Less time between block shed attempts."]]],
+       ["Discipline (Defense)", [["Unfriendly Confines","Home crowd noise hits opponents a little harder."],["Too Loud???","Home crowd noise hits opponents a lot harder."],["No Free Yards","Slightly fewer defensive penalties."],["Clean Sheet Defense","Far fewer defensive penalties."]]]]},
+  {n:"Architect", g:"Hybrid", u:"Win 4 rivalry games and spend 200 CP in both Tactician and Motivator", perk:"Max Gains: +400 coach XP when a player maxes a skill group", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+   br:[["Every position group", [["Can't Stop, Won't Stop","Players earn bonus XP for every three game win streak."],["Star Maker","Starters gain XP faster (+10% as head coach)."],["Limitless","Chance to raise a random skill cap when a player levels up."],["Put A Ring On It","Chance to raise a player's best skill cap when you win a conference or national title."]]]]},
+  {n:"Strategist", g:"Hybrid", u:"Win 4 bowl games and spend 200 CP in both Tactician and Recruiter", perk:"Show Don't Tell: +1,000 coach XP for each visiting prospect when you win", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+   br:[["Every position group", [["Making Friends","Complimentary visits carry more influence."],["Hospitality","Visits make a bigger impression on prospects."],["Lower The Bar","Recruits' dealbreakers are easier to satisfy."],["Mind Reader","Better chance to learn a recruit's dev trait while scouting."]]]]},
+  {n:"Talent Developer", g:"Hybrid", u:"Have 2 players drafted in the 1st round and spend 200 CP in both Motivator and Recruiter", perk:"Draft Dividends: +2,000 coach XP when a player is drafted", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+   br:[["Every position group", [["Field Study","More XP from in-game goals."],["Whisperer","Freshmen and sophomores progress faster."],["Home Sweet Home","Bigger pipeline bonus when recruiting the position."],["Pay It Forward","Players get bonus XP when a teammate at their position is drafted."]]]]},
+  {n:"Program Builder", g:"Leadership", u:"Win 5 playoff games and spend 300 CP in any archetype. Head coach only", perk:"Winning Together: +75 coach XP whenever a school grade or prestige goes up", cost:"40 CP per tier",
+   br:[["Coaching Family", [["Forever Home","Your coordinators are less likely to be poached."],["Deal Sweetener","Coordinators are more likely to accept your offer."],["Cream Of The Crop","Better coordinators show up in your hiring pool."]]],
+       ["Set The Tone", [["Home Field Advantage","Road teams feel your home crowd more."],["Road Warriors","Your team is shielded from road crowds."],["Not Intimidated","Extra protection from the crowd in rivalry games."]]],
+       ["Roster Retention", [["Best Advice","Players projected in rounds 3 to 7 are less likely to go pro."],["Let's Run It Back","Players projected in round 2 are less likely to go pro."],["Delay Sunday","Players projected in round 1 are less likely to go pro."]]],
+       ["High Integrity", [["Gift Of Gab","3 more persuade attempts per season."],["Roster Retainer","Persuades succeed more often."],["Full Refund","A successful persuade gives the attempt back."]]],
+       ["Faster Progression", [["Smart Goals","+25% coach XP from completed goals."],["Portal Preview","See other schools' at risk players in My School."],["Friends & Family Discount","Archetypes cost less when another coach on staff owns them."]]],
+       ["Relationship Builder", [["Invest","Your two best pipelines go up a tier."],["Making Inroads","Your five best pipelines go up a tier."],["Share The Wealth","Your five worst pipelines go up a tier."]]],
+       ["Strong Roots", [["Giving Back","Your primary pipeline goes up a tier."],["Household Name","Recruits from your primary pipeline start with more interest."],["Hometown Discount","Recruiting actions earn extra influence with primary pipeline recruits."]]]]},
+  {n:"CEO", g:"Leadership", u:"Win two national titles and spend 500 CP in any archetype. Head coach only", perk:"Big Game Bonus: +12,500 coach XP for every playoff win", cost:"40 CP each, all single tier",
+   br:[["CEO abilities", [["Gainz Getter","Better chance for players to upgrade their dev trait."],["Second Chance Keeper","If a persuade fails, you get a second try."],["Lasting Impression","Extra interest for every 10 hours spent on a recruit."],["More The Merrier","Up to 8 recruits can visit in a week, up from 4."],["Gasoline","Players start hot in top 5, rivalry, bowl and title games."],["Last Dance","Bonus interest for every visit a recruit took before yours."],["Dream School","Chance of an instant commit when you're the recruit's top school."],["Bundle Discount","Abilities cost 2 CP less for each staff coach who already owns them."],["Senior Superlatives","Rising seniors get +1 to every skill group cap."]]]]},
+  {n:"Rainmaker", g:"Special", u:"MVP+ members only", perk:"", cost:"15 CP each",
+   br:[["Rainmaker abilities", [["Deal Maker","NIL offers carry more recruiting influence."],["Budget Booster","More Dynasty Points from your My School grades."],["Staying Power","NIL matters more when a player weighs leaving."],["Contract Incentives","More Dynasty Points from meeting your AD's expectations."]]]]},
+  {n:"Visionary", g:"Special", u:"Create a coach in Madden NFL 27 Franchise", perk:"", cost:"15 CP each",
+   br:[["Visionary abilities", [["Pro Pipeline","Raises your players' NFL draft stock."],["Practice Makes Perfect","Players progress more from practice."],["Hot Start","Better chance for players to start hot from practice."],["Signing Bonus","Extra coach points when you sign a new contract."]]]]}
+];
+const cFind = q => { const s = abNorm(q); let best;
+  for (const a of CARCH) for (const [b, ab] of a.br) for (const [n, d] of ab) if (s.includes(abNorm(n)) && (!best || n.length > best[2].length)) best = [a, b, n, d];
+  return best; };
+function cDrawAb(q){
+  $("#abArch").innerHTML = CARCH.map(a => `<button type="button" class="chip" data-c="${esc(a.n)}" aria-pressed="${!q && a.n === abC}">${esc(a.n)}</button>`).join("");
+  const row = (t, n, d) => `<li><b>${t ? `<small>T${t}</small> ` : ""}${esc(n)}</b><span>${esc(d)}</span></li>`;
+  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}<span>${esc(q ? a.n : a.g)}</span></h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list">${
+    ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d) : "").join("")}</ul></section>`;
+  if (q) {
+    const hits = CARCH.flatMap(a => a.br.filter(([, ab]) => ab.some(([n]) => n.toLowerCase().includes(q))).map(([b, ab]) => card(a, b, ab, false)));
+    $("#abMeta").innerHTML = "";
+    $("#abCGrid").innerHTML = hits.join("") || `<p class="hint">No coach ability matches "${esc(q)}".</p>`;
+    return;
+  }
+  const a = CARCH.find(x => x.n === abC);
+  $("#abMeta").innerHTML = `<dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}<div><dt>Cost</dt><dd>${esc(a.cost)}</dd></div></dl>`;
+  $("#abCGrid").innerHTML = a.br.map(([b, ab]) => card(a, b, ab, true)).join("");
+}
 function abDraw(){
   const q = $("#abQ").value.trim().toLowerCase();
+  $("#abMode").innerHTML = [["player","Player"],["coach","Coach"]].map(([k, t]) => `<button type="button" class="chip" data-m="${k}" aria-pressed="${k === abM}">${t}</button>`).join("");
+  $("#abPlayer").hidden = abM !== "player"; $("#abCoach").hidden = abM !== "coach";
+  $("#abQ").placeholder = abM === "player" ? "Search an ability, e.g. Sure Hands" : "Search an ability, e.g. Portal King";
+  if (abM === "coach") return cDrawAb(q);
   $("#abPos").innerHTML = ABPOS.map(p => `<button type="button" class="chip" data-p="${p}" aria-pressed="${!q && p === abP}">${p}</button>`).join("");
   const orph = ["K/P", "Archetype not confirmed", Object.keys(ABPHYS).filter(n => !abWho(n).length)];
   const arch = (q ? [...ABARCH, orph].filter(a => a[2].some(n => n.toLowerCase().includes(q))) : [...ABARCH, orph].filter(a => a[0] === abP)).filter(a => a[2].length);
@@ -2072,6 +2162,8 @@ function abDraw(){
   $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(abRow).join("");
 }
 $("#abPos").addEventListener("click", e => { const b = e.target.closest("[data-p]"); if (b) { abP = b.dataset.p; $("#abQ").value = ""; abDraw(); } });
+$("#abMode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (b) { abM = b.dataset.m; $("#abQ").value = ""; abDraw(); } });
+$("#abArch").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) { abC = b.dataset.c; $("#abQ").value = ""; abDraw(); } });
 $("#abQ").addEventListener("input", abDraw);
 abDraw();
 // Coach: templated answers for ability questions ("what abilities does a Speed Rusher get?", "what does Dot! do?").
@@ -2090,6 +2182,12 @@ function pAbil(q){
     return pMd([`### ${n}`, `- ${abDesc(n)}`, n in ABMENT ? "- Mental ability: any player can have it, it isn't tied to an archetype." : who.length ? `- Archetypes with it: ${who.join(", ")}.` : "- It's in the game files, but which archetype gets it isn't confirmed yet.",
       ...(/unlock/i.test(q) && !(n in ABMENT) ? ["- It unlocks in Bronze, Silver, Gold and Platinum tiers as the player's key ratings rise. The board doesn't list the exact ratings yet."] : [])].join("\n"));
   }
+  const c = cFind(q), ca = CARCH.filter(x => abNorm(q).includes(abNorm(x.n))).sort((a, b) => b.n.length - a.n.length)[0];
+  if (c && (aq || /what (is|does)|unlock|coach/i.test(q)))
+    return pMd([`### ${c[2]}`, `- ${c[3]}`, `- Coach ability: ${c[0].n} archetype, ${c[1]}.`, `- Unlock: ${c[0].u}.`].join("\n"));
+  if (ca && /\b(archetype|abilit(y|ies)|unlock|perk)\b/i.test(q))
+    return pMd([`### ${ca.n} (coach archetype)`, `- **Unlock:** ${ca.u}.`, ...(ca.perk ? [`- **Perk:** ${ca.perk}.`] : []), `- **Cost:** ${ca.cost}.`,
+      ...ca.br.map(([b, ab]) => `- **${b}:** ${ab.map(x => x[0]).join(", ")}.`)].join("\n"));
   return "";
 }
 

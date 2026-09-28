@@ -165,7 +165,19 @@ const inPage = async () => {
   ok(!/Battering Ram/.test(JSON.stringify(ABARCH)) && ABARCH.every(a => a[2].every(n => n in ABPHYS)), "Abilities: every archetype ability needs a description, and no Battering Ram");
   $('#abPos [data-p="K/P"]').click(); await wait(50);
   ok(/Field Flip/.test($("#abGrid").textContent), "Abilities: Field Flip should show under K/P");
-  ok(!/—/.test($("#viewAb").innerText), "Abilities: no em dashes in copy");
+  ok(!/—/.test($("#viewAb").textContent), "Abilities: no em dashes in copy");
+  // Coach abilities: Player/Coach toggle, archetype chips, unlocks, search.
+  $('#abMode [data-m="coach"]').click(); await wait(50);
+  ok($("#abPlayer").hidden && !$("#abCoach").hidden, "Abilities: Coach toggle should swap views");
+  ok($$("#abArch .chip").length === 13 && /Portal King/.test($("#abCGrid").textContent) && /Firm Handshakes/.test($("#abMeta").textContent), "Abilities: Recruiter should show its abilities and perk");
+  $('#abArch [data-c="Scheme Guru"]').click(); await wait(50);
+  ok($$("#abCGrid .sl-card").length === 8 && /top 25/.test($("#abMeta").textContent), "Abilities: Scheme Guru should show 8 branches and its unlock");
+  find("#abQ", "whisperer");
+  ok(/Talent Developer/.test($("#abCGrid").textContent), "Abilities: coach search should find Whisperer");
+  find("#abQ", "");
+  $('#abMode [data-m="player"]').click(); await wait(50);
+  ok(!$("#abPlayer").hidden && $("#abCoach").hidden, "Abilities: Player toggle should swap back");
+  ok($("#tabAb").textContent === "Abilities", "Abilities: tab should be named Abilities");
 
   // Dynasty planner: plain chat. Parses team/difficulty/extras from text and replies in prose only.
   $("#pOpen").click(); await wait(50);
@@ -208,6 +220,9 @@ const inPage = async () => {
   m = await ask("how do I unlock Dot!?");
   ok(/Dot!/.test(m) && /Pocket Passer QB/.test(m) && /Gadget WR/.test(m) && /Bronze/.test(m), "Coach: Dot! unlock answer wrong: " + m);
   ok(/any player/.test(await ask("what does Road Dog do?")), "Coach: mental ability answer wrong");
+  m = await ask("what does Portal King do?");
+  ok(/Recruiter/.test(m) && /transfers/i.test(m), "Coach: Portal King answer wrong: " + m);
+  ok(/two national titles/.test(await ask("how do I unlock the CEO archetype?")), "Coach: CEO unlock answer wrong");
   ok(/Physical Route Runner WR/.test(await ask("physical route runner WR abilities")) && !/Physical Route Runner TE/.test([...$$("#pLog .pm.bot")].pop().textContent), "Coach: position should narrow a shared archetype name");
   ok(/Georgia Tech/.test(await ask("casual georgia tech")), "Planner: longest team name should win (Georgia Tech)");
   ok(/Minnesota/.test(await ask("i want to take a former powerhouse program back to glory, what are 3 options?")), "Coach: back-to-glory should answer from board data (Minnesota has 6 titles)");
