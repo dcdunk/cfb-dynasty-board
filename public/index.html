@@ -2336,25 +2336,68 @@ const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
 const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
   "I'll suggest house rules, a recruiting approach and sliders from this site's data. Then say \"make it harder\", \"no transfers\" and so on."].join("\n"));
+// Relative requests ("a little less difficult", "much harder") nudge the last plan rule by rule instead of re-rolling it.
+const PDOWN = /\b(easier|lighter|softer|less (difficult|hard|tough|brutal|strict|challenging|punishing|intense)|not (as|so) (hard|tough|difficult|brutal)|tone (it )?down|dial (it )?back|ease (it )?(up|off)|too (hard|tough|difficult|much|brutal))\b/;
+const PUP = /\b(harder|tougher|more (difficult|challenging|brutal|punishing|intense)|crank (it )?up|turn (it )?up|too easy|not (hard|tough) enough)\b/;
+const pAmt = s => /\b(a (little|bit|touch|tad)|slightly|little)\b/.test(s) ? 1 : /\b(much|way|a lot|lots|significantly|drastically)\b/.test(s) ? 4 : 2;
+const PTARGET = {cas:1, std:2, hard:3};
+// One notch easier (dir -1) or harder (+1). Never touches rules the user asked for by name (keep).
+function pStep(rules, t, dir, keep = []){
+  const fits = r => !r.u && r.w(t) && !rules.includes(r.id), nm = id => unesc(HR[id].n), free = rules.filter(id => !keep.includes(id));
+  if (dir < 0) {
+    const id = [...free].sort((a, b) => HR[b].l - HR[a].l)[0]; if (!id) return null;
+    const alt = HRULES.filter(r => r.c === HR[id].c && fits(r) && r.l < HR[id].l).sort((a, b) => b.l - a.l)[0];
+    return alt ? {rules:rules.map(x => x === id ? alt.id : x), note:`Swapped **${nm(id)}** for the lighter **${nm(alt.id)}**`}
+      : {rules:rules.filter(x => x !== id), note:`Dropped **${nm(id)}**`};
+  }
+  const used = new Set(rules.map(id => HR[id].c));
+  const cat = rules.length < 8 && HCATS.map(c => c[0]).find(c => !used.has(c) && HRULES.some(r => r.c === c && fits(r)));
+  if (cat) { const r = HRULES.filter(x => x.c === cat && fits(x)).sort((a, b) => Math.abs(a.l - 2) - Math.abs(b.l - 2))[0];
+    return {rules:rules.concat(r.id), note:`Added **${nm(r.id)}**`}; }
+  for (const id of [...free].sort((a, b) => HR[a].l - HR[b].l)) {
+    const alt = HRULES.filter(r => r.c === HR[id].c && fits(r) && r.l > HR[id].l).sort((a, b) => a.l - b.l)[0];
+    if (alt) return {rules:rules.map(x => x === id ? alt.id : x), note:`Swapped **${nm(id)}** for the tougher **${nm(alt.id)}**`};
+  }
+  return null;
+}
+// Nudge a fresh rule set until its strain label matches the difficulty asked for (Hardcore used to land on Brutal).
+function pFit(rules, t, strict, keep){
+  for (let i = 0; i < 12; i++) {
+    const d = strainLbl(strainOf(rules))[1] - PTARGET[strict]; if (!d) break;
+    const st = pStep(rules, t, d > 0 ? -1 : 1, keep); if (!st) break; rules = st.rules;
+  }
+  return rules.sort((a, b) => catIx(a) - catIx(b));
+}
 function pPlan(q){
   const s = norm(q), teams = pFindTeams(q);
   if (/\b(random|surprise|any team|pick (a|one) for me)\b/.test(s)) teams.unshift(DATA[Math.floor(Math.random() * DATA.length)]);
   const t = teams[0] || P.team;
   if (!t) return null;
   const heard = teams.length || PDIFF.some(([, re]) => re.test(s)) || PPRE.some(([, re]) => re.test(s)) || PRULE.some(([, re]) => re.test(s))
-    || /creat\w* (a )?coach|custom coach|own coach|harder|tougher|easier|lighter/.test(s);
+    || /creat\w* (a )?coach|custom coach|own coach|rebuild/.test(s) || PDOWN.test(s) || PUP.test(s);
   if (!heard) return null;
-  const more = /\b(harder|tougher)\b/.test(s), less = /\b(easier|lighter)\b/.test(s);
-  let strict = (PDIFF.find(([, re]) => re.test(s)) || [P.plan && t === P.team ? P.plan.strict : "std"])[0];
-  if (P.plan && t === P.team && (more || less)) strict = more ? (P.plan.strict === "cas" ? "std" : "hard") : (P.plan.strict === "hard" ? "std" : "cas");
+  const prev = P.plan && t === P.plan.t ? P.plan : null, dir = PDOWN.test(s) ? -1 : PUP.test(s) ? 1 : 0;
+  const s2 = s.replace(PDOWN, " ").replace(PUP, " ");   // "less difficult" must not also read as "difficult"
+  let strict = (PDIFF.find(([, re]) => re.test(s2)) || [prev ? prev.strict : "std"])[0];
   const pre = (PPRE.find(([, re]) => re.test(s)) || [null])[0];
   const force = [...new Set(PRULE.filter(([, re]) => re.test(s)).map(x => x[0]))].filter(id => HR[id].w(t));
   const created = /creat\w* (a )?coach|custom coach|my own coach|own coach|create a coach/.test(s) || (P.plan && t === P.team && P.plan.created);
-  const same = P.plan && t === P.plan.t && !teams.length, prev = same ? P.plan : null;
+  const keep = [...new Set([...(prev ? prev.keep || [] : []), ...force])], rebuild = /rebuild/.test(s) || !!(prev && prev.rebuild);
+  if (prev && dir && !pre) {
+    let rules = prev.rules.filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force); const notes = [];
+    for (let i = 0; i < pAmt(s); i++) { const st = pStep(rules, t, dir, keep); if (!st) break; rules = st.rules; notes.push(st.note); }
+    const lvl = strainLbl(strainOf(rules))[1];
+    return {...prev, created, keep, rebuild, rules:rules.sort((a, b) => catIx(a) - catIx(b)), strict:lvl <= 1 ? "cas" : lvl === 2 ? "std" : "hard",
+      change:{notes:notes.length ? notes : [dir < 0 ? "Already as light as the rules allow" : "Already as tough as the rules allow"], from:strainOf(prev.rules)}};
+  }
   // A follow-up like "no transfers" edits the last plan in place instead of re-rolling every rule.
-  if (prev && strict === prev.strict && !pre)
-    return {...prev, created, rules:prev.rules.filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force).sort((a, b) => catIx(a) - catIx(b))};
-  return {t, strict, pre:pre || (prev && strict === prev.strict ? prev.pre : null), rules:pRules(t, strict, pre, force), created};
+  if (prev && strict === prev.strict && !pre) {
+    const rules = prev.rules.filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force).sort((a, b) => catIx(a) - catIx(b));
+    return {...prev, created, keep, rebuild, rules, change:force.length ? {notes:force.map(f => `Added **${unesc(HR[f].n)}**`), from:strainOf(prev.rules)} : null};
+  }
+  const rules = pre ? pRules(t, strict, pre, force) : pFit(pRules(t, strict, pre, force), t, strict, keep);
+  return {t, strict, pre:pre || (prev && strict === prev.strict ? prev.pre : null), rules, created, keep, rebuild,
+    change:prev ? {notes:[`New ${HSTRICT[strict].n.toLowerCase()} rule set`], from:strainOf(prev.rules)} : null};
 }
 // Coach replies are a tiny markdown subset: "### title", "- bullet", "**bold**". Escaped before formatting.
 function pMd(s){
@@ -2371,6 +2414,8 @@ function pMd(s){
   if (ul) out.push("</ul>");
   return out.join("");
 }
+// Territory rules that restrict recruiting to a set of regions. Stay local and Border control only set quotas, so they don't count.
+const PONLY = ["ter-pipe", "ter-home", "ter-top3", "ter-foot"];
 // Recruiting advice that respects the plan's house rules: drop band advice a rule forbids, add a rule-aware tip instead.
 const PRTIP = {
   "star-none":[/[45]★|long shots/, () => "Build with 3★ and below: scout early and sign high-potential players you can develop."],
@@ -2387,7 +2432,7 @@ const PRTIP = {
   "port-only":[/portal|transfer/, () => "Portal program: most starters come from transfers, so keep high school classes small."]
 };
 function pRecTips(t, rules, archTxt){
-  const on = rules.map(id => [id, PRTIP[id]]).filter(x => x[1]), ter = rules.find(id => HR[id].c === "ter" && HR[id].reg);
+  const on = rules.map(id => [id, PRTIP[id]]).filter(x => x[1]), ter = rules.find(id => PONLY.includes(id));
   const drop = on.map(x => x[1][0]).concat(ter ? [/national/i] : []);
   const tips = archTxt.split(/(?<=\.)\s+/).filter(s => !drop.some(re => re.test(s)));
   on.forEach(([, [, f]]) => tips.push(f(t)));
@@ -2395,6 +2440,19 @@ function pRecTips(t, rules, archTxt){
   return tips;
 }
 const plain = x => unesc(x.replace(/<[^>]+>/g, ""));
+// "Why it's hard": consequences computed from this program's data, so the plan explains itself.
+function pWhy({t, rules, rebuild}){
+  const out = [], nr = NILRANK.indexOf(t.n) + 1, or = [...DATA].sort((a, b) => b.o - a.o).indexOf(t) + 1, has = id => rules.includes(id);
+  if (rebuild) out.push(`Rebuild: ${t.n} is #${or} of ${DATA.length} in overall rating (${t.o}).`);
+  const ter = rules.find(id => PONLY.includes(id));
+  if (ter) { const ok = HR[ter].reg(t), lost = pipesAt(t, 1).filter(r => !ok.includes(r));
+    out.push(`${plain(HR[ter].n)} limits recruiting to ${ok.length} region${ok.length === 1 ? "" : "s"}${lost.length ? ` and shuts you out of ${lost.length} of ${t.n}'s ${pipesAt(t, 1).length} pipelines` : ""}.`); }
+  if (has("nil-zero")) out.push(`You give up a NIL budget ranked #${nr} of ${DATA.length} (${fmt(t.nt)}).`);
+  if (has("nil-half")) out.push(`Half budget drops you from ${fmt(t.nt)} to ${fmt(Math.floor(t.nt / 2))}, about where #${NILRANK.findIndex(n => DATA.find(x => x.n === n).nt <= t.nt / 2) + 1} sits.`);
+  if (has("port-none")) out.push(`No transfers: every one of the ${t.r.length} roster spots has to come from high school recruiting.`);
+  if (has("game-heis")) out.push("Heisman is the game's hardest difficulty.");
+  return out.length ? ["### Why it's hard", ...out.map(x => `- ${x}`)] : [];
+}
 function pRender(p){
   const {t, strict, pre, rules, created} = p, s = strainOf(rules), [sl] = strainLbl(s);
   const [, arch, archTxt] = ARCH.find(a => t.p >= a[0]), nr = NILRANK.indexOf(t.n) + 1;
@@ -2409,8 +2467,9 @@ function pRender(p){
     : hc ? `You coach as ${hc[1]}: level ${hc[2]}, ${hc[4]}, grade ${hc[3]}${hc[5] ? `, pipeline ${hc[5]}` : ""}.` : "";
   const recT = pRecTips(t, rules, archTxt);
   const html = pMd([`### ${t.n} ${t.nk}`, `- ${t.c} · ${t.p}★ prestige · ${t.o} overall · NIL rank #${nr} of ${DATA.length}`,
-    `### House rules · ${label}`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
-    `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => HR[id].c === "ter" && HR[id].reg) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
+    ...(p.change ? ["### What changed", ...p.change.notes.map(x => `- ${x}`), `- **Difficulty:** ${strainLbl(p.change.from)[0]} (${p.change.from} pts) to ${sl} (${s} pts)`] : []),
+    `### House rules · ${pre ? label + " · " : ""}${sl} (${s} pts)`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
+    ...pWhy(p), `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => PONLY.includes(id)) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
     ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set`].join("\n"));
   P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)}. NIL rank: #${nr} of ${DATA.length} (always call it "NIL rank"). National titles: ${tYears(t).join(", ") || "none"}.`,
     `Challenge: ${label}. House rules (list all ${rules.length}): ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),

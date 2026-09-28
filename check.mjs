@@ -211,6 +211,18 @@ const inPage = async () => {
     ok((await ask("who is oregon's head coach?")).includes(hc[1]), "Coach: Oregon head coach wrong");
     m = await ask("and the OC?"); ok(m.includes(oc[1]) && !m.includes(hc[1]), "Coach: follow-up OC should use the last team");
     ok((await ask(`tell me about ${hc[1]}`)).includes("Oregon"), "Coach: coach lookup by name failed"); }
+  // Relative difficulty: "a little less difficult" must lower difficulty by one rule change, not rebuild the same hard plan.
+  { m = await ask("tough florida dynasty rebuild"); const r0 = [...P.plan.rules], s0 = strainOf(r0);
+    ok(/House rules · Hardcore/.test(m) && /Rebuild: Florida is #/.test(m), "Coach: tough rebuild should be Hardcore and mention the rebuild: " + m);
+    m = await ask("make it a little less difficult"); const s1 = strainOf(P.plan.rules);
+    ok(P.plan.t.n === "Florida" && s1 < s0 && P.plan.rules.filter(id => !r0.includes(id)).length <= 1 && /What changed/.test(m) && /Swapped|Dropped/.test(m),
+      `Coach: 'a little less difficult' should change one rule and lower strain (${s0} to ${s1}): ${m}`);
+    m = await ask("make florida much harder");
+    ok(P.plan.t.n === "Florida" && strainOf(P.plan.rules) > s1 && (m.match(/Swapped|Added/g) || []).length >= 2, "Coach: 'much harder' on the same team should step up several notches: " + m);
+    await ask("no transfers"); m = await ask("way easier");
+    ok(P.plan.rules.includes("port-none"), "Coach: easing off must keep rules the user asked for by name"); }
+  { const txt = pRender({t:DATA.find(x => x.n === "Florida"), strict:"std", pre:null, rules:["ter-local"], created:false}).replace(/<[^>]+>/g, " ");
+    ok(!/Allowed regions|limits recruiting/.test(txt) && /Best pipelines/.test(txt), "Coach: Stay local is a quota, not a region limit: " + txt); }
   // Recruiting advice must not contradict the house rules (e.g. No blue-chips vs "chase 5★").
   { const t = DATA.find(x => x.n === "Michigan"), tips = pRecTips(t, ["ter-top3", "star-none", "nil-zero", "port-none"], ARCH[0][2]).join(" ");
     ok(!/[45]★ talent|long shots|NIL keeping|nationally/.test(tips) && /3★ and below/.test(tips) && /No NIL/.test(tips) && /Allowed regions/.test(tips), "Coach: recruiting advice contradicts house rules: " + tips); }
