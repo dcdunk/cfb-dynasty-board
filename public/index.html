@@ -2388,7 +2388,7 @@ function pRules(t, strict, pre, force){
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
   }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
 }
-const P = {choices:null, past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
+const P = {last:null, choices:null, past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
 const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
@@ -2662,13 +2662,41 @@ function pScope(s){
 }
 const orank = t => [...DATA].sort((a, b) => b.o - a.o).indexOf(t) + 1;
 const tLine = t => `**${t.n}** (${t.c}) · ${t.o} OVR · ${t.p}★ · NIL #${NILRANK.indexOf(t.n) + 1} · ${t.ti} title${t.ti === 1 ? "" : "s"}`;
+// Numeric and yes/no filters over programs. Returns [[predicate, label], ...].
+function pFilters(s){
+  const F = [], M = {o:/overall|ovr|rated|rating/, of:/offen[cs]e/, df:/defen[cs]e/, p:/prestige|stars?|★/};
+  const lt = /\b(under|below|less than|lower than|beneath|at most|no more than)\b/, ge = /\b(over|above|more than|higher than|at least|or better|or higher|\+)/;
+  for (const [k, re] of Object.entries(M)) {
+    const m = s.match(new RegExp(`(${re.source})\\s*(?:rating\\s*)?(${lt.source}|${ge.source})\\s*(\\d+(?:\\.\\d)?)|(${lt.source}|${ge.source})\\s*(\\d+(?:\\.\\d)?)\\s*(?:${re.source})`));
+    if (!m) continue;
+    const g = m.filter(Boolean), op = g.find(x => lt.test(x) || ge.test(x)), v = +g.find(x => /^\d+(\.\d)?$/.test(x)), isLt = lt.test(op);
+    const nm = {o:"overall", of:"offense", df:"defense", p:"prestige"}[k];
+    F.push([t => isLt ? t[k] < v : t[k] >= v, `${nm} ${isLt ? "under" : "at least"} ${v}${k === "p" ? "★" : ""}`]);
+  }
+  const top = s.match(/\btop[- ]?(\d+) (?:in )?nil|nil (?:rank(?:ed)? )?(?:in the )?top[- ]?(\d+)/), bot = s.match(/\bbottom[- ]?(\d+) (?:in )?nil/);
+  if (top) { const v = +(top[1] || top[2]); F.push([t => NILRANK.indexOf(t.n) < v, `top-${v} NIL budget`]); }
+  if (bot) { const v = +bot[1]; F.push([t => NILRANK.indexOf(t.n) >= DATA.length - v, `bottom-${v} NIL budget`]); }
+  if (/\b(with|have|has|had|won|and|plus) (a |any |at least one )?(national )?(title|championship)|title winners?|champions\b/.test(s) && !/most (national )?titles/.test(s)) F.push([t => t.ti > 0, "at least one national title"]);
+  if (/\b(no|without|never won a|zero) (national )?(titles?|championships?)/.test(s)) F.push([t => t.ti === 0, "no national titles"]);
+  return F;
+}
+// A filtered list, sorted by the metric asked about (or overall).
+function pFiltered(s, xs, where, labels, n){
+  const key = /\bnil|budget|money/.test(s) && !/top[- ]?\d+ (in )?nil|bottom[- ]?\d+ (in )?nil/.test(s) ? "nt" : /offen/.test(s) ? "of" : /defen/.test(s) ? "df" : /prestige/.test(s) ? "p" : /titles/.test(s) ? "ti" : "o";
+  const low = /\b(worst|lowest|weakest|poorest|cheapest|least|smallest)\b/.test(s);
+  xs = [...xs].sort((a, b) => low ? a[key] - b[key] : b[key] - a[key]);
+  const shown = xs.slice(0, Math.max(n, 12)); P.last = {kind:"league", q:s};
+  P.facts = `Programs matching ${where}, ${labels.join(", ")} (${xs.length}):\n` + shown.map(t => tLine(t).replace(/\*\*/g, "")).join("\n");
+  return pMd([`### ${where} · ${labels.join(" · ")}`, `- ${xs.length} program${xs.length === 1 ? "" : "s"} match${xs.length === 1 ? "es" : ""}${xs.length > shown.length ? `, top ${shown.length} shown` : ""}.`,
+    ...shown.map(t => `- ${tLine(t)}${key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`), ...(xs.length ? [] : ["- Try loosening one of the filters."])].join("\n"));
+}
 function pLeague(q){
   const s = norm(q), teams = pFindTeams(q), n = Math.min(15, +(s.match(/\btop (\d+)/) || [])[1] || 5);
   // Compare two programs.
   if (teams.length >= 2 && /\b(vs\.?|versus|compare|compared|or|against|better)\b/.test(s)) {
     const [a, b] = teams, best = t => [...t.r].sort((x, y) => y[3] - x[3])[0], hc = t => (t.st || []).find(c => c[0] === "HC");
     const row = (lbl, f, hi = true) => { const x = f(a), y = f(b); const w = x === y ? "" : (hi ? x > y : x < y) ? ` · edge ${a.n}` : ` · edge ${b.n}`; return `- **${lbl}:** ${x} vs ${y}${w}`; };
-    P.team = a; P.facts = [a, b].map(t => `${t.n}: ${tLine(t).replace(/\*\*/g, "")}; best player ${pRow(best(t)).replace(/\*\*/g, "")}; head coach ${hc(t) ? hc(t)[1] : "unknown"}`).join("\n");
+    P.team = a; P.last = {kind:"compare", a}; P.facts = [a, b].map(t => `${t.n}: ${tLine(t).replace(/\*\*/g, "")}; best player ${pRow(best(t)).replace(/\*\*/g, "")}; head coach ${hc(t) ? hc(t)[1] : "unknown"}`).join("\n");
     return pMd([`### ${a.n} vs ${b.n}`, row("Overall", t => t.o), row("Offense", t => t.of), row("Defense", t => t.df), row("Prestige", t => t.p),
       row("NIL rank", t => NILRANK.indexOf(t.n) + 1, false), row("National titles", t => t.ti), row("Tier 3+ pipelines", t => pipesAt(t, 3).length),
       `### Best players`, `- ${pRow(best(a), a)}`, `- ${pRow(best(b), b)}`,
@@ -2681,20 +2709,23 @@ function pLeague(q){
   if (!teams.length && league && (pos || /\bplayers?\b/.test(s)) && /\b(best|top|fastest|highest|who has)\b/.test(s)) {
     const grp = pos && POSG.find(g => g[0] === pos[0])[1], fast = /fastest|speed/.test(s);
     const xs = pool.flatMap(t => t.r.filter(p => !grp || grp.includes(p[1])).map(p => [p, t])).sort((a, b) => fast ? b[0][5] - a[0][5] || b[0][3] - a[0][3] : b[0][3] - a[0][3] || b[0][5] - a[0][5]).slice(0, n);
-    P.facts = `Top players (${where}):\n` + xs.map(([p, t]) => pRow(p, t).replace(/\*\*/g, "")).join("\n");
+    P.last = {kind:"league", q:s}; P.facts = `Top players (${where}):\n` + xs.map(([p, t]) => pRow(p, t).replace(/\*\*/g, "")).join("\n");
     return pMd([`### ${fast ? "Fastest" : "Best"} ${pos ? pos[0] : "players"} · ${where}`, ...xs.map(([p, t]) => `- ${pRow(p, t)}`)].join("\n"));
   }
   // In a pipeline question, "Texas" or "Alabama" means the place, not the team.
   const place = x => Object.values(STNAME).some(nm => norm(nm) === norm(x.n)) || PREGS.some(r => norm(r) === norm(x.n));
   if (teams.length && !(/pipeline/.test(s) && teams.every(place))) return null;
+  // Filters that stack with the conference scope and each other: "SEC teams under 80 overall with a Texas pipeline".
+  const F = pFilters(s), st = /pipeline/.test(s) && Object.entries(STNAME).find(([, nm]) => new RegExp(`\\b${norm(nm)}\\b`).test(s));
+  const regs = /pipeline/.test(s) ? PREGS.filter(r => s.includes(norm(r))) : [], where2 = regs.length ? regs : st ? regsIn(st[0]) : [];
+  const min = +(s.match(/\btier (\d)/) || [])[1] || 1, plbl = regs.length ? and(regs) : st ? STNAME[st[0]] : "";
+  if (where2.length && F.length) F.push([t => t.pl.some(p => where2.includes(p[0]) && p[1] >= min), `${plbl} pipeline${min > 1 ? ` tier ${min}+` : ""}`]);
+  if (F.length) return pFiltered(s, pool.filter(t => F.every(f => f[0](t))), where, F.map(f => f[1]), n);
   // Pipelines: "who has a tier 5 pipeline in Texas", "best pipeline in Metro Atlanta".
   if (/pipeline/.test(s)) {
-    const st = Object.entries(STNAME).find(([, nm]) => new RegExp(`\\b${norm(nm)}\\b`).test(s));
-    const regs = PREGS.filter(r => s.includes(norm(r))), where2 = regs.length ? regs : st ? regsIn(st[0]) : [];
     if (!where2.length) return null;
-    const min = +(s.match(/\btier (\d)/) || [])[1] || 1;
     const xs = pool.map(t => [t, Math.max(0, ...t.pl.filter(p => where2.includes(p[0])).map(p => p[1]))]).filter(x => x[1] >= min).sort((a, b) => b[1] - a[1] || b[0].o - a[0].o);
-    const lbl = regs.length ? and(regs) : STNAME[st[0]];
+    const lbl = plbl; P.last = {kind:"league", q:s};
     P.facts = `Programs with a pipeline in ${lbl}: ` + xs.slice(0, 25).map(([t, tr]) => `${t.n} tier ${tr}`).join(", ");
     return pMd([`### ${lbl} pipelines${min > 1 ? ` · Tier ${min}+` : ""}${where !== "FBS" ? ` · ${where}` : ""}`, `- ${xs.length} program${xs.length === 1 ? "" : "s"}. Strongest first:`,
       ...xs.slice(0, Math.max(n, 8)).map(([t, tr]) => `- **${t.n}** · Tier ${tr} (${TIERN[tr]}) · ${t.o} OVR`)].join("\n"));
@@ -2711,7 +2742,7 @@ function pLeague(q){
   const xs = [...pool2].sort((a, b) => low ? score(a) - score(b) : score(b) - score(a)).slice(0, n);
   const title = {rebuild:"Best rebuild jobs", nil:low ? "Smallest NIL budgets" : "Biggest NIL budgets", titles:"Most national titles", prestige:low ? "Lowest prestige" : "Highest prestige",
     of:low ? "Weakest offenses" : "Best offenses", df:low ? "Weakest defenses" : "Best defenses", o:low ? "Lowest rated" : "Highest rated"}[key];
-  P.facts = `${title} (${where}):\n` + xs.map(t => tLine(t).replace(/\*\*/g, "")).join("\n");
+  P.facts = `${title} (${where}):\n` + xs.map(t => tLine(t).replace(/\*\*/g, "")).join("\n"); P.last = {kind:"league", q:s};
   return pMd([`### ${title} · ${where}`, ...(key === "rebuild" ? [`- Skips the top third of rosters (${cut}+ overall), then ranks by how far the NIL budget outranks the roster, plus prestige: money and a brand to fix a weaker team.`] : []),
     ...xs.map(t => `- ${tLine(t)}${key === "rebuild" ? ` · roster #${orank(t)}, NIL #${NILRANK.indexOf(t.n) + 1}` : key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`)].join("\n"));
 }
@@ -2764,6 +2795,69 @@ function pTakeChallenge(c){
   if (P.plan) P.past.push(P.plan);
   P.team = plan.t; P.plan = {...plan, goal:c.goal, goalName:c.name}; return pRender(P.plan);
 }
+/* ---- roster roadmap: who leaves when, where the holes are, what to recruit ---- */
+// Eligibility left from class year (redshirt * already used): FR 4, SO 3, JR 2, SR 1. Starters per group approximate a base 11 + specialists.
+const PSTART = {QB:1, RB:1, WR:3, TE:1, OL:5, DL:4, LB:3, CB:2, S:2, "K/P":2};
+const PROAD = /\broadmap\b|roster (plan|outlook|needs|holes)|plan (my|the|our)? ?(first )?(\d+ |two |three |four )?(seasons?|years?)\b|who (is|are|'s) (leaving|graduating)|graduat|departures|losing (the most|seniors)|\bholes\b|positions? of need|needs? at|what (positions?|should i) (to )?recruit|recruiting (needs|priorities)|seniors? leaving/;
+const yrsLeft = y => ({FR:4, SO:3, JR:2, SR:1})[String(y).replace("*", "")] || 1;
+function pRoadmap(q, t){
+  const s = norm(q), N = Math.min(4, +(s.match(/\b(\d) (seasons?|years?)/) || [])[1] || {two:2, three:3, four:4}[(s.match(/\b(two|three|four) (seasons?|years?)/) || [])[1]] || 3);
+  const groups = POSG.filter(g => g[1]).map(([name, ps]) => ({name, ps, all:t.r.filter(p => ps.includes(p[1])).sort((a, b) => b[3] - a[3])}));
+  const out = [`### ${t.n} · ${N}-season roster roadmap`, `- Based on class years in the Year 1 preseason roster. Early NFL departures and transfers aren't modeled, so real holes can be bigger.`], pri = {};
+  for (let k = 1; k <= N; k++) {
+    const leave = t.r.filter(p => yrsLeft(p[2]) === k), holes = [];
+    for (const g of groups) {
+      const n = PSTART[g.name] || 1, starters = g.all.slice(0, n), lost = starters.filter(p => yrsLeft(p[2]) <= k && yrsLeft(p[2]) > k - 1);
+      const left = g.all.filter(p => yrsLeft(p[2]) > k), next = left[n - 1];
+      if (!lost.length && left.length >= n) continue;
+      // Share of the unit lost, plus raw bodies lost (4 of 5 linemen beats 1 of 1 back), plus thin depth. Later seasons count a bit less.
+      const score = lost.length / n * 2 + lost.length * .5 + (left.length < n ? 1.5 : left.length < 2 * n ? .5 : 0);
+      pri[g.name] = (pri[g.name] || 0) + score / (1 + (k - 1) * .5);
+      holes.push([score, `**${g.name}:** ${lost.length ? `lose ${lost.length} of ${n} starter${n > 1 ? "s" : ""} (${lost.map(p => `${p[0]} ${p[3]}`).join(", ")})` : "starters stay"}${left.length < n ? `, only ${left.length} left on the roster` : next ? `, next up ${next[0]} ${next[3]}` : ""}`]);
+    }
+    holes.sort((a, b) => b[0] - a[0]);
+    out.push(`### After season ${k}`, `- **Leaving:** ${leave.length} players, ${groups.reduce((c, g) => c + g.all.slice(0, PSTART[g.name] || 1).filter(p => yrsLeft(p[2]) === k).length, 0)} of them starters`,
+      ...(holes.length ? holes.slice(0, 4).map(x => `- ${x[1]}`) : ["- No starter losses."]));
+  }
+  const order = Object.entries(pri).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  out.push("### Recruiting priorities", `- ${order.length ? order.slice(0, 5).map((g, i) => `${i + 1}. ${g}`).join("  ") : "Nothing urgent: the starting lineup is young."}`);
+  P.team = t; P.last = {kind:"roadmap", q};
+  P.facts = out.join("\n").replace(/\*\*/g, "").replace(/### /g, "");
+  return pMd(out.join("\n"));
+}
+// Single-team numbers: "how good is Michigan's defense", "and their NIL?".
+const PSTATW = [["df", /defen[cs]e/], ["of", /offen[cs]e/], ["nt", /\bnil\b|\bbudget\b|\bmoney\b/], ["p", /prestige/], ["ti", /titles?|championships?/], ["o", /\b(overall|how good|rating|rated|how strong)\b/]];
+function pStat(q, t){
+  const s = norm(q), k = (PSTATW.find(([, re]) => re.test(s)) || [])[0]; if (!k) return null;
+  const rk = (pool, f) => [...pool].sort((a, b) => f(b) - f(a)).indexOf(t) + 1, conf = DATA.filter(x => x.c === t.c), f = x => x[k];
+  const lbl = {df:"Defense", of:"Offense", nt:"NIL budget", p:"Prestige", ti:"National titles", o:"Overall"}[k];
+  const val = k === "nt" ? fmt(t.nt) : k === "p" ? t.p + "★" : t[k];
+  const grp = k === "df" ? ["DL", "LB", "CB", "S"] : k === "of" ? ["QB", "RB", "WR", "TE", "OL"] : null;
+  const ps = grp ? t.r.filter(p => grp.some(g => POSG.find(x => x[0] === g)[1].includes(p[1]))).sort((a, b) => b[3] - a[3]).slice(0, 3) : [];
+  P.team = t; P.last = {kind:"stat", q};
+  const out = [`### ${t.n} · ${lbl}`, `- **${lbl}:** ${val} · #${rk(DATA, f)} of ${DATA.length}${t.c !== "Independent" ? ` · #${rk(conf, f)} of ${conf.length} in the ${t.c}` : ""}`,
+    ...(k === "ti" && tYears(t).length ? [`- **Seasons:** ${tYears(t).join(", ")}`] : []), ...(ps.length ? ["### Best on that side", ...ps.map(p => `- ${pRow(p)}`)] : [])];
+  P.facts = out.join("\n").replace(/\*\*/g, "").replace(/### /g, "");
+  return pMd(out.join("\n"));
+}
+/* ---- follow-ups: "what about Michigan?" repeats the last kind of question for the new team or conference ---- */
+function pFollow(q){
+  const s = norm(q), L = P.last; if (!L || s.split(/\s+/).length > 8) return null;
+  if (!/^(what|how) about\b|^and\b|^(same|now|ok|okay)\b|^(for|at|in) \w|^(do|try|show) (the same|that) for|^(what|how) (about|is|are) (their|its)/.test(s) && !(pFindTeams(q).length && s.split(/\s+/).length <= 2 && ![...PDIFF, ...PPRE].some(([, re]) => re.test(s)) && !/dynasty|rebuild/.test(s))) return null;
+  const t = pFindTeams(q)[0], scope = PCONF.find(([, re]) => re.test(s)) || (/\b(p4|power (4|four)|g5|group of (5|five)|country|nation|fbs)\b/.test(s) ? [s.match(/\b(p4|power (4|four)|g5|group of (5|five)|country|nation|fbs)\b/)[0]] : null);
+  if (L.kind === "compare" && t && t !== L.a) return pLeague(`${L.a.n} vs ${t.n}`);
+  if (L.kind === "league" && (scope || t)) {
+    const base = L.q.replace(new RegExp(PCONF.map(([, re]) => re.source).join("|"), "g"), " ").replace(/\b(in the|in|p4|g5|power (4|four)|group of (5|five)|country|nation|fbs)\b/g, " ");
+    return scope ? pLeague(`${base} in the ${scope[0]}`) : null;
+  }
+  if (!t && /\b(their|its|they)\b/.test(s) && P.team) { const st2 = pStat(q, P.team); if (st2) return st2; }
+  if (!t) return null;
+  if (L.kind === "players") return pPlayers(L.q, t);
+  if (L.kind === "staff") return pStaff(L.q, t);
+  if (L.kind === "roadmap") return pRoadmap(L.q, t);
+  if (L.kind === "stat") return pStat(PSTATW.some(([, re]) => re.test(s)) ? q : L.q, t);
+  return null;
+}
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q)); P.fuzzy = null;
@@ -2788,16 +2882,22 @@ async function pAsk(q){
   const tp = pFindTeams(q)[0] || P.team;
   let html = "", plan = null;
   const fc = !fp && pFindCoach(q), sq = /\b(head coach|coaches|coaching staff|staff|coordinators?|oc|dc|hc)\b|who coaches/i.test(q) && !/dynasty|created|custom|own coach|real coach/i.test(q);
-  const ed = pEdit(q), lg = !ed && pLeague(q), ah = !ed && !lg && pAbil(q);
-  if (ed) html = ed;
+  const fu = pFollow(q), ed = !fu && pEdit(q), lg = !fu && !ed && pLeague(q), ah = !fu && !ed && !lg && pAbil(q);
+  const notPlan = !/dynasty|rebuild|house rules|challenge|\brules?\b|\bplan\b(?! (my|the|our))|tough|casual|hard|easy/i.test(q)
+    && ![...PDIFF, ...PPRE, ...PRULE].some(([, re]) => re.test(norm(q))) && !PDOWN.test(norm(q)) && !PUP.test(norm(q));
+  const rm = PROAD.test(norm(q)), stq = notPlan && tp && !/\b(best|top|fastest|worst|highest|lowest|most|who)\b/i.test(q) && PSTATW.some(([, re]) => re.test(norm(q)));
+  if (fu) html = fu;
+  else if (ed) html = ed;
   else if (lg) html = lg;
   else if (ah) html = ah;
+  else if (rm && tp) html = pRoadmap(q, tp);
+  else if (stq && (pFindTeams(q).length || /\b(their|its|they)\b/i.test(q))) html = pStat(q, tp);
   else if (fc) { P.team = fc[0]; P.facts = `Coach on the board: ${sRow(fc[1], fc[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
-  else if (sq && tp) html = pStaff(q, tp);
+  else if (sq && tp) { html = pStaff(q, tp); P.last = {kind:"staff", q}; }
   else if (fp) { P.team = fp[0]; P.facts = `Player on the board: ${pRow(fp[1], fp[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
-  else if (rq && tp) html = pPlayers(q, tp);
+  else if (rq && tp) { html = pPlayers(q, tp); P.last = {kind:"players", q}; }
   else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
-  else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); }
+  else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); P.last = {kind:"plan"}; }
   // Plans, rosters and staff come from the templated reply even with AI on: the model dropped and renamed rules when it rewrote them.
   // The AI only answers what the template can't, using the facts from the last answer plus the league table.
   if (!html && P.aiOn && P.ai) { await pWrite(q, pSay("bot", ""), true, true); return pSave(); }

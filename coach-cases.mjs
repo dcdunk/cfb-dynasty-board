@@ -94,6 +94,29 @@ export default [
   {name: "challenge with a team is a plan", say: [["tough florida dynasty challenge", {has: ["Florida Gators"], not: ["Three dynasty challenges"]}], ["add conference footprint", {not: ["shaded below"]}]]},
   {name: "markdown leaks", say: [["x", {js: "pMd('**### Title**\\n- -\\n- real') === '<h4>Title</h4><ul><li>real</li></ul>'"}]]},
 
+  // ---- follow-ups carry the last kind of question
+  {name: "follow-up players", say: [["best QB at ohio state", {}], ["what about michigan?", {has: ["Michigan · Best QB"], not: ["House rules"]}]]},
+  {name: "follow-up their defense", say: [["best QB at michigan", {}], ["and their defense?", {has: ["Michigan · Defense", "#\\d+ of 138", "Best on that side"]}]]},
+  {name: "follow-up compare", say: [["florida vs georgia", {}], ["what about lsu", {has: ["Florida vs LSU"]}]]},
+  {name: "follow-up conference", say: [["best wr in the sec", {}], ["how about the big ten", {has: ["Best WR · Big Ten"], not: ["· SEC"]}]]},
+  {name: "follow-up staff", say: [["who is oregon's head coach?", {}], ["what about texas?", {has: ["Texas · Head coach"]}]]},
+  {name: "follow-up after plan is a plan", say: [["tough florida dynasty", {}], ["what about michigan?", {has: ["Michigan Wolverines", "House rules · Hardcore"]}]]},
+  {name: "team stat", say: [["how good is alabama's defense", {has: ["Alabama · Defense", "in the SEC"]}]]},
+  {name: "moneyball is still a preset", say: [["moneyball at temple", {has: ["Moneyball"], not: ["NIL budget:"]}]]},
+
+  // ---- roster roadmap
+  {name: "roadmap", say: [["plan my first 3 seasons at florida", {has: ["3-season roster roadmap", "After season 1", "After season 3", "Recruiting priorities"], not: ["House rules"]}]]},
+  {name: "roadmap priorities include big losses", say: [["florida roster needs", {has: ["Recruiting priorities.*OL"]}]]},
+  {name: "roadmap 2 seasons", say: [["plan my first two seasons at texas", {has: ["2-season"], not: ["After season 3"]}]]},
+  {name: "roadmap follow-up", say: [["florida roster roadmap", {}], ["what about georgia?", {has: ["Georgia · 3-season roster roadmap"]}]]},
+
+  // ---- combined filters
+  {name: "filters: conference + overall + pipeline", say: [["sec teams under 85 overall with a texas pipeline",
+    {has: ["SEC · overall under 85 · Texas pipeline"], js: "[...document.querySelectorAll('#pLog .pm.bot:last-child li')].slice(1).every(li => { const t = DATA.find(x => li.textContent.startsWith(x.n + ' (')); return t && t.c === 'SEC' && t.o < 85 && t.pl.some(p => regsIn('TX').includes(p[0])); })"}]]},
+  {name: "filters: G5 + NIL rank", say: [["group of five teams with a top 50 nil budget", {has: ["Group of Five · top-50 NIL budget"]}]]},
+  {name: "filters: prestige + titles", say: [["big ten teams with at least 4 stars prestige and a national title", {has: ["prestige at least 4★", "at least one national title"]}]]},
+  {name: "filters: nothing matches", say: [["sec teams under 60 overall", {has: ["0 programs", "loosening"]}]]},
+
   // ---- memory
   {name: "remembers difficulty", say: [["tough florida dynasty", {}], ["oregon dynasty", {has: ["House rules · Hardcore"]}]]},
   {name: "survives reload", say: [["tough florida dynasty", {}], ["no transfers", {}],
