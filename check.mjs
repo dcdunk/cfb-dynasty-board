@@ -169,9 +169,9 @@ const inPage = async () => {
   // Coach abilities: Player/Coach toggle, archetype chips, unlocks, search.
   $('#abMode [data-m="coach"]').click(); await wait(50);
   ok($("#abPlayer").hidden && !$("#abCoach").hidden, "Abilities: Coach toggle should swap views");
-  ok($$("#abArch .chip").length === 13 && /Portal King/.test($("#abCGrid").textContent) && /Firm Handshakes/.test($("#abMeta").textContent), "Abilities: Recruiter should show its abilities and perk");
-  $('#abArch [data-c="Scheme Guru"]').click(); await wait(50);
-  ok($$("#abCGrid .sl-card").length === 8 && /top 25/.test($("#abMeta").textContent), "Abilities: Scheme Guru should show 8 branches and its unlock");
+  ok($$("#abArch .chip").length === 8 && /Portal King/.test($("#abCGrid").textContent) && /Firm Handshakes/.test($("#abCGrid").textContent) && /Always Be Crootin/.test($("#abCGrid").textContent), "Abilities: Recruiter chip should bundle Recruiter and Elite Recruiter");
+  $('#abArch [data-c="Tactician"]').click(); await wait(50);
+  ok($$("#abCGrid .ab-arch").length === 2 && $$("#abCGrid .sl-card").length === 16 && /top 25/.test($("#abCGrid").textContent), "Abilities: Tactician chip should show Tactician and Scheme Guru (16 branches)");
   find("#abQ", "whisperer");
   ok(/Talent Developer/.test($("#abCGrid").textContent), "Abilities: coach search should find Whisperer");
   find("#abQ", "");
