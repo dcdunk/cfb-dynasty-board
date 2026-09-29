@@ -52,6 +52,7 @@ House rules are the most intricate part: `HRULES` (built-in rules, each with cat
 - `house-custom-v1`: user-made rules and presets (`huSave`/`huLoad`)
 - `dyn-v1`: saved dynasties `{list:[{id,name,team,rules,src,made,arch}], cur, arch}`; the loader drops unknown teams
 - `coach-v1`: Coach transcript (last 60 messages), current plan, undo history (10), last team, preferred difficulty (`pSave`/`pLoad`). Plans store the team by name; `pDe` drops unknown rule ids.
+- `theme-v1`: `"light"` or `"dark"` from the header toggle (`#themeBtn`, next to Coach). Applied by a small script before the `<style>` block so there is no flash; no value means follow the system setting.
 
 Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
 

@@ -7,8 +7,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 
+<script>try{const t=localStorage.getItem("theme-v1");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
 :root{
+  color-scheme:light;
   --ground:#F7F8F8; --panel:#FFFFFF; --raise:#F1F2F4;
   --text:#08090A; --dim:#62666D; --faint:#8A8F98;
   --line:#E0E2E6; --hair:#ECEEF0;
@@ -21,6 +23,7 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
+    color-scheme:dark;
     --ground:#08090A; --panel:#0F1011; --raise:#161718;
     --text:#E5E5E6; --dim:#8A8F98; --faint:#62666D;
     --line:#23252A; --hair:#1A1B1E;
@@ -32,6 +35,7 @@
   }
 }
 :root[data-theme="dark"]{
+  color-scheme:dark;
   --ground:#08090A; --panel:#0F1011; --raise:#161718;
   --text:#E5E5E6; --dim:#8A8F98; --faint:#62666D;
   --line:#23252A; --hair:#1A1B1E;
@@ -633,7 +637,9 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl td.chg{color:var(--accent-ink); font-weight:590; background:var(--accent-soft)}
 /* ---------- dynasty planner (chat) ---------- */
 .masthead{position:relative}
-.coachbtn{position:absolute; top:22px; right:22px; display:flex; align-items:center; gap:7px; background:var(--panel); color:var(--text);
+.mhact{position:absolute; top:22px; right:22px; display:flex; gap:8px}
+.themebtn{padding:8px}
+.coachbtn{display:flex; align-items:center; gap:7px; background:var(--panel); color:var(--text);
   border:1px solid var(--line); padding:8px 12px 8px 10px; font:590 13px Inter,sans-serif; cursor:pointer}
 .coachbtn:hover,.coachbtn[aria-expanded="true"]{border-color:var(--accent); color:var(--accent-ink)}
 .coachbtn svg{display:block}
@@ -670,7 +676,8 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   body.coach-on{margin-right:0; overflow:hidden}
   body.coach-on .dossier{right:0; width:100vw; z-index:50}
   .pchat{width:100vw; border-left:0; padding-top:env(safe-area-inset-top,0px)}
-  .coachbtn{top:18px; right:16px; padding:7px 10px}
+  .mhact{top:18px; right:16px}
+  .coachbtn{padding:7px 10px}
   .pform textarea{font-size:16px}
 }
 
@@ -708,7 +715,10 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
     <div class="count"><b id="cPlayers">11,730</b><span>Players</span></div>
     <div class="count"><b id="cTitles">144</b><span>Titles</span></div>
   </div>
+  <div class="mhact">
+  <button class="coachbtn themebtn" id="themeBtn" type="button"></button>
   <button class="coachbtn" id="pOpen" type="button" aria-controls="pChat" aria-expanded="false" title="Plan a dynasty with Coach"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1"/><rect x="17.5" y="13" width="4" height="6" rx="1"/><path d="M19.5 19v.5a2.5 2.5 0 0 1-2.5 2.5h-4"/></svg>Coach</button>
+  </div>
 </div>
 
 <nav class="nav" aria-label="Sections">
@@ -3097,6 +3107,18 @@ function pToggle(on){
 pLoad();
 $("#pClear").addEventListener("click", () => { pClear(); $("#pIn").focus(); });
 $("#pOpen").addEventListener("click", () => pToggle(!$("#pChat").classList.contains("on")));
+
+/* ---- light/dark toggle: a saved choice (theme-v1) wins, otherwise follow the system ---- */
+const TSVG = p => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const TICON = {dark: TSVG('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  light: TSVG('<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>')};
+const themeNow = () => document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+function themeBtn(){ const t = themeNow(), l = `Switch to ${t === "dark" ? "light" : "dark"} mode`, b = $("#themeBtn");
+  b.innerHTML = TICON[t]; b.setAttribute("aria-label", l); b.title = l; }
+$("#themeBtn").addEventListener("click", () => { const t = themeNow() === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = t; try { localStorage.setItem("theme-v1", t); } catch (e) {} themeBtn(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeBtn);
+themeBtn();
 $("#pClose").addEventListener("click", () => pToggle(false));
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
 const pGrow = () => { const i = $("#pIn"); i.style.height = "auto"; i.style.height = i.scrollHeight + 2 + "px"; };

@@ -59,6 +59,14 @@ const inPage = async () => {
   for (const [nm, r, want] of tok) for (const v of ["--ground", "--panel", "--text", "--accent", "--cta", "--on-cta"])
     ok(r && r.style.getPropertyValue(v).trim(), `Theme: ${nm} token block missing ${v}`);
   for (const [nm, r, want] of tok) ok(r?.style.getPropertyValue("--ground").trim() === want, `Theme: ${nm} --ground should be ${want}`);
+  // Light/dark toggle sits next to Coach, flips the theme, saves it, and its label says what a click does.
+  { const b = $("#themeBtn"), root = document.documentElement, t0 = root.dataset.theme, eff = () => root.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    ok(b && b.nextElementSibling === $("#pOpen") && b.querySelector("svg"), "Theme: toggle should sit just left of the Coach button");
+    const before = eff(); b.click();
+    ok(eff() !== before && localStorage.getItem("theme-v1") === eff() && b.getAttribute("aria-label") === `Switch to ${before} mode`, `Theme: toggle should flip ${before}, saved ${localStorage.getItem("theme-v1")}`);
+    ok(getComputedStyle(document.body).backgroundColor === (eff() === "dark" ? "rgb(8, 9, 10)" : "rgb(247, 248, 248)"), "Theme: page colors should follow the toggle");
+    b.click(); ok(eff() === before, "Theme: second click should flip back");
+    localStorage.removeItem("theme-v1"); if (t0) root.dataset.theme = t0; else delete root.dataset.theme; }
   const wm = getComputedStyle($(".wordmark"));
   ok(/^Inter/.test(wm.fontFamily) && parseFloat(wm.fontSize) >= 36 && getComputedStyle($(".wordmark em")).fontStyle === "normal", `Theme: wordmark is ${wm.fontFamily} ${wm.fontSize}`);
   // Navigation: one row of nine tabs, all visible; arrow keys move along the row and wrap.
