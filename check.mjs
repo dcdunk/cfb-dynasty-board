@@ -184,6 +184,13 @@ const inPage = async () => {
     ok(imgs.length > 20 && imgs.every(i => i.naturalWidth > 0), `Abilities: icons missing or broken: ${imgs.filter(i => !i.naturalWidth).map(i => i.src).slice(0, 3)}`); }
 
   ok(!$("#pAi") && window.__noAI && !P.aiLoading && !P.ai, "Coach: AI toggle should be gone and the test browser must not load the model");
+  // Coach abilities: each upgrade shows its own cost; Recruiter T1 is 15 CP (K/P 10).
+  { const sa = [...$$("#viewAb button")].find(b => b.textContent.trim() === "Coach" && !b.closest("#abArch")); if (sa) { showTab("ab"); sa.click(); await wait(50); }
+    const lis = [...$$("#abCGrid .ab-list li")], first = lis[0]?.querySelector(".ab-cost")?.textContent;
+    ok(lis.length && lis.every(li => li.querySelector(".ab-cost")), "Abilities: every coach upgrade should show its cost");
+    const rc = CARCH.find(a => a.n === "Recruiter");
+    ok(JSON.stringify([0, 3].map(i => cTierCost(rc, i))) === "[[15,10],[30,15]]" && cBranchTotal(rc, 4) === "90 CP for all 4 (K/P 50)", "Abilities: Recruiter tier costs or total wrong");
+    ok(CARCH.every(a => cCost(a)), "Abilities: every coach archetype's cost text must parse"); }
   // Dynasty planner: plain chat. Parses team/difficulty/extras from text and replies in prose only.
   $("#pOpen").click(); await wait(50);
   ok($("#pChat").classList.contains("on") && $("#pLog .pm.bot"), "Coach: sidebar didn't open with a greeting");

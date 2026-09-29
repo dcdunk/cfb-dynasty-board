@@ -568,8 +568,10 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl-v{color:var(--accent)}
 .ab-q{font:inherit; font-size:13px; padding:8px 10px; min-width:240px; max-width:100%; background:var(--panel); color:var(--text); border:1px solid var(--line)}
 .ab-list{list-style:none; margin:0; padding:2px 12px 10px}
-.ab-list li{display:grid; grid-template-columns:minmax(110px,34%) 1fr; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px}
+.ab-list li{display:grid; grid-template-columns:minmax(110px,34%) 1fr auto; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px}
 .ab-list li:first-child{border-top:0}
+.ab-cost{font:600 12px "IBM Plex Mono",monospace; font-style:normal; color:var(--accent-ink); white-space:nowrap; text-align:right}
+.ab-cost small{display:block; font-weight:400; font-size:10px; color:var(--dim)}
 .ab-list li span{color:var(--dim)}
 .ab-ment{padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); column-gap:24px; max-width:1500px}
 .ab-ment li:first-child{border-top:1px solid var(--line)}
@@ -2151,11 +2153,22 @@ const cFind = q => { const s = abNorm(q); let best;
 const CGROUP = [["Recruiter", ["Recruiter","Elite Recruiter"]], ["Motivator", ["Motivator","Master Motivator"]], ["Tactician", ["Tactician","Scheme Guru"]],
   ["Architect", ["Architect"]], ["Strategist", ["Strategist"]], ["Talent Developer", ["Talent Developer"]],
   ["Program Builder & CEO", ["Program Builder","CEO"]], ["Rainmaker & Visionary", ["Rainmaker","Visionary"]]];
+// Per-upgrade cost from the archetype's cost text: "15, 20, 25, 30 CP per tier (K/P 10, 10, 15, 15)", "20 CP per tier", "40 CP each, ...".
+function cCost(a){
+  const nums = s => s.split(/,\s*/).map(Number), four = x => x.length === 1 ? [x[0], x[0], x[0], x[0]] : x;
+  let m = a.cost.match(/^([\d, ]+) CP per tier(?: \(K\/P ([\d, ]+)\))?/);
+  if (m) return {tier:four(nums(m[1])), kp:m[2] ? four(nums(m[2])) : null};
+  m = a.cost.match(/^(\d+) CP each/); return m ? {each:+m[1]} : null;
+}
+const cTierCost = (a, i) => { const c = cCost(a); return !c ? null : c.each ? [c.each, null] : [c.tier[i], c.kp ? c.kp[i] : null]; };
+const cBranchTotal = (a, n) => { const c = cCost(a); if (!c) return ""; const sum = xs => xs.slice(0, n).reduce((s, x) => s + x, 0);
+  return c.each ? `${c.each * n} CP for all ${n}` : `${sum(c.tier)} CP for all ${n}${c.kp ? ` (K/P ${sum(c.kp)})` : ""}`; };
 function cDrawAb(q){
   $("#abArch").innerHTML = CGROUP.map(([g]) => `<button type="button" class="chip ab-cchip" data-c="${esc(g)}" aria-pressed="${!q && g === abC}">${CGROUP.find(x => x[0] === g)[1].map(n => abImg("a", n)).join("")}${esc(g)}</button>`).join("");
-  const row = (t, n, d) => `<li><b>${abImg("c", n)}${t ? `<small>T${t}</small> ` : ""}${esc(n)}</b><span>${esc(d)}</span></li>`;
-  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}<span>${esc(a.n)}</span></h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list">${
-    ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d) : "").join("")}</ul></section>`;
+  const row = (a, i, t, n, d) => { const c = cTierCost(a, i);
+    return `<li><b>${abImg("c", n)}${t ? `<small>T${t}</small> ` : ""}${esc(n)}</b><span>${esc(d)}</span>${c ? `<em class="ab-cost">${c[0]} CP${c[1] != null && c[1] !== c[0] ? `<small>K/P ${c[1]}</small>` : ""}</em>` : ""}</li>`; };
+  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}<span>${all ? esc(cBranchTotal(a, ab.length)) : esc(a.n)}</span></h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list">${
+    ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a, i, a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d) : "").join("")}</ul></section>`;
   if (q) {
     const hits = CARCH.flatMap(a => a.br.filter(([, ab]) => ab.some(([n]) => n.toLowerCase().includes(q))).map(([b, ab]) => card(a, b, ab, false)));
     $("#abCGrid").innerHTML = hits.length ? `<div class="sl-grid">${hits.join("")}</div>` : `<p class="hint">No coach ability matches "${esc(q)}".</p>`;
@@ -2163,7 +2176,7 @@ function cDrawAb(q){
   }
   $("#abCGrid").innerHTML = CGROUP.find(g => g[0] === abC)[1].map(n => CARCH.find(x => x.n === n)).map(a =>
     `<section class="ab-arch"><h3 class="ab-ah">${abImg("a", a.n)}${esc(a.n)} <span>${esc(a.g)}</span></h3>`
-    + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}<div><dt>Cost</dt><dd>${esc(a.cost)}</dd></div></dl></div>`
+    + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}<div><dt>Cost</dt><dd>Shown next to each upgrade${a.pos ? ", per position group" : ""}${cCost(a) && cCost(a).kp ? "; K/P tiers cost less" : ""}.</dd></div></dl></div>`
     + `<div class="sl-grid">${a.br.map(([b, ab]) => card(a, b, ab, true)).join("")}</div></section>`).join("");
 }
 function abDraw(){
