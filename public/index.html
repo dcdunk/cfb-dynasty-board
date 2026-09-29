@@ -2388,7 +2388,7 @@ function pRules(t, strict, pre, force){
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
   }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
 }
-const P = {past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
+const P = {choices:null, past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
 const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
@@ -2467,7 +2467,8 @@ function pMd(s){
     const l = raw.trim(), b = l.match(/^(?:[-*•]|\d+\.)\s+(.*)/), hd = l.match(/^#{1,6}\s*(.*)|^\*\*([^*]+)\*\*:?$/);
     if (!b && ul) { out.push("</ul>"); ul = false; }
     if (!l || /^([-*•]|\d+\.)$/.test(l)) continue;
-    if (hd) out.push(`<h4>${inl(hd[1] ?? hd[2])}</h4>`);
+    if (hd) { const x = (hd[1] ?? hd[2]).replace(/^[#*\s]+|[#*:\s]+$/g, ""); if (x) out.push(`<h4>${inl(x)}</h4>`); }
+    else if (b && /^[-*•#\s.]*$/.test(b[1])) continue;
     else if (b) { if (!ul) { out.push("<ul>"); ul = true; } out.push(`<li>${inl(b[1])}</li>`); }
     else out.push(`<p>${inl(l)}</p>`);
   }
@@ -2499,7 +2500,8 @@ function pRecTips(t, rules, archTxt){
   if (ter) tips.push(`**Allowed regions (${plain(HR[ter].n)}):** ${and(HR[ter].reg(t))}`);
   return tips;
 }
-const plain = x => unesc(x.replace(/<[^>]+>/g, ""));
+// Rule text is written for the House rules tab; drop its references to the map, which the chat doesn't show.
+const plain = x => unesc(x.replace(/<[^>]+>/g, "")).replace(/,? shaded below/g, "").replace(/ Your pipelines are shaded below\./g, "");
 // "Why it's hard": consequences computed from this program's data, so the plan explains itself.
 function pWhy({t, rules, rebuild}){
   const out = [], nr = NILRANK.indexOf(t.n) + 1, or = [...DATA].sort((a, b) => b.o - a.o).indexOf(t) + 1, has = id => rules.includes(id);
@@ -2527,6 +2529,7 @@ function pRender(p){
     : hc ? `You coach as ${hc[1]}: level ${hc[2]}, ${hc[4]}, grade ${hc[3]}${hc[5] ? `, pipeline ${hc[5]}` : ""}.` : "";
   const recT = pRecTips(t, rules, archTxt);
   const html = pMd([`### ${t.n} ${t.nk}`, `- ${t.c} · ${t.p}★ prestige · ${t.o} overall · NIL rank #${nr} of ${DATA.length}`,
+    ...(p.goal ? [`### Your goal · ${p.goalName}`, `- ${p.goal}`] : []),
     ...(p.change ? ["### What changed", ...p.change.notes.map(x => `- ${x}`), `- **Difficulty:** ${strainLbl(p.change.from)[0]} (${p.change.from} pts) to ${sl} (${s} pts)`] : []),
     `### House rules · ${pre ? label + " · " : ""}${sl} (${s} pts)`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
     ...pWhy(p), `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => PONLY.includes(id)) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
@@ -2727,6 +2730,40 @@ function pHelp(t){
   return pMd([`I didn't follow that. About ${t.n} you can ask:`, `- "Tough ${t.n} dynasty" or "casual ${t.n} rebuild"`, `- "Best players at ${t.n}" or "best QB?"`,
     `- "${t.n} coaching staff"`, ...(riv ? [`- "${t.n} vs ${riv.n}"`] : []), ...(P.plan ? [`- "Remove ${unesc(HR[P.plan.rules[0]].n)}", "make it easier" or "undo"`] : [])].join("\n"));
 }
+/* ---- challenge suggestions: three data-driven dynasty challenges, pick one by number or name ---- */
+const PCHAL = /\b(challenges?|suggest|recommend|surprise me|ideas?|what (team|program|school) should i|give me (a|an|some) (dynasty|team|program)|good dynasty|fun dynasty|interesting dynasty|dynasty ideas?)\b/;
+const pick = xs => xs[Math.floor(Math.random() * xs.length)];
+function pChallenges(){
+  const nr = t => NILRANK.indexOf(t.n) + 1, g5 = DATA.filter(t => !isP4(t));
+  const cut = [...DATA].sort((a, b) => b.o - a.o)[Math.floor(DATA.length / 3)].o;
+  const rb = DATA.filter(t => t.o < cut).sort((a, b) => ((orank(b) - nr(b)) + b.p * 10) - ((orank(a) - nr(a)) + a.p * 10)).slice(0, 5);
+  const all = [
+    () => { const t = pick(DATA.filter(t => t.ti >= 3 && t.p <= 4).sort((a, b) => b.ti - a.ti || a.p - b.p).slice(0, 4));
+      return {name:"Back to glory", t, q:`${t.n} dynasty rebuild`, why:`${t.ti} national titles, the last in ${tYears(t).slice(-1)[0]}, but only ${t.p}★ today.`,
+        goal:`Win the ${t.c === "Independent" ? "most games of your career" : t.c} within five seasons and bring home ${t.n}'s first national title since ${tYears(t).slice(-1)[0]}.`}; },
+    () => { const t = pick(g5.sort((a, b) => a.nt - b.nt).slice(0, 8));
+      return {name:"Moneyball", t, q:`moneyball at ${t.n}`, why:`NIL budget #${nr(t)} of ${DATA.length} (${fmt(t.nt)}), ${t.o} overall.`,
+        goal:`Win the ${t.c === "Independent" ? "a bowl game" : t.c} with no blue-chip recruits and half of an already tiny budget.`}; },
+    () => { const t = pick(DATA.filter(t => t.p >= 5));
+      return {name:"Blue-blood burden", t, q:`blue blood ${t.n} dynasty`, why:`${t.p}★ prestige and ${t.ti} titles: anything short of a title is a failure.`,
+        goal:`Win a national title within three seasons on Heisman difficulty against a brutal schedule, or you're fired.`}; },
+    () => { const t = pick(rb);
+      return {name:"Money-pit rebuild", t, q:`tough ${t.n} dynasty rebuild`, why:`Roster #${orank(t)} but NIL #${nr(t)}: the money is there, the players aren't.`,
+        goal:`Top-25 finish by season three and a playoff berth by season five.`}; },
+    () => { const t = pick(g5.filter(t => t.p <= 2));
+      return {name:"Climb the carousel", t, q:`coaching carousel ${t.n} dynasty`, why:`${t.p}★ ${t.c} program, ${t.o} overall: nobody's first choice.`,
+        goal:`Start as a coordinator at ${t.n}, earn the head job, then get hired by a Power 4 program.`}; }];
+  const xs = all.sort(() => Math.random() - .5).slice(0, 3).map(f => f());
+  P.choices = xs;
+  P.facts = "Challenge options:\n" + xs.map((c, i) => `${i + 1}. ${c.name}: ${c.t.n}. ${c.why} Goal: ${c.goal}`).join("\n");
+  return pMd(["### Three dynasty challenges", ...xs.flatMap((c, i) => [`- **${i + 1}. ${c.name}: ${c.t.n}** · ${c.why} **Goal:** ${c.goal}`]),
+    'Reply with a number or the team to build that plan, or say "more ideas".'].join("\n"));
+}
+function pTakeChallenge(c){
+  const plan = pPlan(c.q); if (!plan) return null;
+  if (P.plan) P.past.push(P.plan);
+  P.team = plan.t; P.plan = {...plan, goal:c.goal, goalName:c.name}; return pRender(P.plan);
+}
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q)); P.fuzzy = null;
@@ -2737,6 +2774,12 @@ async function pAsk(q){
     const pick = pd.opts[ix] || pd.opts.find(t => pFindTeams(q).includes(t)); P.pending = null;
     if (pick) q = pd.q.replace(pd.re, ` ${pick.n} ${pick.nk} `).replace(/\s+/g, " ");
   }
+  if (P.choices) {
+    const s = norm(q), ix = /^\W*(1|first|one|the first)\b/.test(s) ? 0 : /^\W*(2|second|two|the second)\b/.test(s) ? 1 : /^\W*(3|third|three|the third)\b/.test(s) ? 2 : -1;
+    const c = P.choices[ix] || P.choices.find(x => pFindTeams(q)[0] === x.t); P.choices = null;
+    if (c) { pSay("bot", pTakeChallenge(c)); return pSave(); }
+  }
+  if ((PCHAL.test(norm(q)) || /\bmore ideas|other ideas|something else\b/i.test(q)) && !pFindTeams(q).length && !/\b(rule|remove|swap)\b/i.test(q)) { pSay("bot", pChallenges()); return pSave(); }
   const amb = pAmbig(norm(q)) && pAmbig(q);
   if (amb) { P.pending = {q:norm(q), re:amb.re, opts:amb.opts};
     pSay("bot", pMd(["### Which one?", ...amb.opts.map((t, i) => `- **${i + 1}. ${t.n} ${t.nk}** · ${t.c} · ${t.o} OVR`), "Reply with the number or the name."].join("\n"))); return pSave(); }

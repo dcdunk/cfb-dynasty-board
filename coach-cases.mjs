@@ -85,6 +85,15 @@ export default [
   {name: "tailored fallback", say: [["tough oregon dynasty", {}], ["banana", {has: ["About Oregon you can ask", "Oregon vs"]}]]},
   {name: "no false typo on plain words", say: [["what can you do", {not: ["Reading"]}]]},
 
+  // ---- challenge suggestions
+  {name: "challenge ideas", say: [["what's a good dynasty challenge?", {has: ["Three dynasty challenges", "Goal"], not: ["###", "2025"], js: "P.choices.length === 3"}],
+    ["2", {has: ["Your goal"], js: "P.plan && P.plan.goalName && P.plan.t === P.past.concat([P.plan]).pop().t"}]]},
+  {name: "challenge by team name", say: [["give me some dynasty ideas", {js: "(window.__c = P.choices[0], true)"}],
+    ["__TEAM__", {has: ["Your goal"], js: "P.plan.t === __c.t"}]]},
+  {name: "more ideas", say: [["surprise me with a challenge", {}], ["more ideas", {has: ["Three dynasty challenges"]}]]},
+  {name: "challenge with a team is a plan", say: [["tough florida dynasty challenge", {has: ["Florida Gators"], not: ["Three dynasty challenges"]}], ["add conference footprint", {not: ["shaded below"]}]]},
+  {name: "markdown leaks", say: [["x", {js: "pMd('**### Title**\\n- -\\n- real') === '<h4>Title</h4><ul><li>real</li></ul>'"}]]},
+
   // ---- memory
   {name: "remembers difficulty", say: [["tough florida dynasty", {}], ["oregon dynasty", {has: ["House rules · Hardcore"]}]]},
   {name: "survives reload", say: [["tough florida dynasty", {}], ["no transfers", {}],

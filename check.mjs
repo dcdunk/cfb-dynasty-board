@@ -266,9 +266,9 @@ const cases = (await import("./coach-cases.mjs")).default;
 const coachRun = async cs => {
   const out = [];
   for (const c of cs) {
-    P.plan = null; P.team = null; P.past = []; P.facts = ""; P.pref = null; P.pending = null; localStorage.removeItem("coach-v1"); document.querySelector("#pLog").innerHTML = "";
+    P.plan = null; P.team = null; P.past = []; P.facts = ""; P.pref = null; P.pending = null; P.choices = null; localStorage.removeItem("coach-v1"); document.querySelector("#pLog").innerHTML = "";
     for (const [q0, e] of c.say) {
-      const q = q0.replace("__NAME__", () => unesc(HR[window.__id].n));
+      const q = q0.replace("__NAME__", () => unesc(HR[window.__id].n)).replace("__TEAM__", () => window.__c.t.n);
       document.querySelector("#pIn").value = q; document.querySelector("#pForm").requestSubmit(); await new Promise(r => setTimeout(r, 20));
       const txt = [...document.querySelectorAll("#pLog .pm.bot")].pop()?.textContent || "", bad = [];
       for (const h of e.has || []) if (!new RegExp(h, "i").test(txt)) bad.push(`missing /${h}/`);
