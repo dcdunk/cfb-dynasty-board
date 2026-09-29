@@ -31,6 +31,8 @@ ws.addEventListener("message", ({ data }) => {
   if (m.method === "Page.loadEventFired") loaded?.();
 });
 await send("Runtime.enable"); await send("Page.enable");
+// Never let the test browser start Coach's 1.8 GB AI model download.
+await send("Page.addScriptToEvaluateOnNewDocument", { source: "window.__noAI = true" });
 await new Promise(r => { loaded = r; send("Page.navigate", { url: PAGE }); });
 
 // Runs inside the page. Returns a list of failed checks.
@@ -179,6 +181,7 @@ const inPage = async () => {
   ok(!$("#abPlayer").hidden && $("#abCoach").hidden, "Abilities: Player toggle should swap back");
   ok($("#tabAb").textContent === "Abilities", "Abilities: tab should be named Abilities");
 
+  ok(!$("#pAi") && window.__noAI && !P.aiLoading && !P.ai, "Coach: AI toggle should be gone and the test browser must not load the model");
   // Dynasty planner: plain chat. Parses team/difficulty/extras from text and replies in prose only.
   $("#pOpen").click(); await wait(50);
   ok($("#pChat").classList.contains("on") && $("#pLog .pm.bot"), "Coach: sidebar didn't open with a greeting");

@@ -872,7 +872,6 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
 
 <aside class="pchat" id="pChat" aria-labelledby="pTitle">
   <div class="phead"><h2 id="pTitle">Coach</h2>
-    <button class="pai" id="pAi" type="button" aria-pressed="false" title="Downloads a small AI model (about 1.8 GB) that runs on your device. Nothing is sent to a server.">AI chat: off</button>
     <button class="pai" id="pClear" type="button" title="Clear the chat and start over">Clear</button>
     <button class="dclose" id="pClose" type="button" aria-label="Close Coach" style="position:static">×</button></div>
   <div class="plog" id="pLog" aria-live="polite"></div>
@@ -2763,24 +2762,21 @@ async function pWrite(q, el, free, open){
     let out = "";
     for await (const c of chunks) { out += c.choices[0]?.delta?.content || ""; el.innerHTML = pMd(out); }
     P.hist.push({role:"user", content:q}, {role:"assistant", content:out});
-  } catch (e) { el.textContent = "The AI model stopped responding. Turn AI chat off to get the standard reply."; }
+  } catch (e) { el.textContent = "Coach's AI model stopped responding. Try rephrasing as a plan, player, staff or league question."; }
   P.busy = false;
 }
 const PMODEL = "Llama-3.2-3B-Instruct-q4f16_1-MLC";   // ~1.8 GB; best grounded answers of the 1B/1.5B/3B models tested
-async function pAiToggle(){
-  const b = $("#pAi"), st = $("#pStat");
-  if (P.aiOn) { P.aiOn = false; b.setAttribute("aria-pressed", "false"); b.textContent = "AI chat: off"; return; }
-  if (!navigator.gpu) { st.hidden = false; st.textContent = "This browser can't run the AI model (needs WebGPU). The planner still works without it."; return; }
-  if (!P.ai) {
-    if (!confirm("AI chat downloads a ~1.8 GB model once and runs it on your device. Nothing you type leaves your browser. Continue?")) return;
-    b.disabled = true; st.hidden = false; st.textContent = "Loading AI model…";
-    try {
-      const w = await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/+esm");
-      P.ai = await w.CreateMLCEngine(PMODEL, {initProgressCallback:r => st.textContent = r.text});
-    } catch (e) { b.disabled = false; st.textContent = "Couldn't load the AI model on this device. The planner still works without it."; return; }
-    b.disabled = false;
-  }
-  st.hidden = true; P.aiOn = true; b.setAttribute("aria-pressed", "true"); b.textContent = "AI chat: on";
+// The AI model loads automatically the first time Coach opens (not on page load, so visitors who never open Coach don't download it).
+// Skipped without WebGPU, with the browser's data saver on, or in the test browser (window.__noAI). Coach works fully without it.
+async function pAiLoad(){
+  if (P.ai || P.aiLoading || window.__noAI || !navigator.gpu || navigator.connection?.saveData) return;
+  const st = $("#pStat"); P.aiLoading = true; st.hidden = false; st.textContent = "Loading Coach's AI model (one-time download, about 1.8 GB)…";
+  try {
+    const w = await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/+esm");
+    P.ai = await w.CreateMLCEngine(PMODEL, {initProgressCallback:r => st.textContent = `Loading Coach's AI model (one-time download, about 1.8 GB): ${Math.round((r.progress || 0) * 100)}%`});
+    P.aiOn = true; st.hidden = true;
+  } catch (e) { st.textContent = "Coach's AI model couldn't load on this device. Everything else still works."; setTimeout(() => st.hidden = true, 6000); }
+  P.aiLoading = false;
 }
 // Chat memory (localStorage "coach-v1"): the transcript, current plan, undo history, last team and preferred difficulty.
 const pSer = p => p && {...p, t:p.t.n};
@@ -2804,14 +2800,13 @@ function pClear(){
 }
 function pToggle(on){
   $("#pChat").classList.toggle("on", on); document.body.classList.toggle("coach-on", on); $("#pOpen").setAttribute("aria-expanded", on);
-  if (on) { if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus({preventScroll:true}); } else $("#pOpen").focus();
+  if (on) { pAiLoad(); if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus({preventScroll:true}); } else $("#pOpen").focus();
 }
 pLoad();
 $("#pClear").addEventListener("click", () => { pClear(); $("#pIn").focus(); });
 $("#pOpen").addEventListener("click", () => pToggle(!$("#pChat").classList.contains("on")));
 $("#pClose").addEventListener("click", () => pToggle(false));
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
-$("#pAi").addEventListener("click", pAiToggle);
 const pGrow = () => { const i = $("#pIn"); i.style.height = "auto"; i.style.height = i.scrollHeight + 2 + "px"; };
 $("#pIn").addEventListener("input", pGrow);
 // Enter sends, Shift+Enter adds a line.
