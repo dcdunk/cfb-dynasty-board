@@ -72,5 +72,24 @@ export default [
   {name: "pipeline by region", say: [["best pipeline in metro atlanta", {has: ["Metro Atlanta pipelines"]}]]},
   {name: "compare", say: [["florida vs florida state", {has: ["Florida vs Florida State", "Overall", "Best players", "Head coaches"]}]]},
   {name: "compare word", say: [["compare ohio state and michigan", {has: ["Ohio State vs Michigan"]}]]},
+  // ---- messy input
+  {name: "typo", say: [["tough floida dynasty", {has: ["Reading “floida” as Florida", "Florida Gators"]}]]},
+  {name: "transposed typo", say: [["casual gerogia dynasty", {has: ["Georgia Bulldogs"]}]]},
+  {name: "nickname alias", say: [["tough bama dynasty", {has: ["Alabama Crimson Tide"]}]]},
+  {name: "the U", say: [["best players at the u", {has: ["Miami"], not: ["Which one"]}]]},
+  {name: "rule words are not typos", say: [["tough florida dynasty", {}], ["no transfers", {}],
+    ["swap closed portal for patch the holes", {has: ["Patch the holes"], not: ["Reading"]}]]},
+  {name: "ambiguous Miami", say: [["tough miami dynasty", {has: ["Which one", "Miami Hurricanes", "Miami University"]}],
+    ["2", {has: ["Miami University"], js: "P.plan && P.plan.t.n === 'Miami University'"}]]},
+  {name: "ambiguous UT by name", say: [["best player at ut", {has: ["Which one", "Tennessee"]}], ["tennessee", {has: ["Tennessee"], js: "P.team.n === 'Tennessee'"}]]},
+  {name: "tailored fallback", say: [["tough oregon dynasty", {}], ["banana", {has: ["About Oregon you can ask", "Oregon vs"]}]]},
+  {name: "no false typo on plain words", say: [["what can you do", {not: ["Reading"]}]]},
+
+  // ---- memory
+  {name: "remembers difficulty", say: [["tough florida dynasty", {}], ["oregon dynasty", {has: ["House rules · Hardcore"]}]]},
+  {name: "survives reload", say: [["tough florida dynasty", {}], ["no transfers", {}],
+    ["x", {js: "(pSave(), P.plan = null, P.team = null, P.past = [], document.querySelector('#pLog').innerHTML = '', pLoad()) && P.plan.t.n === 'Florida' && P.plan.rules.includes('port-none') && P.past.length === 1 && document.querySelectorAll('#pLog .pm').length >= 6"}]]},
+  {name: "start over", say: [["tough florida dynasty", {}], ["start over", {has: ["I'm Coach"], js: "!P.plan && !P.pref && !localStorage.getItem('coach-v1') && document.querySelectorAll('#pLog .pm').length === 1"}]]},
+
   {name: "powerhouse", say: [["former powerhouse back to glory, 3 options?", {has: ["Minnesota", "1960"]}]]},
 ];

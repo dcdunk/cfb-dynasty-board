@@ -625,6 +625,7 @@ body.coach-on{margin-right:400px}
 .pm.me{align-self:flex-end; background:var(--accent-soft); color:var(--text); padding:8px 11px}
 .pm.bot{align-self:flex-start}
 .pm.bot p{margin:0 0 8px}
+.pm.bot .pguess{color:var(--dim); font-size:12px}
 .pm.bot h4{margin:12px 0 4px; font:600 11px "IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.06em; color:var(--accent-ink)}
 .pm.bot h4:first-child{margin-top:0}
 .pm.bot ul{margin:0 0 6px; padding-left:18px}
@@ -872,6 +873,7 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
 <aside class="pchat" id="pChat" aria-labelledby="pTitle">
   <div class="phead"><h2 id="pTitle">Coach</h2>
     <button class="pai" id="pAi" type="button" aria-pressed="false" title="Downloads a small AI model (about 1.8 GB) that runs on your device. Nothing is sent to a server.">AI chat: off</button>
+    <button class="pai" id="pClear" type="button" title="Clear the chat and start over">Clear</button>
     <button class="dclose" id="pClose" type="button" aria-label="Close Coach" style="position:static">×</button></div>
   <div class="plog" id="pLog" aria-live="polite"></div>
   <div class="pstat" id="pStat" hidden></div>
@@ -2315,17 +2317,54 @@ const PRULE = [["port-none", /no (transfer|portal)|closed portal|without the por
 const PNK = (() => { const c = {}; DATA.forEach(t => { const k = norm(t.nk); c[k] = (c[k] || 0) + 1; }); return c; })();
 // Abbreviations that are ordinary words ("most" = Missouri State) never count as a team mention.
 const PABSTOP = new Set(["most", "ball", "mass", "wake", "app", "miss", "ill", "usa", "bay", "tem", "pur", "cal", "ark"]);
+// Fan nicknames and shorthand. Ambiguous ones ("miami", "ut") are handled by pAmbig instead.
+const PALIAS = {"Alabama":["bama","roll tide","the tide"], "Miami":["the u","canes","miami fl","miami florida"], "Miami University":["miami oh","miami ohio"],
+  "Florida State":["noles"], "Georgia":["dawgs","uga"], "Texas":["horns","hook em"], "Texas A&M":["a&m","a and m","aggieland"], "Oklahoma":["ou","boomer sooner"],
+  "Tennessee":["vols"], "Arkansas":["hogs"], "Nebraska":["huskers"], "Notre Dame":["irish","domers"], "Ohio State":["bucks"], "Syracuse":["cuse"],
+  "Michigan State":["sparty"], "Washington State":["wazzu"], "Michigan":["umich","mich"], "Mississippi State":["miss state"], "Ole Miss":["mississippi"],
+  "LSU":["bayou bengals"], "Penn State":["penn st"], "Virginia Tech":["hokies"], "North Carolina":["unc","carolina"], "South Carolina":["gamecocks"]};
+const PALIASN = Object.fromEntries(Object.entries(PALIAS).flatMap(([n, xs]) => xs.map(x => [x, n])));
+// Words Coach uses that must never be "corrected" into a team name.
+const PWORDS = new Set("about above after again their there these those which while would could should dynasty rebuild tough tougher casual harder easier lighter little less more most much make build start coach coaches coaching created custom player players roster ratings rating rated overall offense defense prestige budget titles title national champion championship pipeline pipelines region regions state states recruit recruiting recruits house rules rule remove swap switch change replace explain transfer transfers portal schedule difficulty hardcore brutal standard heisman sliders slider compare versus against better stronger best worst fastest quickest speed biggest smallest highest lowest program programs school schools teams conference country nation college football first second third where what when who why how does tell show please thanks thank great awesome right wrong other another".split(" "));
+// Words from house rule, preset and ability names ("Patch the holes") are never typos for a team ("Noles").
+let PNAMEW_ = null;
+const PNAMEW = () => PNAMEW_ || (PNAMEW_ = new Set([...HRULES.map(r => r.n), ...HPRE.map(p => p.n), ...(typeof ABPHYS === "object" ? Object.keys(ABPHYS) : []),
+  ...(typeof ABMENT === "object" ? (Array.isArray(ABMENT) ? ABMENT.map(x => x[0] || x.n || x) : Object.keys(ABMENT)) : [])].flatMap(n => norm(unesc(String(n))).split(/[^a-z0-9]+/))));
+function lev(a, b){
+  const d = Array.from({length:a.length + 1}, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1] ? d[i - 2][j - 2] + 1 : Infinity);
+  return d[a.length][b.length];
+}
+// Typo fallback: one or two words within 1 edit (2 for long names) of a team name, unique nickname or alias.
+function pFuzzy(q){
+  const w = norm(q).replace(/[^a-z0-9& ]+/g, " ").split(/\s+/).filter(Boolean), grams = [];
+  w.forEach((x, i) => { grams.push(x); if (w[i + 1]) grams.push(x + " " + w[i + 1]); });
+  const keys = DATA.flatMap(t => [[norm(t.n).replace(/[^a-z0-9& ]+/g, " ").trim(), t], ...(PNK[norm(t.nk)] === 1 ? [[norm(t.nk), t]] : [])])
+    .filter(k => k[0].length >= 5);
+  let best = null;
+  for (const g of grams) {
+    if (g.length < 5 || g.split(" ").some(x => PWORDS.has(x) || PNAMEW().has(x))) continue;
+    for (const [k, t] of keys) { const d = lev(g, k), lim = k.length >= 8 ? 2 : 1;
+      if (d && d <= lim && (!best || d < best[2] || (d === best[2] && k.length > best[3]))) best = [t, g, d, k.length]; }
+  }
+  return best ? {t:best[0], typed:best[1]} : null;
+}
 function pFindTeams(q){
   const v = " " + norm(q).replace(/[^a-z0-9&]+/g, " ") + " ", hits = [];
   for (const t of DATA) {
     const keys = [norm(t.n).replace(/[^a-z0-9&]+/g, " ")];
     if (PNK[norm(t.nk)] === 1) keys.push(norm(t.nk));
     if (t.ab.length >= 2 && !PABSTOP.has(norm(t.ab))) keys.push(norm(t.ab));
+    keys.push(...(PALIAS[t.n] || []));
     for (const k of keys) { const i = v.indexOf(" " + k + " "); if (i >= 0) hits.push([t, k.length, i]); }
   }
   hits.sort((a, b) => b[1] - a[1]);
   const out = [];   // longest match wins, so "Georgia Tech" beats "Georgia"
   for (const [t, len, i] of hits) if (!out.some(o => o[0] === t || (i < o[2] + o[1] && o[2] < i + len))) out.push([t, len, i]);
+  if (!out.length) { const f = pFuzzy(q); if (f) { P.fuzzy = f; return [f.t]; } }
   return out.sort((a, b) => a[2] - b[2]).map(o => o[0]);
 }
 function pRules(t, strict, pre, force){
@@ -2339,10 +2378,11 @@ function pRules(t, strict, pre, force){
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
   }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
 }
-const P = {past:[], team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
+const P = {past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
 const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
+  "Or ask about the league:", '- "Florida vs Florida State"', '- "Best QB in the SEC"', '- "Best rebuild jobs in the Big Ten"',
   "I'll suggest house rules, a recruiting approach and sliders from this site's data. Then say \"make it harder\", \"no transfers\" and so on."].join("\n"));
 // Relative requests ("a little less difficult", "much harder") nudge the last plan rule by rule instead of re-rolling it.
 const PDOWN = /\b(easier|lighter|softer|less (difficult|hard|tough|brutal|strict|challenging|punishing|intense)|not (as|so) (hard|tough|difficult|brutal)|tone (it )?down|dial (it )?back|ease (it )?(up|off)|too (hard|tough|difficult|much|brutal))\b/;
@@ -2386,7 +2426,9 @@ function pPlan(q){
   if (!heard) return null;
   const prev = P.plan && t === P.plan.t ? P.plan : null, dir = PDOWN.test(s) ? -1 : PUP.test(s) ? 1 : 0;
   const s2 = s.replace(PDOWN, " ").replace(PUP, " ");   // "less difficult" must not also read as "difficult"
-  let strict = (PDIFF.find(([, re]) => re.test(s2)) || [prev ? prev.strict : "std"])[0];
+  const said = PDIFF.find(([, re]) => re.test(s2));
+  if (said) P.pref = said[0];                              // remembered for the next program you plan
+  let strict = (said || [prev ? prev.strict : P.pref || "std"])[0];
   const pre = (PPRE.find(([, re]) => re.test(s)) || [null])[0];
   const force = [...new Set(PRULE.filter(([, re]) => re.test(s)).map(x => x[0]))].filter(id => HR[id].w(t));
   const created = /creat\w* (a )?coach|custom coach|my own coach|own coach|create a coach/.test(s) || (P.plan && t === P.team && P.plan.created);
@@ -2660,9 +2702,34 @@ function pLeague(q){
   return pMd([`### ${title} · ${where}`, ...(key === "rebuild" ? [`- Skips the top third of rosters (${cut}+ overall), then ranks by how far the NIL budget outranks the roster, plus prestige: money and a brand to fix a weaker team.`] : []),
     ...xs.map(t => `- ${tLine(t)}${key === "rebuild" ? ` · roster #${orank(t)}, NIL #${NILRANK.indexOf(t.n) + 1}` : key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`)].join("\n"));
 }
+// Names that point at more than one program: ask instead of guessing.
+const PAMB = [[/\bmiami\b(?! (university|oh\b|ohio|fl\b|florida|hurricanes|redhawks))/, ["Miami", "Miami University"], /\bthe u\b|hurricanes|redhawks/],
+  [/\but\b/, ["Texas", "Tennessee", "Utah"], null]];
+function pAmbig(q){
+  const s = norm(q);
+  for (const [re, names, skip] of PAMB) if (re.test(s) && !(skip && skip.test(s))) return {re, opts:names.map(n => DATA.find(t => t.n === n)).filter(Boolean)};
+  return null;
+}
+// When nothing matched: suggest what Coach can do, aimed at the team in play if there is one.
+function pHelp(t){
+  if (!t) return PHELP;
+  const riv = DATA.filter(x => x !== t && x.c === t.c).sort((a, b) => Math.abs(a.o - t.o) - Math.abs(b.o - t.o))[0];
+  return pMd([`I didn't follow that. About ${t.n} you can ask:`, `- "Tough ${t.n} dynasty" or "casual ${t.n} rebuild"`, `- "Best players at ${t.n}" or "best QB?"`,
+    `- "${t.n} coaching staff"`, ...(riv ? [`- "${t.n} vs ${riv.n}"`] : []), ...(P.plan ? [`- "Remove ${unesc(HR[P.plan.rules[0]].n)}", "make it easier" or "undo"`] : [])].join("\n"));
+}
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
-  pSay("me", esc(q));
+  pSay("me", esc(q)); P.fuzzy = null;
+  if (/^(clear|reset|start over|new chat|clear chat|forget (it|everything))\b/i.test(q)) return pClear();
+  // Answer to "Which Miami?": pick an option and replay the original question with an unambiguous name.
+  if (P.pending) {
+    const pd = P.pending, s = norm(q), ix = /\b(1|first|one)\b/.test(s) ? 0 : /\b(2|second|two)\b/.test(s) ? 1 : /\b(3|third|three)\b/.test(s) ? 2 : -1;
+    const pick = pd.opts[ix] || pd.opts.find(t => pFindTeams(q).includes(t)); P.pending = null;
+    if (pick) q = pd.q.replace(pd.re, ` ${pick.n} ${pick.nk} `).replace(/\s+/g, " ");
+  }
+  const amb = pAmbig(norm(q)) && pAmbig(q);
+  if (amb) { P.pending = {q:norm(q), re:amb.re, opts:amb.opts};
+    pSay("bot", pMd(["### Which one?", ...amb.opts.map((t, i) => `- **${i + 1}. ${t.n} ${t.nk}** · ${t.c} · ${t.o} OVR`), "Reply with the number or the name."].join("\n"))); return pSave(); }
   // Order: a named player, then roster questions ("best QB at Ohio State"), then fallen powerhouses, then a dynasty plan.
   const fp = pFindPlayer(q), rq = /\b(best|top|fastest|highest.rated|starting|starter)\b/i.test(q) && !/dynasty|rebuild|house rules|challenge|\bplan\b/i.test(q);
   const tp = pFindTeams(q)[0] || P.team;
@@ -2680,8 +2747,10 @@ async function pAsk(q){
   else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); }
   // Plans, rosters and staff come from the templated reply even with AI on: the model dropped and renamed rules when it rewrote them.
   // The AI only answers what the template can't, using the facts from the last answer plus the league table.
-  if (!html && P.aiOn && P.ai) return pWrite(q, pSay("bot", ""), true, true);
-  pSay("bot", html || `<p>I didn't catch a program${P.team ? " or a change to the plan" : ""} in that.</p>` + PHELP);
+  if (!html && P.aiOn && P.ai) { await pWrite(q, pSay("bot", ""), true, true); return pSave(); }
+  if (html && P.fuzzy) html = `<p class="pguess">Reading “${esc(P.fuzzy.typed)}” as ${esc(P.fuzzy.t.n)}.</p>` + html;
+  pSay("bot", html || (P.team || pFindTeams(q)[0] ? pHelp(pFindTeams(q)[0] || P.team) : `<p>I didn't catch a program in that.</p>` + PHELP));
+  pSave();
 }
 async function pWrite(q, el, free, open){
   el.textContent = "…"; P.busy = true;
@@ -2713,10 +2782,32 @@ async function pAiToggle(){
   }
   st.hidden = true; P.aiOn = true; b.setAttribute("aria-pressed", "true"); b.textContent = "AI chat: on";
 }
+// Chat memory (localStorage "coach-v1"): the transcript, current plan, undo history, last team and preferred difficulty.
+const pSer = p => p && {...p, t:p.t.n};
+const pDe = p => { const t = p && DATA.find(x => x.n === p.t); return t ? {...p, t, rules:(p.rules || []).filter(id => HR[id]), keep:(p.keep || []).filter(id => HR[id])} : null; };
+function pSave(){
+  try { localStorage.setItem("coach-v1", JSON.stringify({msgs:[...pLog.children].slice(-60).map(d => [d.classList.contains("me") ? "me" : "bot", d.innerHTML]),
+    plan:pSer(P.plan), past:P.past.slice(-10).map(pSer), team:P.team && P.team.n, pref:P.pref})); } catch (e) {}
+}
+function pLoad(){
+  try {
+    const s = JSON.parse(localStorage.getItem("coach-v1") || "null"); if (!s) return false;
+    pLog.innerHTML = ""; (s.msgs || []).forEach(([w, x]) => { const d = document.createElement("div"); d.className = "pm " + (w === "me" ? "me" : "bot"); d.innerHTML = x; pLog.append(d); });
+    P.plan = pDe(s.plan); P.past = (s.past || []).map(pDe).filter(Boolean); P.team = DATA.find(t => t.n === s.team) || (P.plan && P.plan.t) || null;
+    P.pref = ["cas", "std", "hard"].includes(s.pref) ? s.pref : null; pLog.scrollTop = pLog.scrollHeight; return true;
+  } catch (e) { return false; }
+}
+function pClear(){
+  Object.assign(P, {plan:null, past:[], team:null, pref:null, pending:null, facts:"", hist:[]});
+  try { localStorage.removeItem("coach-v1"); } catch (e) {}
+  pLog.innerHTML = ""; pSay("bot", PHELP);
+}
 function pToggle(on){
   $("#pChat").classList.toggle("on", on); document.body.classList.toggle("coach-on", on); $("#pOpen").setAttribute("aria-expanded", on);
   if (on) { if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus({preventScroll:true}); } else $("#pOpen").focus();
 }
+pLoad();
+$("#pClear").addEventListener("click", () => { pClear(); $("#pIn").focus(); });
 $("#pOpen").addEventListener("click", () => pToggle(!$("#pChat").classList.contains("on")));
 $("#pClose").addEventListener("click", () => pToggle(false));
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
