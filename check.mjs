@@ -188,9 +188,10 @@ const inPage = async () => {
   { const sa = [...$$("#viewAb button")].find(b => b.textContent.trim() === "Coach" && !b.closest("#abArch")); if (sa) { showTab("ab"); sa.click(); await wait(50); }
     const lis = [...$$("#abCGrid .ab-list li")], first = lis[0]?.querySelector(".ab-cost")?.textContent;
     ok(lis.length && lis.every(li => li.querySelector(".ab-cost")), "Abilities: every coach upgrade should show its cost");
+    ok(!/for all \d|<dt>Cost/.test($("#abCGrid").innerHTML), "Abilities: archetype Cost row and branch totals were removed");
     // Game-file costs (prestonchoate.dev): K/P discounts exist only on specific abilities.
     const ca = n => CARCH.find(a => a.n === n), br = n => ca(n).br[0][1], cost = (n, i) => cTierCost(ca(n), i, br(n)[i][0]);
-    ok(JSON.stringify(cost("Recruiter", 2)) === "[25,null]" && cBranchTotal(ca("Recruiter"), br("Recruiter")) === "90 CP for all 4", "Abilities: Recruiter has no K/P discount (Magnetic Personality is 25 for K/P)");
+    ok(JSON.stringify(cost("Recruiter", 2)) === "[25,null]" , "Abilities: Recruiter has no K/P discount (Magnetic Personality is 25 for K/P)");
     ok(JSON.stringify([0, 1, 2, 3].map(i => cost("Motivator", i))) === "[[15,null],[20,10],[25,null],[30,15]]", "Abilities: Motivator K/P discounts should be Hot Hand 10 and Locked In 15 only");
     ok(JSON.stringify(cost("Elite Recruiter", 3)) === "[40,20]" && JSON.stringify(cost("Elite Recruiter", 0)) === "[25,null]", "Abilities: Elite Recruiter K/P discount is Always Be Crootin' only");
     ok(JSON.stringify([0, 1, 2, 3].map(i => cost("Talent Developer", i))) === "[[25,null],[30,15],[35,null],[40,20]]", "Abilities: Talent Developer K/P: Whisperer 15, Pay It Forward 20");

@@ -2171,17 +2171,13 @@ function cCost(a){
   m = a.cost.match(/^(\d+) CP each/); return m ? {each:+m[1]} : null;
 }
 const cTierCost = (a, i, n) => { const c = cCost(a); return !c ? null : c.each ? [c.each, null] : [c.tier[i], c.kp[n] ?? null]; };
-const cBranchTotal = (a, ab) => { const c = cCost(a); if (!c) return "";
-  if (c.each) return `${c.each * ab.length} CP for all ${ab.length}`;
-  const all = ab.reduce((s, _, i) => s + c.tier[i], 0), kp = ab.reduce((s, [n], i) => s + (c.kp[n] ?? c.tier[i]), 0);
-  return `${all} CP for all ${ab.length}${kp !== all ? ` (K/P ${kp})` : ""}`; };
 function cDrawAb(q){
   $("#abArch").innerHTML = CGROUP.map(([g]) => `<button type="button" class="chip ab-cchip" data-c="${esc(g)}" aria-pressed="${!q && g === abC}">${CGROUP.find(x => x[0] === g)[1].map(n => abImg("a", n)).join("")}${esc(g)}</button>`).join("");
   let ico = false;
   const row = (a, i, t, n, d) => { const c = cTierCost(a, i, n);
     return `<li>${ico ? abImg("c", n) || '<span class="ab-slot"></span>' : ""}<div class="ab-tx">${t ? `<span class="ab-tier">Tier ${t}</span>` : ""}<b class="ab-nm">${esc(n)}</b><span class="ab-ds">${esc(d)}</span></div>`
       + `${c ? `<em class="ab-cost"><span class="ab-coin" aria-label="${c[0]} coach points">${c[0]}</span>${c[1] != null && c[1] !== c[0] ? `<small>K/P ${c[1]}</small>` : ""}</em>` : ""}</li>`; };
-  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}<span>${all ? esc(cBranchTotal(a, ab)) : esc(a.n)}</span></h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list ab-clist${(ico = ab.some(([n]) => abImg("c", n))) ? "" : " noico"}">${
+  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}${all ? "" : `<span>${esc(a.n)}</span>`}</h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list ab-clist${(ico = ab.some(([n]) => abImg("c", n))) ? "" : " noico"}">${
     ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a, i, a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d) : "").join("")}</ul></section>`;
   if (q) {
     const hits = CARCH.flatMap(a => a.br.filter(([, ab]) => ab.some(([n]) => n.toLowerCase().includes(q))).map(([b, ab]) => card(a, b, ab, false)));
@@ -2190,7 +2186,7 @@ function cDrawAb(q){
   }
   $("#abCGrid").innerHTML = CGROUP.find(g => g[0] === abC)[1].map(n => CARCH.find(x => x.n === n)).map(a =>
     `<section class="ab-arch"><h3 class="ab-ah">${abImg("a", a.n)}${esc(a.n)} <span>${esc(a.g)}</span></h3>`
-    + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}<div><dt>Cost</dt><dd>Shown next to each upgrade${a.pos ? ", per position group" : ""}${cCost(a) && cCost(a).kp && Object.keys(cCost(a).kp).length ? `; K/P pays less for ${and(Object.keys(cCost(a).kp))}` : ""}.</dd></div></dl></div>`
+    + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}</dl></div>`
     + `<div class="sl-grid">${a.br.map(([b, ab]) => card(a, b, ab, true)).join("")}</div></section>`).join("");
 }
 function abDraw(){
