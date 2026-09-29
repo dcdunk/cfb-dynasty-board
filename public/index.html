@@ -574,6 +574,13 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .ab-ment{padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); column-gap:24px; max-width:1500px}
 .ab-ment li:first-child{border-top:1px solid var(--line)}
 @media (max-width:420px){.ab-ment{grid-template-columns:1fr}}
+.ab-list li b{display:flex; align-items:center; gap:8px}
+.ab-ico{width:28px; height:28px; flex:none; background:#161C23; border-radius:6px; padding:3px; box-sizing:border-box}
+.ab-ico.ab-badge{background:none; padding:0}
+.ab-ah{display:flex; align-items:center; gap:8px}
+.ab-ah .ab-badge{width:44px; height:44px}
+.ab-cchip{display:inline-flex; align-items:center; gap:4px}
+.ab-cchip .ab-badge{width:22px; height:22px; margin:-3px 0}
 .ab-arch + .ab-arch{margin-top:34px}
 .ab-ah{margin:0 0 10px; font-size:17px}
 .ab-ah span{font-size:10.5px; letter-spacing:.085em; text-transform:uppercase; color:var(--dim); font-weight:400; padding-left:6px}
@@ -2078,8 +2085,12 @@ const abDesc = n => (ABPHYS[n] || ABMENT[n] || "").replace(/^\?/, "");
 const abWho = n => ABARCH.filter(a => a[2].includes(n)).map(a => `${a[1]} ${a[0]}`);
 const abNorm = s => " " + s.toLowerCase().replace(/[^a-z0-9/!]+/g, " ").trim() + " ";
 const abFind = q => { const s = abNorm(q); return Object.keys({...ABPHYS, ...ABMENT}).filter(n => s.includes(abNorm(n))).sort((a, b) => b.length - a.length)[0]; };
+// Real CFB 27 icons pulled from the game files (public/ab: p player, c coach ability, a archetype badge). Only names in these lists have one.
+const abSlug = n => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const ABICO = new Set(["360", "50-50", "adrenaline", "aftershock", "arm-bar", "balanced", "ball-security", "ballhawk", "best-friend", "blanket-coverage", "blow-up", "bouncer", "chip-shot", "clearheaded", "clutch-kicker", "coffin-corner", "cutter", "deep-range", "defensive-rally", "dot", "double-dip", "downhill", "extender", "fan-favorite", "field-flip", "field-general", "grip-breaker", "ground-n-pound", "hammer", "headfirst", "headstrong", "house-call", "inside-disruptor", "inside-shield", "instinct", "jammer", "knockout", "lay-out", "legion", "magician", "mega-leg", "mobile-deadeye", "mobile-resistance", "off-platform", "offensive-rally", "on-time", "option-disruptor", "option-king", "option-shield", "outside-disruptor", "outside-shield", "pa-shield", "pocket-disruptor", "pocket-shield", "press-pro", "pull-down", "quick-drop", "quick-jump", "quick-step", "recoup", "resistance", "road-dog", "robber", "rollercoaster", "safety-valve", "screen-enforcer", "second-level", "shifty", "side-step", "sidekick", "sleight-of-hand", "step-up", "strong-grip", "sure-hands", "take-down", "takeoff", "team-player", "the-natural", "wear-down", "winning-time", "workhorse"]), CICO = new Set(["battery-pack", "bundle-discount", "camouflaged-coverage", "cardio-kings", "caught-napping", "chew-up-yards", "clean-sheet-defense", "clean-sheet-offense", "delay-sunday", "demoralizing", "dream-school", "family-atmosphere", "fresh-legs", "friends-family-discount", "full-refund", "gas-tank", "gasoline", "gift-of-gab", "giving-back", "hands-off", "hater-blockers", "he-shed", "home-field-advantage", "hometown-discount", "household-name", "invest", "keep-blocks-longer", "keep-em-coming", "let-s-run-it-back", "lower-the-bar", "making-inroads", "master-of-disguise", "no-free-yards", "no-mid-here", "not-intimidated", "not-so-fast", "nothing-deep", "on-their-heels", "polished", "portal-preview", "puncher-s-chance", "road-warriors", "roster-retainer", "second-chance-keeper", "senior-superlatives", "share-the-wealth", "signing-bonus", "smart-goals", "stretch-the-field", "take-what-s-there", "teflon", "tipped-your-hand", "to-the-whistle", "too-loud", "unfriendly-confines", "we-see-you", "wear-em-down"]);
+const abImg = (dir, n) => (dir === "p" ? ABICO : dir === "c" ? CICO : {has: () => true}).has(abSlug(n)) ? `<img class="ab-ico${dir === "a" ? " ab-badge" : ""}" src="ab/${dir}/${abSlug(n)}.png" alt="">` : "";
 let abP = "QB", abM = "player", abC = "Recruiter";
-const abRow = n => `<li><b>${esc(n)}</b><span>${esc(abDesc(n))}</span></li>`;
+const abRow = n => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}</span></li>`;
 
 /* ---- coach abilities ---- */
 // Names and unlocks: CollegeFootball.gg. Costs, perks and values: prestonchoate.dev, mined from the CFB 27 game files (dynasty tuning data);
@@ -2141,8 +2152,8 @@ const CGROUP = [["Recruiter", ["Recruiter","Elite Recruiter"]], ["Motivator", ["
   ["Architect", ["Architect"]], ["Strategist", ["Strategist"]], ["Talent Developer", ["Talent Developer"]],
   ["Program Builder & CEO", ["Program Builder","CEO"]], ["Rainmaker & Visionary", ["Rainmaker","Visionary"]]];
 function cDrawAb(q){
-  $("#abArch").innerHTML = CGROUP.map(([g]) => `<button type="button" class="chip" data-c="${esc(g)}" aria-pressed="${!q && g === abC}">${esc(g)}</button>`).join("");
-  const row = (t, n, d) => `<li><b>${t ? `<small>T${t}</small> ` : ""}${esc(n)}</b><span>${esc(d)}</span></li>`;
+  $("#abArch").innerHTML = CGROUP.map(([g]) => `<button type="button" class="chip ab-cchip" data-c="${esc(g)}" aria-pressed="${!q && g === abC}">${CGROUP.find(x => x[0] === g)[1].map(n => abImg("a", n)).join("")}${esc(g)}</button>`).join("");
+  const row = (t, n, d) => `<li><b>${abImg("c", n)}${t ? `<small>T${t}</small> ` : ""}${esc(n)}</b><span>${esc(d)}</span></li>`;
   const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}<span>${esc(a.n)}</span></h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list">${
     ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d) : "").join("")}</ul></section>`;
   if (q) {
@@ -2151,7 +2162,7 @@ function cDrawAb(q){
     return;
   }
   $("#abCGrid").innerHTML = CGROUP.find(g => g[0] === abC)[1].map(n => CARCH.find(x => x.n === n)).map(a =>
-    `<section class="ab-arch"><h3 class="ab-ah">${esc(a.n)} <span>${esc(a.g)}</span></h3>`
+    `<section class="ab-arch"><h3 class="ab-ah">${abImg("a", a.n)}${esc(a.n)} <span>${esc(a.g)}</span></h3>`
     + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}<div><dt>Cost</dt><dd>${esc(a.cost)}</dd></div></dl></div>`
     + `<div class="sl-grid">${a.br.map(([b, ab]) => card(a, b, ab, true)).join("")}</div></section>`).join("");
 }

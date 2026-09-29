@@ -180,6 +180,8 @@ const inPage = async () => {
   $('#abMode [data-m="player"]').click(); await wait(50);
   ok(!$("#abPlayer").hidden && $("#abCoach").hidden, "Abilities: Player toggle should swap back");
   ok($("#tabAb").textContent === "Abilities", "Abilities: tab should be named Abilities");
+  { const imgs = [...$$("#viewAb img.ab-ico")]; await Promise.race([Promise.all(imgs.map(i => i.decode().catch(() => {}))), wait(3000)]);
+    ok(imgs.length > 20 && imgs.every(i => i.naturalWidth > 0), `Abilities: icons missing or broken: ${imgs.filter(i => !i.naturalWidth).map(i => i.src).slice(0, 3)}`); }
 
   ok(!$("#pAi") && window.__noAI && !P.aiLoading && !P.ai, "Coach: AI toggle should be gone and the test browser must not load the model");
   // Dynasty planner: plain chat. Parses team/difficulty/extras from text and replies in prose only.
