@@ -241,7 +241,14 @@ h3{font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(-
   background:transparent; border:0; border-bottom:3px solid transparent; color:var(--faint);
   padding:9px 14px 8px; cursor:pointer; margin-bottom:-1px}
 .tab:hover{color:var(--text)}
-.tab[aria-selected="true"]{color:var(--text); border-bottom-color:var(--accent)}
+.tab[aria-pressed="true"]{color:var(--text); border-bottom-color:var(--accent)}
+.tabs .tab{font-size:13.5px; padding:11px 16px 10px}
+.subtabs{max-width:1500px; margin:0 auto; padding:12px 22px 0; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none}
+.stab{font:500 13px "IBM Plex Sans",sans-serif; color:var(--dim); background:transparent; border:1px solid transparent;
+  padding:6px 12px; cursor:pointer; white-space:nowrap}
+.stab:hover{color:var(--text); border-color:var(--line)}
+.stab[aria-selected="true"]{color:var(--text); background:var(--panel); border-color:var(--line); box-shadow:inset 0 -2px 0 var(--accent)}
+.stab:focus-visible,.tab:focus-visible{outline:2px solid var(--focus); outline-offset:-2px}
 #viewBoard .rail, #viewCoach .rail{margin-top:0}
 .ctab{min-width:760px}
 .ctab .role{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--dim); width:64px}
@@ -342,7 +349,9 @@ h3{font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(-
 [hidden]{display:none !important}
 .tab{white-space:nowrap}
 .tabs{overflow-x:auto; scrollbar-width:none}
-@media (max-width:480px){.tab{padding:9px 9px 8px; font-size:11.5px; letter-spacing:.03em}}
+@media (max-width:480px){.tabs{display:grid; grid-template-columns:repeat(4,auto); justify-content:space-between; padding:0 16px; gap:0}
+  .tabs .tab{padding:10px 2px 9px; font-size:12px; letter-spacing:.01em; font-variation-settings:"wdth" 100}
+  .subtabs{padding:10px 16px 0; flex-wrap:wrap; gap:4px}}
 @media (max-width:980px){thead th{position:static}}
 /* ---------- house rules ---------- */
 .house{max-width:1500px; margin:0 auto; padding:24px 22px 80px; display:grid;
@@ -559,6 +568,25 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .rec-src{font-size:11.5px; color:var(--faint); margin:22px 0 0; max-width:100ch}
 .rec-src a{color:var(--dim)}
 
+/* ---------- my dynasty ---------- */
+.dlist{list-style:none; margin:16px 0 0; padding:0; border-top:1px solid var(--line)}
+.dlist button{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 12px; width:100%; text-align:left; font:inherit; color:var(--text);
+  background:transparent; border:0; border-bottom:1px solid var(--line); border-left:3px solid transparent; padding:12px 14px; cursor:pointer}
+.dlist button:hover{background:var(--raise)}
+.dlist button[aria-pressed="true"]{background:var(--panel); border-left-color:var(--accent)}
+.dlist b{font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dlist span{font-size:12px; color:var(--dim)}
+.dlist small{grid-column:2; grid-row:1; white-space:nowrap; font:11px "IBM Plex Mono",monospace; color:var(--faint)}
+.dlist .bempty{padding:30px 14px}
+.dname{display:block; width:100%; background:transparent; border:0; border-bottom:1px dashed transparent; color:var(--text); padding:0;
+  font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 122; font-weight:800; text-transform:uppercase;
+  font-size:clamp(26px,4vw,40px); line-height:1.05; letter-spacing:-.015em; margin:8px 0 6px}
+.dname:hover{border-bottom-color:var(--line)}
+.dname:focus{outline:0; border-bottom-color:var(--accent)}
+.dyn .sl{padding:0; max-width:none}
+.dyn .rec-sec:first-child{margin-top:26px}
+.dyn .rec-where .ghost{margin-top:12px; font-size:12.5px; padding:7px 13px}
+
 /* ---------- sliders ---------- */
 .sl{max-width:1500px; margin:0 auto; padding:24px 22px 80px}
 .sl .hh{font-family:"Archivo","Helvetica Neue",Arial,sans-serif; font-variation-settings:"wdth" 120;
@@ -676,16 +704,25 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   <button class="coachbtn" id="pOpen" type="button" aria-controls="pChat" aria-expanded="false" title="Plan a dynasty with Coach"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1"/><rect x="17.5" y="13" width="4" height="6" rx="1"/><path d="M19.5 19v.5a2.5 2.5 0 0 1-2.5 2.5h-4"/></svg>Coach</button>
 </div>
 
-<div class="tabs" role="tablist" aria-label="Views">
-  <button class="tab" role="tab" id="tabBoard" aria-controls="viewBoard" aria-selected="true" type="button">Board</button>
-  <button class="tab" role="tab" id="tabRand" aria-controls="viewRand" aria-selected="false" tabindex="-1" type="button">Randomizer</button>
-  <button class="tab" role="tab" id="tabCoach" aria-controls="viewCoach" aria-selected="false" tabindex="-1" type="button">Coach Database</button>
-  <button class="tab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
-  <button class="tab" role="tab" id="tabHouse" aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
-  <button class="tab" role="tab" id="tabRec" aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
-  <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
-  <button class="tab" role="tab" id="tabAb" aria-controls="viewAb" aria-selected="false" tabindex="-1" type="button">Abilities</button>
+<nav class="nav" aria-label="Sections">
+<div class="tabs" id="tabGroups">
+  <button class="tab" type="button" data-grp="dyn" aria-pressed="false">My Dynasty</button>
+  <button class="tab" type="button" data-grp="prog" aria-pressed="true">Programs</button>
+  <button class="tab" type="button" data-grp="plan" aria-pressed="false">Plan</button>
+  <button class="tab" type="button" data-grp="ref" aria-pressed="false">Reference</button>
 </div>
+<div class="subtabs" id="subtabs" role="tablist" aria-label="Views">
+  <button class="stab" role="tab" id="tabDyn" hidden aria-controls="viewDyn" aria-selected="false" tabindex="-1" type="button">My Dynasty</button>
+  <button class="stab" role="tab" id="tabBoard" aria-controls="viewBoard" aria-selected="true" type="button">Board</button>
+  <button class="stab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
+  <button class="stab" role="tab" id="tabCoach" aria-controls="viewCoach" aria-selected="false" tabindex="-1" type="button">Coach Database</button>
+  <button class="stab" role="tab" id="tabRand" aria-controls="viewRand" aria-selected="false" tabindex="-1" type="button">Randomizer</button>
+  <button class="stab" role="tab" id="tabHouse" hidden aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
+  <button class="stab" role="tab" id="tabRec" hidden aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
+  <button class="stab" role="tab" id="tabSlide" hidden aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
+  <button class="stab" role="tab" id="tabAb" hidden aria-controls="viewAb" aria-selected="false" tabindex="-1" type="button">Abilities</button>
+</div>
+</nav>
 
 <div id="viewBoard" role="tabpanel" aria-labelledby="tabBoard">
 <div class="rail">
@@ -820,9 +857,6 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
   </div>
 </section>
 
-<div class="foot">
-  Team ratings, prestige and NIL from a CFB&nbsp;27 Year&nbsp;1 Week&nbsp;0 preseason save; rosters, player ratings, conferences, identity and coaching staffs decoded from the dynasty save file (UCLA dynasty, Year&nbsp;1 preseason). National titles per NCAA.com, 1869&ndash;2025, shared titles counted. Pipeline influence from the dynasty save&rsquo;s school pipeline table. Map outlines from Wikimedia Commons (public domain). Stadium names and capacities per Wikipedia&rsquo;s list of FBS stadiums, September 2026.
-</div>
 
 <section id="viewRec" class="sl rec" role="tabpanel" aria-labelledby="tabRec" hidden>
   <header class="sl-head">
@@ -848,6 +882,17 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
     <a href="https://www.espn.com/college-football/story/_/id/43601368/recruiting-roster-challenges-facing-group-5-power-4-gap-college-football-conferences" target="_blank" rel="noopener">ESPN</a>,
     <a href="https://thenilstandard.com/guides/what-college-football-positions-cost" target="_blank" rel="noopener">The NIL Standard</a>.
     Team data from the same preseason save as the rest of the board.</p>
+</section>
+
+<section id="viewDyn" class="house dyn" role="tabpanel" aria-labelledby="tabDyn" hidden>
+  <div>
+    <h2 class="hh">My dynasties</h2>
+    <p class="hint">Save a program and its house rules as a dynasty. Each one keeps its rules, pipelines and recruiting &amp; NIL plan together. Saved in this browser.</p>
+    <button class="ghost pri" id="dNew" type="button" style="margin:18px 0; width:100%">Save House Rules as a dynasty</button>
+    <div class="seg" id="dSeg" role="group" aria-label="Active or archived dynasties"></div>
+    <ul class="dlist" id="dList"></ul>
+  </div>
+  <div id="dView" aria-live="polite"></div>
 </section>
 
 <section id="viewSlide" class="sl" role="tabpanel" aria-labelledby="tabSlide" hidden>
@@ -887,6 +932,10 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
     <p class="hint ab-src">Costs and values come from CFB 27 game-file data.</p>
   </div>
 </section>
+
+<div class="foot">
+  Team ratings, prestige and NIL from a CFB&nbsp;27 Year&nbsp;1 Week&nbsp;0 preseason save; rosters, player ratings, conferences, identity and coaching staffs decoded from the dynasty save file (UCLA dynasty, Year&nbsp;1 preseason). National titles per NCAA.com, 1869&ndash;2025, shared titles counted. Pipeline influence from the dynasty save&rsquo;s school pipeline table. Map outlines from Wikimedia Commons (public domain). Stadium names and capacities per Wikipedia&rsquo;s list of FBS stadiums, September 2026.
+</div>
 
 <aside class="pchat" id="pChat" aria-labelledby="pTitle">
   <div class="phead"><h2 id="pTitle">Coach</h2>
@@ -1124,24 +1173,32 @@ $("#scrim").addEventListener("click", closeTeam);
 addEventListener("keydown", e => { if (e.key === "Escape" && picked) closeTeam(); });
 
 /* ---- tabs ---- */
-const TABS = [["board","#tabBoard","#viewBoard"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["rec","#tabRec","#viewRec"],["slide","#tabSlide","#viewSlide"],["ab","#tabAb","#viewAb"]];
+const TABS = [["board","#tabBoard","#viewBoard"],["dyn","#tabDyn","#viewDyn"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["rec","#tabRec","#viewRec"],["slide","#tabSlide","#viewSlide"],["ab","#tabAb","#viewAb"]];
+// Top-level groups; each remembers the view it was last on.
+const GROUPS = {dyn:["dyn"], prog:["board","pipe","coach","rand"], plan:["house","rec"], ref:["slide","ab"]}, gLast = {};
+const grpOf = k => Object.keys(GROUPS).find(g => GROUPS[g].includes(k));
 let curTab = "board";
 function showTab(which){
   curTab = which;
   if (which === "rec") recDraw();
+  if (which === "dyn") dDraw();
   for (const [k, tb, vw] of TABS) {
     $(vw).hidden = k !== which;
     $(tb).setAttribute("aria-selected", k === which);
     $(tb).tabIndex = k === which ? 0 : -1;
+    $(tb).hidden = grpOf(k) !== grpOf(which);
   }
+  const g = grpOf(which); gLast[g] = which;
+  document.querySelectorAll("#tabGroups [data-grp]").forEach(b => b.setAttribute("aria-pressed", b.dataset.grp === g));
+  $("#subtabs").hidden = GROUPS[g].length < 2;
   setRail();
 }
 for (const [k, tb] of TABS) $(tb).addEventListener("click", () => showTab(k));
-document.querySelector(".tabs").addEventListener("keydown", e => {
+$("#tabGroups").addEventListener("click", e => { const b = e.target.closest("[data-grp]"); if (b) showTab(gLast[b.dataset.grp] || GROUPS[b.dataset.grp][0]); });
+$("#subtabs").addEventListener("keydown", e => {
   if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-  const i = TABS.findIndex(t => t[0] === curTab);
-  const to = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
-  showTab(to[0]); $(to[1]).focus();
+  const vs = GROUPS[grpOf(curTab)], i = vs.indexOf(curTab), to = vs[(i + (e.key === "ArrowRight" ? 1 : vs.length - 1)) % vs.length];
+  showTab(to); $(TABS.find(t => t[0] === to)[1]).focus();
 });
 
 /* ---- coach database ---- */
@@ -1608,7 +1665,7 @@ const presetOf = id => HPRE.find(x => x.id === id) || HU.presets.find(x => x.id 
 const isUserPre = id => HU.presets.some(x => x.id === id);
 let HF = null, HPS = null, HDEL = "";
 const HSTRICT = {cas:{n:"Casual", k:4, w:[0,3,1,0]}, std:{n:"Standard", k:6, w:[0,2,3,1]}, hard:{n:"Hardcore", k:8, w:[0,0,2,3]}};
-const H = {team:"UCLA", rules:[], lock:new Set(), mode:"preset", pre:"purist", strict:"std", rprog:false, src:"", edited:false, note:""};
+const H = {team:"UCLA", rules:[], lock:new Set(), mode:"preset", pre:"purist", strict:"std", rprog:false, src:"", edited:false, note:"", dyn:""};
 const hT = () => DATA.find(x => x.n === H.team);
 const catIx = id => HCATS.findIndex(c => c[0] === HR[id].c);
 const hSort = () => H.rules.sort((a, b) => catIx(a) - catIx(b));
@@ -1630,7 +1687,7 @@ function hPickIn(cat, t, not){
 }
 function hSave(){
   try { localStorage.setItem("house-v1", JSON.stringify({team:H.team, rules:H.rules, lock:[...H.lock], mode:H.mode,
-    pre:H.pre, strict:H.strict, rprog:H.rprog, src:H.src, edited:H.edited})); } catch (e) {}
+    pre:H.pre, strict:H.strict, rprog:H.rprog, src:H.src, edited:H.edited, dyn:H.dyn})); } catch (e) {}
 }
 function hLoad(){
   try {
@@ -1750,6 +1807,8 @@ function hDraw(){
       <button class="ghost" type="button" id="hclear"${H.rules.length ? "" : " disabled"}>Clear</button>
       <button class="ghost" type="button" id="hpsave"${H.rules.length && !HPS ? "" : " disabled"}>Save as preset</button>
       ${isUserPre(H.pre) && H.edited && H.rules.length ? `<button class="ghost" type="button" id="hpupd">Update &ldquo;${esc(presetOf(H.pre).n)}&rdquo;</button>` : ""}
+      <button class="ghost" type="button" id="hdyn">Save to My Dynasty</button>
+      ${hDyn() && hDyn().rules.join() !== H.rules.join() ? `<button class="ghost pri" type="button" id="hdupd">Update dynasty &ldquo;${esc(hDyn().name)}&rdquo;</button>` : ""}
       ${H.note ? `<span class="bnote">${H.note}</span>` : ""}
     </div>
     ${HPS ? `<form class="psave" id="hps" novalidate>
@@ -1936,6 +1995,8 @@ $("#hPre").addEventListener("click", e => {
   hDraw();
 });
 $("#hbook").addEventListener("click", e => {
+  if (e.target.closest("#hdyn")) { dAdd(); showTab("dyn"); window.scrollTo({top:0}); return; }
+  if (e.target.closest("#hdupd")) { const d = hDyn(); d.rules = [...H.rules]; d.src = H.src; dSave(); H.note = `Updated “${esc(d.name)}”.`; hDraw(); return; }
   if (e.target.closest("#hpsave")) { HPS = {n:"", b:"", err:""}; hDraw(); $("#hpsN").focus(); return; }
   if (e.target.closest("#hpsX")) { HPS = null; hDraw(); return; }
   if (e.target.closest("#hpupd")) {
@@ -2252,7 +2313,15 @@ const recSave = () => { try { localStorage.setItem("rec-v1", JSON.stringify({lin
 const recTeam = () => rLink ? H.team : rTeam;
 function recPick(n){ if (rLink) hSetTeam(n); else rTeam = n; recSave(); recDraw(); }
 function recDraw(){
-  const t = DATA.find(x => x.n === recTeam()), gv = n => t.g[GRADES.indexOf(n)];
+  const t = DATA.find(x => x.n === recTeam());
+  $("#rLink").setAttribute("aria-checked", rLink);
+  if (document.activeElement !== $("#rq")) $("#rq").value = t.n;
+  $("#recGrid").innerHTML = recBody(t);
+}
+const recSec = (n, h, sub, body) => `<section class="rec-sec"><h3 class="rec-sh"><b>0${n}</b>${h}<span>${sub}</span></h3>${body}</section>`;
+// The recruiting & NIL plan for team t. dyn: the My Dynasty version, numbered after its House rules section and showing every pipeline.
+function recBody(t, dyn){
+  const gv = n => t.g[GRADES.indexOf(n)];
   const [, arch, plan] = ARCH.find(a => t.p >= a[0]), target = Math.min(5, Math.floor(t.p) + 1), nr = NILRANK.indexOf(t.n) + 1;
   const last = GLAST.map(n => [n, gv(n)]).sort((a, b) => GVAL[b[1]] - GVAL[a[1]]), earned = GRADES.filter(n => !GLAST.includes(n)).map(n => [n, gv(n)]);
   let hard = last.filter(x => GVAL[x[1]] >= 9); if (!hard.length) hard = last.slice(0, 2);
@@ -2260,10 +2329,9 @@ function recDraw(){
   const grs = (h, sub, xs) => `<div class="grp"><h4>${h}<small>${sub}</small></h4>${xs.length
     ? xs.map(([n, g]) => `<span class="gr">${n} <b>${g}</b></span>`).join("") : '<span class="gr" style="color:var(--faint)">None</span>'}</div>`;
   const [tier, regs] = purist(t), pl = t.pl.filter(p => p[1] > 0).sort((a, b) => b[2] - a[2]);
-  const map = hMap(regs, tiersOf(t))
-    .replace(/<figcaption>.*<\/figcaption>/, `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions), colored by tier</figcaption>`);
-  $("#rLink").setAttribute("aria-checked", rLink);
-  if (document.activeElement !== $("#rq")) $("#rq").value = t.n;
+  const map = hMap(dyn ? pl.map(p => p[0]) : regs, tiersOf(t))
+    .replace(/<figcaption>.*<\/figcaption>/, dyn ? `<figcaption>Every active pipeline (${pl.length} regions), colored by tier</figcaption>`
+      : `<figcaption>Shaded: Tier ${tier}+ pipelines (${regs.length} regions), colored by tier</figcaption>`);
   // ---- program-specific spending + year-one advice: in-game data + real-world recruiting patterns (sources in #recSrc4)
   const cn = t.c === "Independent" ? null : t.c, cA = /^Conference/.test(t.c) ? "" : "the ";
   const peers = cn ? DATA.filter(x => x.c === t.c) : DATA.filter(isP4);           // independents compare against P4
@@ -2302,10 +2370,9 @@ function recDraw(){
       : `<b>${esc(topP[0])} is yours.</b> No other program holds a Tier 3+ pipeline there.`) : `<b>No established pipelines.</b> Every region is a fair fight, so let scouting decide where you spend hours.`,
     p4 && t.p >= 4 ? `<b>High school first, portal to patch.</b> The most stable programs (Georgia, Ohio State, Notre Dame) take the fewest transfers. Use the portal for one or two plug-in starters a year.`
       : `<b>Use the portal every year.</b> Every program now gets at least a fifth of its new players there. ${p4 ? "Target proven Group of Five starters ready to move up." : "FCS standouts and Power 4 backups give you instant starters high school recruits can't."}`,
-    `<b>Know your standing.</b> #${pr} of ${peers.length} on prestige in ${cn ? `${cA}${esc(cn)}` : "Power 4"}. ${pr <= 3 || natl ? "Anything short of a title run is a step back." : pr > peers.length / 2 ? "A winning conference record is a real first-year goal." : "A top-half finish and a bowl build the prestige recruits notice."}${GVAL[lowE[1]] <= 6 ? ` Expect ${esc(lowE[0].toLowerCase())} (${lowE[1]}) to stay low until you win.` : ""} <button type="button" class="ghost" id="recRoster">Current roster</button>`];
-  const sec = (n, h, sub, body) => `<section class="rec-sec"><h3 class="rec-sh"><b>0${n}</b>${h}<span>${sub}</span></h3>${body}</section>`;
-  $("#recGrid").innerHTML =
-  sec(1, "The program", `${esc(t.n)} · ${esc(t.c)}`, `<div class="sl-card rec-hero">
+    `<b>Know your standing.</b> #${pr} of ${peers.length} on prestige in ${cn ? `${cA}${esc(cn)}` : "Power 4"}. ${pr <= 3 || natl ? "Anything short of a title run is a step back." : pr > peers.length / 2 ? "A winning conference record is a real first-year goal." : "A top-half finish and a bowl build the prestige recruits notice."}${GVAL[lowE[1]] <= 6 ? ` Expect ${esc(lowE[0].toLowerCase())} (${lowE[1]}) to stay low until you win.` : ""} <button type="button" class="ghost" data-roster="${esc(t.n)}">Current roster</button>`];
+  const sec = (n, ...a) => recSec(n + (dyn ? 1 : 0), ...a);
+  return sec(1, "The program", `${esc(t.n)} · ${esc(t.c)}`, `<div class="sl-card rec-hero">
     <div><div class="arch">${arch}</div>
       <p class="note" style="margin-top:8px">${plan}</p>
       <p class="note">Prestige moves with results. If it rises or falls by the time you're there, use that tier's approach instead.</p></div>
@@ -2315,9 +2382,9 @@ function recDraw(){
       <div><div class="big">${fmt(t.nt)}</div><span>NIL budget · #${nr} of ${DATA.length}</span></div>
       <div><div class="big">~${fmt(recHours(t.p))}</div><span>Preseason hours</span></div></div>
       <p class="note">Target about one star above prestige. Each recruit takes at most <b>50 hours a week</b> from you, or 70 with the Always Be Crootin coach ability.</p></div></div>`)
-  + sec(2, "Where to recruit", `${pl.length} active pipelines`, `<div class="sl-card rec-where">
+  + sec(2, dyn ? "Pipelines" : "Where to recruit", `${pl.length} active pipelines`, `<div class="sl-card rec-where">
     <div>${map}</div>
-    <div><table><tbody>${pl.slice(0, 10).map(p => `<tr><td class="swc"><i class="sw" style="background:var(--t${p[1]})" role="img" aria-label="Tier ${p[1]}"></i></td><td class="l">${esc(p[0])}</td><td class="sub">${TIERN[p[1]]}</td><td class="mono">${p[2]}</td></tr>`).join("")}</tbody></table></div></div>`)
+    <div><table><tbody>${(dyn ? pl : pl.slice(0, 10)).map(p => `<tr><td class="swc"><i class="sw" style="background:var(--t${p[1]})" role="img" aria-label="Tier ${p[1]}"></i></td><td class="l">${esc(p[0])}</td><td class="sub">${TIERN[p[1]]}</td><td class="mono">${p[2]}</td></tr>`).join("")}</tbody></table>${dyn ? `<button type="button" class="ghost" data-pipe="${esc(t.n)}">Open in Program Pipelines</button>` : ""}</div></div>`)
   + sec(3, "What to pitch", "From the grades that last", `<div class="sl-card">
     <div class="rec-pitch">${grs("Hard sell", "big swing, worth the risk", hard)}${grs("Soft sell", "steady, smaller gains", soft)}${grs("Avoid", "skip recruits whose dealbreaker is here", weak)}</div>
     <div class="earned"><h4>Earned grades</h4>${earned.map(([n, g]) => `<span class="gr" style="color:var(--dim)">${n} <b>${g}</b></span>`).join("")}<span class="sub">change with your results and tenure; recheck when you take over</span></div>
@@ -2328,9 +2395,63 @@ function recDraw(){
     <div class="sl-card"><h3>Recruiting plan<span>Year one at ${esc(t.n)}</span></h3><ul class="tips">${yearTips.map(x => `<li>${x}</li>`).join("")}</ul></div></div>`)
   + sec(5, "Hour costs", "Per recruiting action. A visit uses only your hours, not the recruit's 50-hour cap", `<div class="sl-card"><div class="rec-costs">${
     RCOST.map(([n, h]) => `<div><span>${n}</span><b>${h} hrs</b></div>`).join("")}</div></div>`);
-  $("#recRoster").addEventListener("click", () => openTeam(t.n));
 }
+document.addEventListener("click", e => { const b = e.target.closest("[data-roster]"); if (b) openTeam(b.dataset.roster); });
 $("#rLink").addEventListener("click", () => { rLink = !rLink; if (!rLink) rTeam = H.team; recSave(); recDraw(); });
+/* ---- my dynasty: saved snapshots of a program + its house rules; pipelines and the recruiting plan are derived from the team ---- */
+let D = {list:[], cur:"", arch:false};
+try { const s = JSON.parse(localStorage.getItem("dyn-v1") || "null");
+  if (s && Array.isArray(s.list)) D = {list:s.list.filter(d => d && d.id && DATA.some(t => t.n === d.team) && Array.isArray(d.rules)), cur:s.cur || "", arch:!!s.arch}; } catch (e) {}
+const dSave = () => { try { localStorage.setItem("dyn-v1", JSON.stringify(D)); } catch (e) {} };
+// The dynasty House rules is editing, if it's still for this team and not archived.
+const hDyn = () => D.list.find(d => d.id === H.dyn && d.team === H.team && !d.arch);
+const dDate = ms => new Date(ms).toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"});
+function dAdd(){
+  const t = hT(), n = D.list.filter(d => d.team === t.n).length;
+  const d = {id:"d" + Date.now().toString(36), name:`${t.n} ${t.nk}${n ? ` ${n + 1}` : ""}`, team:t.n, rules:[...H.rules], src:H.src, made:Date.now(), arch:false};
+  D.list.unshift(d); D.cur = d.id; D.arch = false; H.dyn = d.id; dSave(); hDraw(); dDraw();
+}
+function dDraw(){
+  const shown = D.list.filter(d => !!d.arch === D.arch), nA = D.list.length - D.list.filter(d => !d.arch).length;
+  if (!shown.some(d => d.id === D.cur)) D.cur = shown[0] ? shown[0].id : "";
+  $("#dNew").textContent = `+ Save ${H.team} from House Rules`;
+  $("#dSeg").innerHTML = `<button type="button" data-dseg="" aria-pressed="${!D.arch}">Active (${D.list.length - nA})</button><button type="button" data-dseg="1" aria-pressed="${D.arch}">Archived (${nA})</button>`;
+  $("#dList").innerHTML = shown.length ? shown.map(d => { const t = DATA.find(x => x.n === d.team);
+    return `<li><button type="button" data-d="${d.id}" aria-pressed="${d.id === D.cur}"><b>${esc(d.name)}</b><small>${dDate(d.made)}</small><span>${esc(t.n)} &middot; ${esc(t.c)} &middot; ${strainLbl(strainOf(d.rules.filter(id => HR[id])))[0]}</span></button></li>`; }).join("")
+    : `<li class="bempty">${D.arch ? "Nothing archived. Archived dynasties show up here." : "No dynasties yet."}</li>`;
+  const d = D.list.find(x => x.id === D.cur);
+  if (!d) { $("#dView").innerHTML = D.arch ? "" : `<div class="book"><div class="bempty">Pick a program and its house rules in House Rules, then save it here to keep its pipelines and recruiting &amp; NIL plan in one place.<br><br><button class="ghost pri" type="button" data-go="house">Go to House Rules</button></div></div>`; return; }
+  const t = DATA.find(x => x.n === d.team), ids = d.rules.filter(id => HR[id]).sort((a, b) => catIx(a) - catIx(b)), s = strainOf(ids);
+  const rules = ids.map(id => { const r = HR[id], reg = r.reg ? r.reg(t) : null;
+    return `<li class="rule"><div><span class="rcat">${HCATN[r.c]}</span><div class="rttl">${r.n} ${pips(r.l)}${r.u ? `<span class="ctag">Custom</span>` : ""}</div><p>${r.x(t)}</p>${reg && reg.length ? hMap(reg, tiersOf(t)) : ""}</div></li>`; }).join("");
+  $("#dView").innerHTML = `<div class="book">
+    <div class="bhead"><span class="kick">${d.arch ? "Archived dynasty" : "Dynasty"} &middot; started ${dDate(d.made)}</span>
+      <input class="dname" id="dName" value="${esc(d.name)}" maxlength="40" aria-label="Dynasty name" title="Click to rename">
+      <div class="bsub"><b>${t.nk}</b> &nbsp;&middot;&nbsp; ${t.c} &nbsp;&middot;&nbsp; ${t.sl} &nbsp;&middot;&nbsp; ${t.p.toFixed(1)}★ prestige &nbsp;&middot;&nbsp; ${fmt(t.nt)} NIL</div>
+      <div class="strain"><span class="lbl">Difficulty</span>${meter(s)}<b>${strainLbl(s)[0]}</b><span class="sub">${ids.length} ${ids.length === 1 ? "rule" : "rules"}</span></div></div>
+    <div class="bfoot">${d.arch ? "" : `<button class="ghost pri" type="button" id="dEdit">Edit rules in House Rules</button>`}
+      <button class="ghost" type="button" id="dArch">${d.arch ? "Restore to active" : "Archive"}</button></div></div>
+  <div class="sl rec">${recSec(1, "House rules", esc(d.src || "Custom"), `<div class="book">${ids.length ? `<ul class="rules">${rules}</ul>` : `<div class="bempty">No house rules on this dynasty.</div>`}</div>`)}${recBody(t, true)}</div>`;
+}
+$("#viewDyn").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = D.list.find(x => x.id === D.cur);
+  if (b.id === "dNew") dAdd();
+  else if (b.dataset.dseg != null) { D.arch = !!b.dataset.dseg; dSave(); dDraw(); }
+  else if (b.dataset.d) { D.cur = b.dataset.d; dSave(); dDraw(); }
+  else if (b.dataset.go) showTab(b.dataset.go);
+  else if (b.dataset.pipe) { pSet(b.dataset.pipe); showTab("pipe"); window.scrollTo({top:0}); }
+  else if (b.id === "dArch" && d) { d.arch = !d.arch; if (!d.arch) D.arch = false; dSave(); dDraw(); }
+  else if (b.id === "dEdit" && d) {
+    Object.assign(H, {team:d.team, rules:d.rules.filter(id => HR[id]), lock:new Set(), pre:"", src:d.src, edited:false, dyn:d.id,
+      note:`Editing “${esc(d.name)}”. Change rules here, then press Update dynasty.`});
+    hDraw(); showTab("house"); window.scrollTo({top:0});
+  }
+});
+$("#viewDyn").addEventListener("change", e => {
+  const d = D.list.find(x => x.id === D.cur);
+  if (e.target.id === "dName" && d) { d.name = e.target.value.trim() || d.name; dSave(); dDraw(); }
+});
 function hOpenFor(n){ hSetTeam(n); showTab("house"); window.scrollTo({top:0}); }
 huLoad();
 if (!hLoad()) hApplyPreset("purist");

@@ -13,7 +13,7 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 ## Layout of the file
 
 - Lines ~7-476: one `<style>` block. Colors are CSS tokens on `:root`, with dark mode under `prefers-color-scheme` and `[data-theme]` overrides.
-- Lines ~477-645: static HTML for the eight tabs (`#viewBoard`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`, `#viewRec`, `#viewSlide`, `#viewAb`) plus the team dossier drawer (`#dossier`, `#scrim`).
+- Lines ~477-645: static HTML for the nine tabs (`#viewBoard`, `#viewDyn`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`, `#viewRec`, `#viewSlide`, `#viewAb`) plus the team dossier drawer (`#dossier`, `#scrim`).
 - Lines ~646-1661: one `<script>`, plain JS with no framework. UI is rendered by building HTML strings into `innerHTML`.
 
 **Line 650 (`const DATA = [...]`) is ~540 KB on one line and line 1044 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 650p public/index.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
@@ -28,11 +28,12 @@ Everything else is derived from `DATA` at load (`confs`, `COACHES`, `PIPES`, `PO
 
 ## Tabs and their code
 
-Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views.
+Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is two rows: four group tabs (`#tabGroups`, `GROUPS`: My Dynasty; Programs = Board, Pipelines, Coach Database, Randomizer; Plan = House Rules, Recruiting & NIL; Reference = Sliders, Abilities) and a sub-tab row (`#subtabs`, the `#tab*` buttons) showing only the current group's views, hidden for single-view groups. Each group reopens the view it was last on (`gLast`). A new tab needs a `TABS` entry, a `GROUPS` slot and a `.stab` button (add `hidden` unless it is in Programs).
 
 | Tab | Purpose | Main functions |
 |---|---|---|
 | Board | Sortable team table (`COLS`), conference chips, search | `rowsFor`, `draw`, `openTeam`/`body` (dossier) |
+| My Dynasty | Saved dynasties (`D`, `dyn-v1`): a snapshot of a team + its House rules ids + source label. Created from House rules ("Save to My Dynasty", `#hdyn`) or the tab button (`dAdd`). The view shows the rules read-only, then `recBody(t, true)` (the Recruiting & NIL plan, renumbered, with every pipeline). "Edit rules in House Rules" loads it into `H` with `H.dyn` set, and House rules shows "Update dynasty" (`#hdupd`) while the team matches. Archive/restore flips `arch`; no delete | `dDraw`, `dAdd`, `hDyn` |
 | Randomizer | Filtered random team roll (`RG`, `rSel`) | `rPool`, `rDraw`, `rollIt` |
 | Coaches | Sortable staff table (`CCOLS`) | `cDraw` |
 | Pipelines | Recruiting pipeline map per team | `buildMap`, `paintMap`, `pDraw`, `pSet` |
@@ -49,13 +50,14 @@ House rules are the most intricate part: `HRULES` (built-in rules, each with cat
 `localStorage` only, wrapped in try/catch:
 - `house-v1`: current House rules state (`hSave`/`hLoad`)
 - `house-custom-v1`: user-made rules and presets (`huSave`/`huLoad`)
+- `dyn-v1`: saved dynasties `{list:[{id,name,team,rules,src,made,arch}], cur, arch}`; the loader drops unknown teams
 - `coach-v1`: Coach transcript (last 60 messages), current plan, undo history (10), last team, preferred difficulty (`pSave`/`pLoad`). Plans store the team by name; `pDe` drops unknown rule ids.
 
 Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
 
 ## Verifying changes
 
-`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all eight tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
+`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all nine tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
 
 ```bash
 node check.mjs

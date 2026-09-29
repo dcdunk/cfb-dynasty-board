@@ -40,7 +40,7 @@ const inPage = async () => {
   const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const fails = [], ok = (cond, msg) => { if (!cond) fails.push(msg); };
-  const views = { tabBoard: "viewBoard", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabRec: "viewRec", tabSlide: "viewSlide", tabAb: "viewAb" };
+  const views = { tabBoard: "viewBoard", tabDyn: "viewDyn", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabRec: "viewRec", tabSlide: "viewSlide", tabAb: "viewAb" };
   const open = async tab => {
     $("#" + tab).click(); await wait(50);
     for (const [t, v] of Object.entries(views)) ok($("#" + v).hidden === (t !== tab), `${tab}: #${v} visibility wrong`);
@@ -49,6 +49,20 @@ const inPage = async () => {
   };
 
   ok(document.querySelector('link[rel="icon"]'), "Favicon link missing");
+  // Navigation: four group tabs; each shows only its own sub-tabs and remembers the last one used.
+  const grp = async g => { $(`#tabGroups [data-grp="${g}"]`).click(); await wait(50); };
+  const subs = () => [...$$("#subtabs .stab")].filter(b => !b.hidden).map(b => b.id).join(",");
+  ok(subs() === "tabBoard,tabPipe,tabCoach,tabRand" && !$("#viewBoard").hidden, `Nav: Programs should be the default group, sub-tabs ${subs()}`);
+  await grp("ref"); ok(subs() === "tabSlide,tabAb" && !$("#viewSlide").hidden, `Nav: Reference should open Sliders, sub-tabs ${subs()}`);
+  $("#tabAb").click(); await grp("plan"); ok(subs() === "tabHouse,tabRec" && !$("#viewHouse").hidden, "Nav: Plan should open House Rules");
+  await grp("ref"); ok(!$("#viewAb").hidden, "Nav: a group should reopen the view it was last on");
+  await grp("dyn"); ok($("#subtabs").hidden && !$("#viewDyn").hidden, "Nav: My Dynasty has no sub-tab row");
+  ok($('#tabGroups [data-grp="dyn"]').getAttribute("aria-pressed") === "true", "Nav: active group not marked");
+  $("#tabDyn").click(); $("#subtabs").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+  ok(curTab === "dyn", "Nav: arrow keys should stay inside the group");
+  await grp("prog"); $("#tabBoard").click(); $("#tabBoard").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+  ok(curTab === "rand", `Nav: ArrowLeft from Board should wrap to Randomizer, got ${curTab}`);
+
   await open("tabBoard");
   ok($$("#rows tr").length >= 100, `Board: expected 100+ team rows, got ${$$("#rows tr").length}`);
   $("#rows tr").click(); await wait(100);
@@ -138,6 +152,34 @@ const inPage = async () => {
   ok($("#rq").value === "Temple" && $("#hq").value === "Georgia", "Recruiting: unlinked pick should not change House rules");
   $("#rLink").click();
   ok($("#rq").value === "Georgia", "Recruiting: relinking should snap back to the House rules team");
+  // My Dynasty: save from House rules, view rules + pipelines + recruiting plan, rename, edit round trip, archive and restore.
+  await open("tabDyn");
+  ok($("#dView [data-go]") && !$$("#dList [data-d]").length, "My Dynasty: empty state should point to House Rules");
+  $("#dNew").click(); await wait(50);
+  ok($$("#dList [data-d]").length === 1 && $("#dName").value === "Georgia Bulldogs", `My Dynasty: saving should add Georgia Bulldogs, got ${$("#dName")?.value}`);
+  const dSecs = [...$$("#dView .rec-sh")].map(h => h.childNodes[1].textContent);
+  ok(dSecs.join("|") === "House rules|The program|Pipelines|What to pitch|Spending and year one|Hour costs", `My Dynasty: sections wrong: ${dSecs}`);
+  ok($$("#dView .rule").length === H.rules.length && H.rules.length > 0, "My Dynasty: should list the saved house rules");
+  const uga = DATA.find(t => t.n === "Georgia");
+  ok($$("#dView .rec-where tr").length === uga.pl.filter(p => p[1] > 0).length, "My Dynasty: should list every active pipeline");
+  $("#dName").value = "My Dawgs"; $("#dName").dispatchEvent(new Event("change", { bubbles: true }));
+  ok($("#dList b").textContent === "My Dawgs" && JSON.parse(localStorage.getItem("dyn-v1")).list[0].name === "My Dawgs", "My Dynasty: rename not saved");
+  await open("tabHouse"); hSetTeam("Temple"); $("#hdyn").click(); await wait(50);
+  ok(curTab === "dyn" && $$("#dList [data-d]").length === 2 && $("#dName").value === "Temple Owls", "My Dynasty: Save to My Dynasty from House rules should add Temple and switch tabs");
+  const n0 = D.list[0].rules.length;
+  $("#dEdit").click(); await wait(50);
+  ok(curTab === "house" && $("#hq").value === "Temple" && !$("#hdupd"), "My Dynasty: Edit should load Temple into House rules");
+  $('#hbook [data-act="del"]').click(); await wait(50);
+  $("#hdupd").click(); await wait(50);
+  ok(D.list[0].rules.length === n0 - 1 && !$("#hdupd"), "My Dynasty: Update dynasty should save the edited rules");
+  await open("tabDyn");
+  $('#dList [data-d]').click(); $("#dArch").click(); await wait(50);
+  ok($$("#dList [data-d]").length === 1 && /Archived \(1\)/.test($("#dSeg").textContent), "My Dynasty: archiving should move it out of the active list");
+  $('#dSeg [data-dseg="1"]').click(); await wait(50);
+  ok($$("#dList [data-d]").length === 1 && /Archived dynasty/.test($("#dView").textContent) && !$("#dEdit"), "My Dynasty: archive list should show it read-only");
+  $("#dArch").click(); await wait(50);
+  ok($$("#dList [data-d]").length === 2 && /Active \(2\)/.test($("#dSeg").textContent), "My Dynasty: restore should bring it back to active");
+  hSetTeam("Georgia");
   // Split states (CA, TX, FL) must clip to their own outline; duplicate clipPath ids across maps drew them as rectangles.
   const ids = [...$$("clipPath")].map(c => c.id);
   ok(ids.length === new Set(ids).size, "Maps: duplicate clipPath ids");
@@ -306,5 +348,5 @@ if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboa
 if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log(`PASS: all 8 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, sliders, player abilities, planner, ${cases.length} Coach conversations, www redirect. No JS errors.`);
+console.log(`PASS: all 9 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, www redirect. No JS errors.`);
 process.exit(0);
