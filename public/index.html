@@ -570,6 +570,15 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .ab-list{list-style:none; margin:0; padding:2px 12px 10px}
 .ab-list li{display:grid; grid-template-columns:minmax(110px,34%) 1fr auto; gap:10px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px}
 .ab-list li:first-child{border-top:0}
+.ab-clist li{grid-template-columns:28px 1fr auto; align-items:center; gap:12px; padding:12px 0}
+.ab-clist.noico li{grid-template-columns:1fr auto}
+.ab-clist .ab-slot{width:28px}
+.ab-clist .ab-tx{display:flex; flex-direction:column; gap:2px; min-width:0}
+.ab-clist .ab-tier{font:500 10.5px "IBM Plex Mono",monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
+.ab-clist .ab-nm{font:700 14px/1.2 "Archivo",sans-serif; font-variation-settings:"wdth" 100; text-transform:uppercase; letter-spacing:.01em; color:var(--text)}
+.ab-clist .ab-ds{color:var(--dim); font-size:12.5px}
+.ab-coin{display:inline-flex; align-items:center; gap:6px; font:700 16px "Archivo",sans-serif; color:var(--accent)}
+.ab-coin::before{content:""; width:15px; height:15px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#F6DC96,#C9962E 60%,#8A6417); box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.25)}
 .ab-cost{font:600 12px "IBM Plex Mono",monospace; font-style:normal; color:var(--accent-ink); white-space:nowrap; text-align:right}
 .ab-cost small{display:block; font-weight:400; font-size:10px; color:var(--dim)}
 .ab-list li span{color:var(--dim)}
@@ -2099,9 +2108,9 @@ const abRow = n => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}<
 // where the two disagree the game-file numbers win. Descriptions are our own. POS: branch bought once per position group.
 const CPOS = "QB, RB/FB, WR/TE, OL, DL, LB, DB and K/P";
 const CARCH = [
-  {n:"Recruiter", g:"Base", u:"Available from the start", perk:"Firm Handshakes: +100 coach XP for every recruit you sign", cost:"15, 20, 25, 30 CP per tier (K/P 10, 10, 15, 15)", pos:true,
+  {n:"Recruiter", g:"Base", u:"Available from the start", perk:"Firm Handshakes: +100 coach XP for every recruit you sign", cost:"15, 20, 25, 30 CP per tier", pos:true,
    br:[["Every position group", [["Advanced Look","Recruits at the position take less time to fully scout."],["Persuasive Personality","Better chance to sway recruits at the position."],["Magnetic Personality","High school recruits at the position start with more interest."],["Portal King","Transfers at the position start with more interest."]]]]},
-  {n:"Motivator", g:"Base", u:"Available from the start", perk:"Grow Together: +7 coach XP every time a player levels up", cost:"15, 20, 25, 30 CP per tier (K/P 10, 10, 15, 15)", pos:true,
+  {n:"Motivator", g:"Base", u:"Available from the start", perk:"Grow Together: +7 coach XP every time a player levels up", cost:"15, 20, 25, 30 CP per tier (K/P: Hot Hand 10, Locked In 15)", pos:true,
    br:[["Every position group", [["Extra Gear","Boosts Toughness, Stamina and Injury."],["Hot Hand","Players stay hot through timeouts, quarter breaks and into the next game."],["Put In Work","Bigger offseason training gains (+5% XP as head coach)."],["Locked In","Players start the 4th quarter hot in close games."]]]]},
   {n:"Tactician", g:"Base", u:"Available from the start", perk:"Winner: +450 coach XP for every win", cost:"20 CP per tier",
    br:[["Passing Game (QB)", [["Mobile QB Ratings Boost","Throw on the Run and Change of Direction."],["Passing QB Ratings Boost","Throw Under Pressure and Break Sack."],["Mobile QB Ratings Boost 2","Spin, Juke and Ball Carrier Vision."],["Passing QB Ratings Boost 2","Short and Medium Accuracy."]]],
@@ -2112,9 +2121,9 @@ const CARCH = [
        ["Linebackers (LB)", [["LB Ratings Boost","Finesse Moves and Block Shedding."],["LB Ratings Boost 2","Pursuit and Play Recognition."],["LB Ratings Boost 3","Man and Zone Coverage."],["LB Ratings Boost 4","Tackle and Hit Power."]]],
        ["Secondary (DB)", [["DB Ratings Boost","Spin, Juke and Ball Carrier Vision."],["DB Ratings Boost 2","Catching and Jumping."],["DB Ratings Boost 3","Man Coverage and Pursuit."],["DB Ratings Boost 4","Zone Coverage and Play Recognition."]]],
        ["Cross Training", [["Cross Train OL as DL","OL gain Power Moves, Block Shedding, Play Recognition and Pursuit."],["Cross Train DL as OL","DL gain Pass Block, Run Block, Run Block Power and Run Block Finesse."],["Cross Train WR as DB","WRs gain Man and Zone Coverage, Pursuit and Play Recognition."],["Cross Train DB as WR","DBs gain Short, Medium and Deep Route and Release."]]]]},
-  {n:"Elite Recruiter", g:"Elite", u:"Sign two top 5 recruiting classes and spend 200 CP in Recruiter", perk:"Firmer Handshakes: +200 coach XP for every recruit you sign", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+  {n:"Elite Recruiter", g:"Elite", u:"Sign two top 5 recruiting classes and spend 200 CP in Recruiter", perk:"Firmer Handshakes: +200 coach XP for every recruit you sign", cost:"25, 30, 35, 40 CP per tier (K/P: Always Be Crootin' 20)", pos:true,
    br:[["Every position group", [["Ideal Situation","Raises your ideal pitch grades for recruits at the position."],["Upsell","Your My School grades carry more weight with recruits at the position."],["Most Influential","Every recruiting action earns a little more influence."],["Always Be Crootin'","More recruiting hours every week (+15 as head coach)."]]]]},
-  {n:"Master Motivator", g:"Elite", u:"Have 5 players drafted and spend 200 CP in Motivator", perk:"Let's Grow: +15 coach XP every time a player levels up", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+  {n:"Master Motivator", g:"Elite", u:"Have 5 players drafted and spend 200 CP in Motivator", perk:"Let's Grow: +15 coach XP every time a player levels up", cost:"25, 30, 35, 40 CP per tier", pos:true,
    br:[["Every position group", [["Quick Recovery","Players recover from wear and tear faster."],["Icy Veins","Players start games with a composure boost."],["Family Atmosphere","Players are less likely to transfer."],["Everybody Eats","More XP from everything outside practice (+5% as head coach)."]]]]},
   {n:"Scheme Guru", g:"Elite", u:"Win 8 games against top 25 teams and spend 200 CP in Tactician", perk:"Winners Win: +900 coach XP for every win", cost:"30 CP per tier",
    br:[["Fast Tempo (Offense)", [["Battery Pack","Your offense tires more slowly in hurry up."],["Caught Napping","Defenders take longer to look to the sideline at the snap."],["On Their Heels","Team composure boost for first downs gained in hurry up."],["Tipped Your Hand","Chance to see the coverage shell in hurry up."]]],
@@ -2125,11 +2134,11 @@ const CARCH = [
        ["Pass Game (Defense)", [["Puncher's Chance","More knockouts on passes of 10 yards or less."],["No Mid Here","More knockouts on passes up to 20 yards."],["Nothing Deep","More knockouts on passes anywhere on the field."],["Master Of Disguise","Protects your blitzes from being spotted after the snap."]]],
        ["Ground & Pound (Defense)", [["Keep 'Em Coming","The DL tires more slowly on run plays."],["Fresh Legs","The DL and LBs tire more slowly on run plays."],["Hands Off","Defenders disengage from blocks better on runs."],["He Shed","Less time between block shed attempts."]]],
        ["Discipline (Defense)", [["Unfriendly Confines","Home crowd noise hits opponents a little harder."],["Too Loud???","Home crowd noise hits opponents a lot harder."],["No Free Yards","Slightly fewer defensive penalties."],["Clean Sheet Defense","Far fewer defensive penalties."]]]]},
-  {n:"Architect", g:"Hybrid", u:"Win 4 rivalry games and spend 200 CP in both Tactician and Motivator", perk:"Max Gains: +400 coach XP when a player maxes a skill group", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+  {n:"Architect", g:"Hybrid", u:"Win 4 rivalry games and spend 200 CP in both Tactician and Motivator", perk:"Max Gains: +400 coach XP when a player maxes a skill group", cost:"25, 30, 35, 40 CP per tier", pos:true,
    br:[["Every position group", [["Can't Stop, Won't Stop","Players earn bonus XP for every three game win streak."],["Star Maker","Starters gain XP faster (+10% as head coach)."],["Limitless","Chance to raise a random skill cap when a player levels up."],["Put A Ring On It","Chance to raise a player's best skill cap when you win a conference or national title."]]]]},
-  {n:"Strategist", g:"Hybrid", u:"Win 4 bowl games and spend 200 CP in both Tactician and Recruiter", perk:"Show Don't Tell: +1,000 coach XP for each visiting prospect when you win", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+  {n:"Strategist", g:"Hybrid", u:"Win 4 bowl games and spend 200 CP in both Tactician and Recruiter", perk:"Show Don't Tell: +1,000 coach XP for each visiting prospect when you win", cost:"25, 30, 35, 40 CP per tier", pos:true,
    br:[["Every position group", [["Making Friends","Complimentary visits carry more influence."],["Hospitality","Visits make a bigger impression on prospects."],["Lower The Bar","Recruits' dealbreakers are easier to satisfy."],["Mind Reader","Better chance to learn a recruit's dev trait while scouting."]]]]},
-  {n:"Talent Developer", g:"Hybrid", u:"Have 2 players drafted in the 1st round and spend 200 CP in both Motivator and Recruiter", perk:"Draft Dividends: +2,000 coach XP when a player is drafted", cost:"25, 30, 35, 40 CP per tier (K/P 15, 15, 20, 20)", pos:true,
+  {n:"Talent Developer", g:"Hybrid", u:"Have 2 players drafted in the 1st round and spend 200 CP in both Motivator and Recruiter", perk:"Draft Dividends: +2,000 coach XP when a player is drafted", cost:"25, 30, 35, 40 CP per tier (K/P: Whisperer 15, Pay It Forward 20)", pos:true,
    br:[["Every position group", [["Field Study","More XP from in-game goals."],["Whisperer","Freshmen and sophomores progress faster."],["Home Sweet Home","Bigger pipeline bonus when recruiting the position."],["Pay It Forward","Players get bonus XP when a teammate at their position is drafted."]]]]},
   {n:"Program Builder", g:"Leadership", u:"Win 5 playoff games and spend 300 CP in any archetype. Head coach only", perk:"Winning Together: +75 coach XP whenever a school grade or prestige goes up", cost:"40 CP per tier",
    br:[["Coaching Family", [["Forever Home","Your coordinators are less likely to be poached."],["Deal Sweetener","Coordinators are more likely to accept your offer."],["Cream Of The Crop","Better coordinators show up in your hiring pool."]]],
@@ -2153,21 +2162,26 @@ const cFind = q => { const s = abNorm(q); let best;
 const CGROUP = [["Recruiter", ["Recruiter","Elite Recruiter"]], ["Motivator", ["Motivator","Master Motivator"]], ["Tactician", ["Tactician","Scheme Guru"]],
   ["Architect", ["Architect"]], ["Strategist", ["Strategist"]], ["Talent Developer", ["Talent Developer"]],
   ["Program Builder & CEO", ["Program Builder","CEO"]], ["Rainmaker & Visionary", ["Rainmaker","Visionary"]]];
-// Per-upgrade cost from the archetype's cost text: "15, 20, 25, 30 CP per tier (K/P 10, 10, 15, 15)", "20 CP per tier", "40 CP each, ...".
+// Per-upgrade cost from the archetype's cost text: "15, 20, 25, 30 CP per tier (K/P: Hot Hand 10, Locked In 15)", "20 CP per tier", "40 CP each, ...".
+// K/P discounts are per ability (prestonchoate.dev game-file data); an ability not listed costs K/P the same as every other group.
 function cCost(a){
-  const nums = s => s.split(/,\s*/).map(Number), four = x => x.length === 1 ? [x[0], x[0], x[0], x[0]] : x;
-  let m = a.cost.match(/^([\d, ]+) CP per tier(?: \(K\/P ([\d, ]+)\))?/);
-  if (m) return {tier:four(nums(m[1])), kp:m[2] ? four(nums(m[2])) : null};
+  const four = x => x.length === 1 ? [x[0], x[0], x[0], x[0]] : x;
+  let m = a.cost.match(/^([\d, ]+) CP per tier(?: \(K\/P: (.+)\))?$/);
+  if (m) return {tier:four(m[1].split(/,\s*/).map(Number)), kp:m[2] ? Object.fromEntries(m[2].split(/,\s*(?=[A-Z])/).map(x => { const k = x.match(/^(.+) (\d+)$/); return [k[1], +k[2]]; })) : {}};
   m = a.cost.match(/^(\d+) CP each/); return m ? {each:+m[1]} : null;
 }
-const cTierCost = (a, i) => { const c = cCost(a); return !c ? null : c.each ? [c.each, null] : [c.tier[i], c.kp ? c.kp[i] : null]; };
-const cBranchTotal = (a, n) => { const c = cCost(a); if (!c) return ""; const sum = xs => xs.slice(0, n).reduce((s, x) => s + x, 0);
-  return c.each ? `${c.each * n} CP for all ${n}` : `${sum(c.tier)} CP for all ${n}${c.kp ? ` (K/P ${sum(c.kp)})` : ""}`; };
+const cTierCost = (a, i, n) => { const c = cCost(a); return !c ? null : c.each ? [c.each, null] : [c.tier[i], c.kp[n] ?? null]; };
+const cBranchTotal = (a, ab) => { const c = cCost(a); if (!c) return "";
+  if (c.each) return `${c.each * ab.length} CP for all ${ab.length}`;
+  const all = ab.reduce((s, _, i) => s + c.tier[i], 0), kp = ab.reduce((s, [n], i) => s + (c.kp[n] ?? c.tier[i]), 0);
+  return `${all} CP for all ${ab.length}${kp !== all ? ` (K/P ${kp})` : ""}`; };
 function cDrawAb(q){
   $("#abArch").innerHTML = CGROUP.map(([g]) => `<button type="button" class="chip ab-cchip" data-c="${esc(g)}" aria-pressed="${!q && g === abC}">${CGROUP.find(x => x[0] === g)[1].map(n => abImg("a", n)).join("")}${esc(g)}</button>`).join("");
-  const row = (a, i, t, n, d) => { const c = cTierCost(a, i);
-    return `<li><b>${abImg("c", n)}${t ? `<small>T${t}</small> ` : ""}${esc(n)}</b><span>${esc(d)}</span>${c ? `<em class="ab-cost">${c[0]} CP${c[1] != null && c[1] !== c[0] ? `<small>K/P ${c[1]}</small>` : ""}</em>` : ""}</li>`; };
-  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}<span>${all ? esc(cBranchTotal(a, ab.length)) : esc(a.n)}</span></h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list">${
+  let ico = false;
+  const row = (a, i, t, n, d) => { const c = cTierCost(a, i, n);
+    return `<li>${ico ? abImg("c", n) || '<span class="ab-slot"></span>' : ""}<div class="ab-tx">${t ? `<span class="ab-tier">Tier ${t}</span>` : ""}<b class="ab-nm">${esc(n)}</b><span class="ab-ds">${esc(d)}</span></div>`
+      + `${c ? `<em class="ab-cost"><span class="ab-coin" aria-label="${c[0]} coach points">${c[0]}</span>${c[1] != null && c[1] !== c[0] ? `<small>K/P ${c[1]}</small>` : ""}</em>` : ""}</li>`; };
+  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}<span>${all ? esc(cBranchTotal(a, ab)) : esc(a.n)}</span></h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list ab-clist${(ico = ab.some(([n]) => abImg("c", n))) ? "" : " noico"}">${
     ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a, i, a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d) : "").join("")}</ul></section>`;
   if (q) {
     const hits = CARCH.flatMap(a => a.br.filter(([, ab]) => ab.some(([n]) => n.toLowerCase().includes(q))).map(([b, ab]) => card(a, b, ab, false)));
@@ -2176,7 +2190,7 @@ function cDrawAb(q){
   }
   $("#abCGrid").innerHTML = CGROUP.find(g => g[0] === abC)[1].map(n => CARCH.find(x => x.n === n)).map(a =>
     `<section class="ab-arch"><h3 class="ab-ah">${abImg("a", a.n)}${esc(a.n)} <span>${esc(a.g)}</span></h3>`
-    + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}<div><dt>Cost</dt><dd>Shown next to each upgrade${a.pos ? ", per position group" : ""}${cCost(a) && cCost(a).kp ? "; K/P tiers cost less" : ""}.</dd></div></dl></div>`
+    + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}<div><dt>Cost</dt><dd>Shown next to each upgrade${a.pos ? ", per position group" : ""}${cCost(a) && cCost(a).kp && Object.keys(cCost(a).kp).length ? `; K/P pays less for ${and(Object.keys(cCost(a).kp))}` : ""}.</dd></div></dl></div>`
     + `<div class="sl-grid">${a.br.map(([b, ab]) => card(a, b, ab, true)).join("")}</div></section>`).join("");
 }
 function abDraw(){
