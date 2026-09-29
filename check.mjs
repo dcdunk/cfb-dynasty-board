@@ -49,6 +49,18 @@ const inPage = async () => {
   };
 
   ok(document.querySelector('link[rel="icon"]'), "Favicon link missing");
+  // Theme tokens (Linear design system): both themes resolve, and the wordmark stays Inter at display size.
+  // Read the rules themselves: computed colors would depend on the OS light/dark setting.
+  const rules = [...[...document.styleSheets].find(s => s.ownerNode.tagName === "STYLE" && s.cssRules.length > 50).cssRules];
+  const media = rules.find(r => r.media && /prefers-color-scheme: dark/.test(r.media.mediaText));
+  const tok = [["light", rules.find(r => r.selectorText === ":root" && r.style.getPropertyValue("--ground")), "#F7F8F8"],
+    ["dark (toggle)", rules.find(r => r.selectorText === ':root[data-theme="dark"]'), "#08090A"],
+    ["dark (system)", media && [...media.cssRules].find(r => r.selectorText === ':root:not([data-theme="light"])'), "#08090A"]];
+  for (const [nm, r, want] of tok) for (const v of ["--ground", "--panel", "--text", "--accent", "--cta", "--on-cta"])
+    ok(r && r.style.getPropertyValue(v).trim(), `Theme: ${nm} token block missing ${v}`);
+  for (const [nm, r, want] of tok) ok(r?.style.getPropertyValue("--ground").trim() === want, `Theme: ${nm} --ground should be ${want}`);
+  const wm = getComputedStyle($(".wordmark"));
+  ok(/^Inter/.test(wm.fontFamily) && parseFloat(wm.fontSize) >= 36 && getComputedStyle($(".wordmark em")).fontStyle === "normal", `Theme: wordmark is ${wm.fontFamily} ${wm.fontSize}`);
   // Navigation: four group tabs; each shows only its own sub-tabs and remembers the last one used.
   const grp = async g => { $(`#tabGroups [data-grp="${g}"]`).click(); await wait(50); };
   const subs = () => [...$$("#subtabs .stab")].filter(b => !b.hidden).map(b => b.id).join(",");

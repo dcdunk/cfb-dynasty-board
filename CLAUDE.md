@@ -12,7 +12,7 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 
 ## Layout of the file
 
-- Lines ~7-476: one `<style>` block. Colors are CSS tokens on `:root`, with dark mode under `prefers-color-scheme` and `[data-theme]` overrides.
+- Lines ~10-708: one `<style>` block. Colors are CSS tokens on `:root`, with dark mode under `prefers-color-scheme` and `[data-theme]` overrides. The look follows the "Linear Design System" in Claude Design (dark surfaces, Inter + JetBrains Mono, lime accent), plus a light theme the system doesn't define. Rules: weights only 400/510/590, uppercase only on labels under 12px, radii 4 (badges) / 6 (controls) / 12 (cards, the max), borders instead of shadows. Primary buttons use `--cta`/`--on-cta` (lime with dark text in both themes); `--accent` is lime in dark and olive in light for text and bars. Colors that carry meaning (pipeline tiers `--t0..5`, map labels, errors, the CP coin) are deliberately outside the system. The system's rules live in a block at the end of the style tag. check.mjs verifies all three token blocks.
 - Lines ~477-645: static HTML for the nine tabs (`#viewBoard`, `#viewDyn`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`, `#viewRec`, `#viewSlide`, `#viewAb`) plus the team dossier drawer (`#dossier`, `#scrim`).
 - Lines ~646-1661: one `<script>`, plain JS with no framework. UI is rendered by building HTML strings into `innerHTML`.
 
