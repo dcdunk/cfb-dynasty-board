@@ -2313,12 +2313,14 @@ const PRULE = [["port-none", /no (transfer|portal)|closed portal|without the por
   ["nil-zero", /no nil|zero nil|without nil|no money/], ["nil-half", /half (the )?(nil|budget)|low budget/], ["star-none", /no (5|five).?stars?|no blue.?chips?/],
   ["game-heis", /heisman difficulty|on heisman/], ["job-coord", /start as (a )?coordinator|earn the headset/], ["sch-gaunt", /tough schedule|gauntlet|hardest schedule/]];
 const PNK = (() => { const c = {}; DATA.forEach(t => { const k = norm(t.nk); c[k] = (c[k] || 0) + 1; }); return c; })();
+// Abbreviations that are ordinary words ("most" = Missouri State) never count as a team mention.
+const PABSTOP = new Set(["most", "ball", "mass", "wake", "app", "miss", "ill", "usa", "bay", "tem", "pur", "cal", "ark"]);
 function pFindTeams(q){
   const v = " " + norm(q).replace(/[^a-z0-9&]+/g, " ") + " ", hits = [];
   for (const t of DATA) {
     const keys = [norm(t.n).replace(/[^a-z0-9&]+/g, " ")];
     if (PNK[norm(t.nk)] === 1) keys.push(norm(t.nk));
-    if (t.ab.length >= 2) keys.push(norm(t.ab));
+    if (t.ab.length >= 2 && !PABSTOP.has(norm(t.ab))) keys.push(norm(t.ab));
     for (const k of keys) { const i = v.indexOf(" " + k + " "); if (i >= 0) hits.push([t, k.length, i]); }
   }
   hits.sort((a, b) => b[1] - a[1]);
@@ -2337,7 +2339,7 @@ function pRules(t, strict, pre, force){
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
   }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
 }
-const P = {team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
+const P = {past:[], team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
 const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
@@ -2524,6 +2526,140 @@ function pFindPlayer(q){
   for (const t of DATA) for (const p of t.r) if (v.includes(" " + norm(p[0]) + " ") || v.includes(" " + norm(p[0]) + "?")) return [t, p];
   return null;
 }
+/* ---- rule-level editing: remove / swap / add / explain a rule by name, undo ---- */
+// House rule names mentioned in the text, longest first ("One five-star" before "One side of the ball" can't collide).
+function pFindRules(q){
+  const v = " " + norm(q).replace(/[^a-z0-9]+/g, " ") + " ", out = [];
+  for (const r of [...HRULES].filter(r => !r.u).sort((a, b) => b.n.length - a.n.length)) {
+    const k = " " + norm(unesc(r.n)).replace(/[^a-z0-9]+/g, " ").trim() + " ", i = v.indexOf(k);
+    if (i >= 0 && !out.some(o => i < o[1] + o[2] && o[1] < i + k.length)) out.push([r.id, i, k.length]);
+  }
+  return out.sort((a, b) => a[1] - b[1]).map(o => o[0]);
+}
+const PCATW = [["nil", /\bnil|money|budget\b/], ["port", /portal|transfer/], ["ter", /territory|region|pipeline rule|where (i|you) recruit/],
+  ["star", /\bstars?\b|blue.?chip|class size/], ["ros", /roster|depth|playing time/], ["sch", /schedul/], ["job", /\bjob|hot seat|coaching career/], ["game", /game.?day|difficulty rule|sim\b/]];
+const nmR = id => unesc(HR[id].n);
+// Why a rule matters for this program, from the data (falls back to its category and weight).
+function pRuleWhy(id, t){
+  const w = pWhy({t, rules:[id], rebuild:false}).slice(1).map(x => x.replace(/^- /, ""));
+  return w.length ? w : [`It fills the ${HCATN[HR[id].c].toLowerCase()} slot at weight ${HR[id].l} of 3 (${HSTR[HR[id].l].toLowerCase()}).`];
+}
+function pEdit(q){
+  const s = norm(q), p = P.plan, t = p ? p.t : P.team || hT(), named = pFindRules(q);
+  if (/^(undo|go back|revert|undo that|take that back|back)\b/.test(s)) {
+    if (!P.past.length) return pMd("### Undo\n- Nothing to undo yet.");
+    const was = P.plan; P.plan = P.past.pop(); P.team = P.plan.t;
+    return pRender({...P.plan, change:{notes:["Undid the last change"], from:was ? strainOf(was.rules) : strainOf(P.plan.rules)}});
+  }
+  const explain = /\b(why|what (is|does|do)|explain|meaning|mean|tell me about|how does)\b/.test(s);
+  if (named.length && explain) {
+    const id = named[0], r = HR[id], inPlan = p && p.rules.includes(id);
+    P.facts = `House rule ${nmR(id)} (${HCATN[r.c]}, weight ${r.l} of 3): ${plain(r.x(t))}`;
+    return pMd([`### ${nmR(id)}`, `- **Rule:** ${plain(r.x(t))}`, `- **Category:** ${HCATN[r.c]} · weight ${r.l} of 3 (${HSTR[r.l]})`,
+      ...(r.w(t) ? [] : [`- Doesn't apply to ${t.n}.`]),
+      ...(inPlan ? [`- **Why it's in your plan:** ${pRuleWhy(id, t).join(" ")}`] : p ? [`- Not in your current plan. Say "add ${nmR(id)}" to use it.`] : [])].join("\n"));
+  }
+  // A new plan request ("Moneyball at Temple with Closed portal") belongs to pPlan, not an edit of the current plan.
+  const other = pFindTeams(q)[0]; if (p && ((other && other !== p.t) || /\b(dynasty|rebuild)\b/.test(s))) return null;
+  if (!p) return named.length ? pMd(`### ${nmR(named[0])}\n- Build a plan first, like "tough ${hT().n} dynasty", then I can change its rules.`) : null;
+  const remove = /\b(remove|drop|delete|get rid of|lose|ditch|without|cut|take out|no more)\b/.test(s), swap = /\b(swap|replace|change|switch|instead|different)\b/.test(s),
+    add = /\b(add|include|use|put in|throw in|with)\b/.test(s), dir = PDOWN.test(s) ? -1 : PUP.test(s) ? 1 : 0;
+  const cat = !named.length && dir && (PCATW.find(([, re]) => re.test(s)) || [])[0];
+  let rules = [...p.rules], keep = [...(p.keep || [])]; const notes = [];
+  if (named.length && swap && named.length >= 2 && p.rules.includes(named[0])) {         // "swap Seniority for Redshirt rule"
+    const [a, b] = named; rules = rules.filter(x => x !== a && HR[x].c !== HR[b].c).concat(b); keep = keep.filter(x => x !== a).concat(b);
+    notes.push(`Swapped **${nmR(a)}** for **${nmR(b)}**`);
+  } else if (named.length && (swap || remove) && p.rules.includes(named[0])) {
+    const a = named[0];
+    if (remove && !swap) { rules = rules.filter(x => x !== a); keep = keep.filter(x => x !== a); notes.push(`Removed **${nmR(a)}**`); }
+    else { const alt = HRULES.filter(r => r.c === HR[a].c && !r.u && r.w(t) && !rules.includes(r.id)).sort((x, y) => Math.abs(x.l - HR[a].l) - Math.abs(y.l - HR[a].l))[0];
+      if (!alt) return pMd(`### ${nmR(a)}\n- No other ${HCATN[HR[a].c].toLowerCase()} rule fits ${t.n}. Say "remove ${nmR(a)}" to drop it.`);
+      rules = rules.map(x => x === a ? alt.id : x); keep = keep.filter(x => x !== a); notes.push(`Swapped **${nmR(a)}** for **${nmR(alt.id)}** (same category, closest weight)`); }
+  } else if (named.length && (add || swap) && !p.rules.includes(named[0])) {
+    const b = named[0]; if (!HR[b].w(t)) return pMd(`### ${nmR(b)}\n- Doesn't apply to ${t.n}.`);
+    const out = rules.find(x => HR[x].c === HR[b].c); rules = rules.filter(x => x !== out).concat(b); keep.push(b);
+    notes.push(out ? `Replaced **${nmR(out)}** with **${nmR(b)}**` : `Added **${nmR(b)}**`);
+  } else if (named.length && remove) return pMd(`### ${nmR(named[0])}\n- It isn't in your plan.`);
+  else if (cat) {                                                                           // "make the NIL rule lighter"
+    const cur = rules.find(x => HR[x].c === cat);
+    const alt = HRULES.filter(r => r.c === cat && !r.u && r.w(t) && !rules.includes(r.id) && (cur ? (dir < 0 ? r.l < HR[cur].l : r.l > HR[cur].l) : true))
+      .sort((x, y) => dir < 0 ? y.l - x.l : x.l - y.l)[0];
+    if (!alt && cur && dir < 0) { rules = rules.filter(x => x !== cur); notes.push(`Dropped **${nmR(cur)}**, the lightest ${HCATN[cat].toLowerCase()} rule`); }
+    else if (!alt) return pMd(`### ${HCATN[cat]}\n- Already as ${dir < 0 ? "light" : "tough"} as it gets for ${t.n}.`);
+    else { rules = cur ? rules.map(x => x === cur ? alt.id : x) : rules.concat(alt.id); keep = keep.filter(x => x !== cur).concat(alt.id);
+      notes.push(cur ? `Swapped **${nmR(cur)}** for the ${dir < 0 ? "lighter" : "tougher"} **${nmR(alt.id)}**` : `Added **${nmR(alt.id)}**`); }
+  } else return null;
+  P.past.push(p);
+  P.plan = {...p, rules:rules.sort((a, b) => catIx(a) - catIx(b)), keep, change:{notes, from:strainOf(p.rules)}};
+  return pRender(P.plan);
+}
+
+/* ---- league-wide questions: filter/sort all programs, compare two, best players nationally ---- */
+const PCONF = [["SEC", /\bsec\b/], ["Big Ten", /\bbig (ten|10)\b|\bb1g\b/], ["Big 12", /\bbig (12|twelve)\b/], ["ACC", /\bacc\b/], ["American", /\bamerican\b|\baac\b/],
+  ["Pac-12", /\bpac.?12\b/], ["Mountain West", /\bmountain west\b|\bmwc\b/], ["Conference USA", /\bconference usa\b|\bc.?usa\b/], ["Sun Belt", /\bsun belt\b/], ["MAC", /\bmac\b/], ["Independent", /\bindependents?\b/]];
+const PREGS = [...new Set(DATA.flatMap(t => t.pl.map(p => p[0])))];
+function pScope(s){
+  const c = PCONF.filter(([, re]) => re.test(s)).map(x => x[0]);
+  if (c.length) return [DATA.filter(t => c.includes(t.c)), and(c)];
+  if (/\b(p4|power (4|four|conference))\b/.test(s)) return [DATA.filter(isP4), "Power 4"];
+  if (/\b(g5|group of (5|five))\b/.test(s)) return [DATA.filter(t => !isP4(t)), "Group of Five"];
+  return [DATA, "FBS"];
+}
+const orank = t => [...DATA].sort((a, b) => b.o - a.o).indexOf(t) + 1;
+const tLine = t => `**${t.n}** (${t.c}) · ${t.o} OVR · ${t.p}★ · NIL #${NILRANK.indexOf(t.n) + 1} · ${t.ti} title${t.ti === 1 ? "" : "s"}`;
+function pLeague(q){
+  const s = norm(q), teams = pFindTeams(q), n = Math.min(15, +(s.match(/\btop (\d+)/) || [])[1] || 5);
+  // Compare two programs.
+  if (teams.length >= 2 && /\b(vs\.?|versus|compare|compared|or|against|better)\b/.test(s)) {
+    const [a, b] = teams, best = t => [...t.r].sort((x, y) => y[3] - x[3])[0], hc = t => (t.st || []).find(c => c[0] === "HC");
+    const row = (lbl, f, hi = true) => { const x = f(a), y = f(b); const w = x === y ? "" : (hi ? x > y : x < y) ? ` · edge ${a.n}` : ` · edge ${b.n}`; return `- **${lbl}:** ${x} vs ${y}${w}`; };
+    P.team = a; P.facts = [a, b].map(t => `${t.n}: ${tLine(t).replace(/\*\*/g, "")}; best player ${pRow(best(t)).replace(/\*\*/g, "")}; head coach ${hc(t) ? hc(t)[1] : "unknown"}`).join("\n");
+    return pMd([`### ${a.n} vs ${b.n}`, row("Overall", t => t.o), row("Offense", t => t.of), row("Defense", t => t.df), row("Prestige", t => t.p),
+      row("NIL rank", t => NILRANK.indexOf(t.n) + 1, false), row("National titles", t => t.ti), row("Tier 3+ pipelines", t => pipesAt(t, 3).length),
+      `### Best players`, `- ${pRow(best(a), a)}`, `- ${pRow(best(b), b)}`,
+      `### Head coaches`, ...[a, b].map(t => hc(t) ? `- ${sRow(hc(t), t)}` : `- ${t.n}: none listed`)].join("\n"));
+  }
+  const [pool, where] = pScope(s), league = /\b(in the country|nationally|in the nation|in (the )?(fbs|college football)|any team|who has|which team|what team|across|in the (sec|acc|big|pac|mac|sun|mountain|american|conference)|overall)\b/.test(s)
+    || PCONF.some(([, re]) => re.test(s)) || /\b(p4|g5|power (4|four)|group of (5|five))\b/.test(s);
+  // Best players across many teams ("best QB in the SEC", "who has the fastest receiver").
+  const pos = PPOS.find(([, re]) => re.test(s));
+  if (!teams.length && league && (pos || /\bplayers?\b/.test(s)) && /\b(best|top|fastest|highest|who has)\b/.test(s)) {
+    const grp = pos && POSG.find(g => g[0] === pos[0])[1], fast = /fastest|speed/.test(s);
+    const xs = pool.flatMap(t => t.r.filter(p => !grp || grp.includes(p[1])).map(p => [p, t])).sort((a, b) => fast ? b[0][5] - a[0][5] || b[0][3] - a[0][3] : b[0][3] - a[0][3] || b[0][5] - a[0][5]).slice(0, n);
+    P.facts = `Top players (${where}):\n` + xs.map(([p, t]) => pRow(p, t).replace(/\*\*/g, "")).join("\n");
+    return pMd([`### ${fast ? "Fastest" : "Best"} ${pos ? pos[0] : "players"} · ${where}`, ...xs.map(([p, t]) => `- ${pRow(p, t)}`)].join("\n"));
+  }
+  // In a pipeline question, "Texas" or "Alabama" means the place, not the team.
+  const place = x => Object.values(STNAME).some(nm => norm(nm) === norm(x.n)) || PREGS.some(r => norm(r) === norm(x.n));
+  if (teams.length && !(/pipeline/.test(s) && teams.every(place))) return null;
+  // Pipelines: "who has a tier 5 pipeline in Texas", "best pipeline in Metro Atlanta".
+  if (/pipeline/.test(s)) {
+    const st = Object.entries(STNAME).find(([, nm]) => new RegExp(`\\b${norm(nm)}\\b`).test(s));
+    const regs = PREGS.filter(r => s.includes(norm(r))), where2 = regs.length ? regs : st ? regsIn(st[0]) : [];
+    if (!where2.length) return null;
+    const min = +(s.match(/\btier (\d)/) || [])[1] || 1;
+    const xs = pool.map(t => [t, Math.max(0, ...t.pl.filter(p => where2.includes(p[0])).map(p => p[1]))]).filter(x => x[1] >= min).sort((a, b) => b[1] - a[1] || b[0].o - a[0].o);
+    const lbl = regs.length ? and(regs) : STNAME[st[0]];
+    P.facts = `Programs with a pipeline in ${lbl}: ` + xs.slice(0, 25).map(([t, tr]) => `${t.n} tier ${tr}`).join(", ");
+    return pMd([`### ${lbl} pipelines${min > 1 ? ` · Tier ${min}+` : ""}${where !== "FBS" ? ` · ${where}` : ""}`, `- ${xs.length} program${xs.length === 1 ? "" : "s"}. Strongest first:`,
+      ...xs.slice(0, Math.max(n, 8)).map(([t, tr]) => `- **${t.n}** · Tier ${tr} (${TIERN[tr]}) · ${t.o} OVR`)].join("\n"));
+  }
+  // Rankings over programs.
+  const M = [["rebuild", /rebuild|turn ?around|fixer.?upper|sleeping|potential|upside/], ["nil", /\bnil|budget|money|richest|poorest|cheapest/], ["titles", /titles?|championships?/],
+    ["prestige", /prestige|brand|blue.?blood/], ["of", /offen[cs]e/], ["df", /defen[cs]e/], ["o", /\b(best|worst|top|strongest|weakest|highest|lowest|rated|overall|good|bad)\b/]];
+  const m = M.find(([, re]) => re.test(s)); if (!m || !(league || /\b(team|teams|program|programs|school|schools|which|who)\b/.test(s))) return null;
+  const low = /\b(worst|lowest|weakest|poorest|cheapest|least|bottom|smallest|bad)\b/.test(s), key = m[0];
+  // Rebuild pick: a budget that ranks well above the roster (money to fix it), then prestige.
+  // Rebuilds leave out the top third of rosters in scope, then rank by money and brand relative to the roster.
+  const cut = [...pool].sort((a, b) => b.o - a.o)[Math.floor(pool.length / 3)]?.o ?? 0, pool2 = key === "rebuild" ? pool.filter(t => t.o < cut) : pool;
+  const score = key === "rebuild" ? t => (orank(t) - (NILRANK.indexOf(t.n) + 1)) + t.p * 10 : key === "nil" ? t => t.nt : t => t[key === "titles" ? "ti" : key];
+  const xs = [...pool2].sort((a, b) => low ? score(a) - score(b) : score(b) - score(a)).slice(0, n);
+  const title = {rebuild:"Best rebuild jobs", nil:low ? "Smallest NIL budgets" : "Biggest NIL budgets", titles:"Most national titles", prestige:low ? "Lowest prestige" : "Highest prestige",
+    of:low ? "Weakest offenses" : "Best offenses", df:low ? "Weakest defenses" : "Best defenses", o:low ? "Lowest rated" : "Highest rated"}[key];
+  P.facts = `${title} (${where}):\n` + xs.map(t => tLine(t).replace(/\*\*/g, "")).join("\n");
+  return pMd([`### ${title} · ${where}`, ...(key === "rebuild" ? [`- Skips the top third of rosters (${cut}+ overall), then ranks by how far the NIL budget outranks the roster, plus prestige: money and a brand to fix a weaker team.`] : []),
+    ...xs.map(t => `- ${tLine(t)}${key === "rebuild" ? ` · roster #${orank(t)}, NIL #${NILRANK.indexOf(t.n) + 1}` : key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`)].join("\n"));
+}
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q));
@@ -2532,14 +2668,16 @@ async function pAsk(q){
   const tp = pFindTeams(q)[0] || P.team;
   let html = "", plan = null;
   const fc = !fp && pFindCoach(q), sq = /\b(head coach|coaches|coaching staff|staff|coordinators?|oc|dc|hc)\b|who coaches/i.test(q) && !/dynasty|created|custom|own coach|real coach/i.test(q);
-  const ah = pAbil(q);
-  if (ah) html = ah;
+  const ed = pEdit(q), lg = !ed && pLeague(q), ah = !ed && !lg && pAbil(q);
+  if (ed) html = ed;
+  else if (lg) html = lg;
+  else if (ah) html = ah;
   else if (fc) { P.team = fc[0]; P.facts = `Coach on the board: ${sRow(fc[1], fc[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
   else if (sq && tp) html = pStaff(q, tp);
   else if (fp) { P.team = fp[0]; P.facts = `Player on the board: ${pRow(fp[1], fp[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
   else if (rq && tp) html = pPlayers(q, tp);
   else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
-  else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { P.team = plan.t; P.plan = plan; html = pRender(plan); }
+  else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); }
   // Plans, rosters and staff come from the templated reply even with AI on: the model dropped and renamed rules when it rewrote them.
   // The AI only answers what the template can't, using the facts from the last answer plus the league table.
   if (!html && P.aiOn && P.ai) return pWrite(q, pSay("bot", ""), true, true);

@@ -256,6 +256,26 @@ const inPage = async () => {
 };
 const r = await send("Runtime.evaluate", { expression: `(${inPage})()`, awaitPromise: true, returnByValue: true });
 const fails = [...errors, ...(r.result.exceptionDetails ? ["Check crashed: " + r.result.exceptionDetails.exception?.description] : r.result.result.value)];
+// Coach conversation suite (coach-cases.mjs): each case is a fresh conversation checked turn by turn.
+const cases = (await import("./coach-cases.mjs")).default;
+const coachRun = async cs => {
+  const out = [];
+  for (const c of cs) {
+    P.plan = null; P.team = null; P.past = []; P.facts = ""; document.querySelector("#pLog").innerHTML = "";
+    for (const [q0, e] of c.say) {
+      const q = q0.replace("__NAME__", () => unesc(HR[window.__id].n));
+      document.querySelector("#pIn").value = q; document.querySelector("#pForm").requestSubmit(); await new Promise(r => setTimeout(r, 20));
+      const txt = [...document.querySelectorAll("#pLog .pm.bot")].pop()?.textContent || "", bad = [];
+      for (const h of e.has || []) if (!new RegExp(h, "i").test(txt)) bad.push(`missing /${h}/`);
+      for (const h of e.not || []) if (new RegExp(h, "i").test(txt)) bad.push(`should not say /${h}/`);
+      try { if (e.js && !eval(e.js)) bad.push(`check failed: ${e.js}`); } catch (x) { bad.push(`check crashed: ${x.message}`); }
+      if (bad.length) out.push(`Coach case "${c.name}", after "${q}": ${bad.join("; ")}. Reply: ${txt.slice(0, 300)}`);
+    }
+  }
+  return out;
+};
+const cr = await send("Runtime.evaluate", { expression: `(${coachRun})(${JSON.stringify(cases)})`, awaitPromise: true, returnByValue: true });
+fails.push(...(cr.result.exceptionDetails ? ["Coach suite crashed: " + cr.result.exceptionDetails.exception?.description] : cr.result.result.value));
 
 chrome.kill(); await new Promise(r => chrome.once("exit", r));
 try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch {} // leftover temp files are harmless
@@ -267,5 +287,5 @@ if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboa
 if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log("PASS: all 8 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, sliders, player abilities, planner, www redirect. No JS errors.");
+console.log(`PASS: all 8 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, sliders, player abilities, planner, ${cases.length} Coach conversations, www redirect. No JS errors.`);
 process.exit(0);
