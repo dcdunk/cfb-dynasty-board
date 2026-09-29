@@ -226,6 +226,14 @@ const inPage = async () => {
   $('#abMode [data-m="coach"]').click(); await wait(50);
   ok($("#abPlayer").hidden && !$("#abCoach").hidden, "Abilities: Coach toggle should swap views");
   ok($$("#abArch .chip").length === 8 && /Portal King/.test($("#abCGrid").textContent) && /Firm Handshakes/.test($("#abCGrid").textContent) && /Always Be Crootin/.test($("#abCGrid").textContent), "Abilities: Recruiter chip should bundle Recruiter and Elite Recruiter");
+  // Archetypes bought per position group get one card per group, each priced for that group.
+  { const heads = [...$$("#abCGrid .sl-card h3")].map(h => h.textContent);
+    ok($$("#abCGrid .sl-card").length === 16 && heads.slice(0, 8).join() === "QB,RB/FB,WR/TE,OL,DL,LB,DB,K/P" && !/Bought separately/.test($("#abCGrid").textContent),
+      `Abilities: Recruiter + Elite Recruiter should be 8 position cards each, got ${heads.join("|")}`); }
+  $('#abArch [data-c="Motivator"]').click(); await wait(50);
+  { const hot = p => { const c = [...$$("#abCGrid .sl-card")].find(c => c.querySelector("h3").textContent === p);
+      return [...c.querySelectorAll("li")].find(li => /Hot Hand/.test(li.textContent)).querySelector(".ab-cost").textContent; };
+    ok(hot("QB") === "20" && hot("K/P") === "10", `Abilities: Hot Hand should cost 20 on QB and 10 on K/P, got ${hot("QB")} / ${hot("K/P")}`); }
   $('#abArch [data-c="Tactician"]').click(); await wait(50);
   ok($$("#abCGrid .ab-arch").length === 2 && $$("#abCGrid .sl-card").length === 16 && /top 25/.test($("#abCGrid").textContent), "Abilities: Tactician chip should show Tactician and Scheme Guru (16 branches)");
   find("#abQ", "whisperer");

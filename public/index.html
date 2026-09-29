@@ -615,7 +615,6 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .ab-meta dl{display:flex; flex-wrap:wrap; gap:8px 28px; margin:0 0 18px; font-size:12.5px}
 .ab-meta dt{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim)}
 .ab-meta dd{margin:2px 0 0; max-width:48ch}
-.ab-each{margin:0; padding:8px 12px 0; font-size:11.5px}
 .ab-list b small{font-weight:400; color:var(--dim); font-size:10.5px}
 .sl .ab-src{margin-top:30px}
 
@@ -2181,7 +2180,7 @@ const abRow = n => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}<
 /* ---- coach abilities ---- */
 // Names and unlocks: CollegeFootball.gg. Costs, perks and values: prestonchoate.dev, mined from the CFB 27 game files (dynasty tuning data);
 // where the two disagree the game-file numbers win. Descriptions are our own. POS: branch bought once per position group.
-const CPOS = "QB, RB/FB, WR/TE, OL, DL, LB, DB and K/P";
+const CPOS = ["QB", "RB/FB", "WR/TE", "OL", "DL", "LB", "DB", "K/P"];
 const CARCH = [
   {n:"Recruiter", g:"Base", u:"Available from the start", perk:"Firm Handshakes: +100 coach XP for every recruit you sign", cost:"15, 20, 25, 30 CP per tier", pos:true,
    br:[["Every position group", [["Advanced Look","Recruits at the position take less time to fully scout."],["Persuasive Personality","Better chance to sway recruits at the position."],["Magnetic Personality","High school recruits at the position start with more interest."],["Portal King","Transfers at the position start with more interest."]]]]},
@@ -2249,11 +2248,11 @@ const cTierCost = (a, i, n) => { const c = cCost(a); return !c ? null : c.each ?
 function cDrawAb(q){
   $("#abArch").innerHTML = CGROUP.map(([g]) => `<button type="button" class="chip ab-cchip" data-c="${esc(g)}" aria-pressed="${!q && g === abC}">${CGROUP.find(x => x[0] === g)[1].map(n => abImg("a", n)).join("")}${esc(g)}</button>`).join("");
   let ico = false;
-  const row = (a, i, t, n, d) => { const c = cTierCost(a, i, n);
+  const row = (a, i, t, n, d, p) => { let c = cTierCost(a, i, n); if (c && p) c = [p === "K/P" ? c[1] ?? c[0] : c[0], null];
     return `<li>${ico ? abImg("c", n) || '<span class="ab-slot"></span>' : ""}<div class="ab-tx">${t ? `<span class="ab-tier">Tier ${t}</span>` : ""}<b class="ab-nm">${esc(n)}</b><span class="ab-ds">${esc(d)}</span></div>`
       + `${c ? `<em class="ab-cost"><span class="ab-coin" aria-label="${c[0]} coach points">${c[0]}</span>${c[1] != null && c[1] !== c[0] ? `<small>K/P ${c[1]}</small>` : ""}</em>` : ""}</li>`; };
-  const card = (a, b, ab, all) => `<section class="sl-card"><h3>${esc(b)}${all ? "" : `<span>${esc(a.n)}</span>`}</h3>${a.pos && !q ? `<p class="hint ab-each">Bought separately for ${CPOS}.</p>` : ""}<ul class="ab-list ab-clist${(ico = ab.some(([n]) => abImg("c", n))) ? "" : " noico"}">${
-    ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a, i, a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d) : "").join("")}</ul></section>`;
+  const card = (a, b, ab, all, p) => `<section class="sl-card"><h3>${esc(p || b)}${all ? "" : `<span>${esc(a.n)}</span>`}</h3><ul class="ab-list ab-clist${(ico = ab.some(([n]) => abImg("c", n))) ? "" : " noico"}">${
+    ab.map(([n, d], i) => all || n.toLowerCase().includes(q) ? row(a, i, a.n === "CEO" || a.g === "Special" ? 0 : i + 1, n, d, p) : "").join("")}</ul></section>`;
   if (q) {
     const hits = CARCH.flatMap(a => a.br.filter(([, ab]) => ab.some(([n]) => n.toLowerCase().includes(q))).map(([b, ab]) => card(a, b, ab, false)));
     $("#abCGrid").innerHTML = hits.length ? `<div class="sl-grid">${hits.join("")}</div>` : `<p class="hint">No coach ability matches "${esc(q)}".</p>`;
@@ -2262,7 +2261,7 @@ function cDrawAb(q){
   $("#abCGrid").innerHTML = CGROUP.find(g => g[0] === abC)[1].map(n => CARCH.find(x => x.n === n)).map(a =>
     `<section class="ab-arch"><h3 class="ab-ah">${abImg("a", a.n)}${esc(a.n)} <span>${esc(a.g)}</span></h3>`
     + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}</dl></div>`
-    + `<div class="sl-grid">${a.br.map(([b, ab]) => card(a, b, ab, true)).join("")}</div></section>`).join("");
+    + `<div class="sl-grid">${a.br.flatMap(([b, ab]) => a.pos ? CPOS.map(p => card(a, b, ab, true, p)) : [card(a, b, ab, true)]).join("")}</div></section>`).join("");
 }
 function abDraw(){
   const q = $("#abQ").value.trim().toLowerCase();
