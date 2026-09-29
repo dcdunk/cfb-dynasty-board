@@ -240,14 +240,9 @@ h3{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(-
   background:transparent; border:0; border-bottom:3px solid transparent; color:var(--faint);
   padding:9px 14px 8px; cursor:pointer; margin-bottom:-1px}
 .tab:hover{color:var(--text)}
-.tab[aria-pressed="true"]{color:var(--text); border-bottom-color:var(--accent)}
-.tabs .tab{font-size:13.5px; padding:11px 16px 10px}
-.subtabs{max-width:1500px; margin:0 auto; padding:12px 22px 0; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none}
-.stab{font:510 13px Inter,sans-serif; color:var(--dim); background:transparent; border:1px solid transparent;
-  padding:6px 12px; cursor:pointer; white-space:nowrap}
-.stab:hover{color:var(--text); border-color:var(--line)}
-.stab[aria-selected="true"]{color:var(--text); background:var(--panel); border-color:var(--line); box-shadow:inset 0 -2px 0 var(--accent)}
-.stab:focus-visible,.tab:focus-visible{outline:2px solid var(--focus); outline-offset:-2px}
+.tab[aria-selected="true"]{color:var(--text); border-bottom-color:var(--accent)}
+.tabs .tab{font-size:13.5px; padding:11px 12px 10px}
+.tab:focus-visible{outline:2px solid var(--focus); outline-offset:-2px}
 #viewBoard .rail, #viewCoach .rail{margin-top:0}
 .ctab{min-width:760px}
 .ctab .role{font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--dim); width:64px}
@@ -343,9 +338,8 @@ h3{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(-
 [hidden]{display:none !important}
 .tab{white-space:nowrap}
 .tabs{overflow-x:auto; scrollbar-width:none}
-@media (max-width:480px){.tabs{display:grid; grid-template-columns:repeat(4,auto); justify-content:space-between; padding:0 16px; gap:0}
-  .tabs .tab{padding:10px 2px 9px; font-size:12px; letter-spacing:.01em;}
-  .subtabs{padding:10px 16px 0; flex-wrap:wrap; gap:4px}}
+@media (max-width:480px){.tabs{padding:0 16px; gap:0}
+  .tabs .tab{padding:10px 10px 9px; font-size:13px}}
 @media (max-width:980px){thead th{position:static}}
 /* ---------- house rules ---------- */
 .house{max-width:1500px; margin:0 auto; padding:24px 22px 80px; display:grid;
@@ -688,11 +682,11 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
 .rand h2,.house .hh,.sl .hh,.pcard .pname,.rec .arch{font-weight:590; letter-spacing:-.012em}
 .pre b,.ab-clist .ab-nm,.phead h2{letter-spacing:-.011em}
 .tab{font-weight:510}
-.tab[aria-pressed="true"]{font-weight:590}
+.tab[aria-selected="true"]{font-weight:590}
 /* radii: 4 badges, 6 controls, 12 cards (the ceiling) */
 .tag,.dev,.lkt,.ctag,.sl-chg,mark.hit{border-radius:4px}
 .search,.chip,.ghost,.ib,.dclose,.seg,.hfi,.ab-q,.pmode select,.coachbtn,.pai,.pform textarea,.pform button,
-.roll,.rmore,.stab,.pre,.cb,.pm.me,.hbuild,.tgl .trk{border-radius:6px}
+.roll,.rmore,.pre,.cb,.pm.me,.hbuild,.tgl .trk{border-radius:6px}
 .tgl .trk{border-radius:9px}
 .result,.pmap,.pcard,.book,.lib,.sl-card,.hfprev,.hf,.psave,.trio,.rstats,.sl-new{border-radius:12px}
 .seg,.trio,.rstats,.book,.sl-card,.lib{overflow:hidden}
@@ -702,7 +696,7 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
 /* hairlines in place of shadows; overlays keep the one floating shadow */
 .dossier{box-shadow:var(--shadow)}
 /* motion: short, no bounce */
-.chip,.ghost,.ib,.stab,.tab,.pre,.search,.coachbtn,.rmore,tbody tr{transition:color 120ms var(--ease),background-color 120ms var(--ease),border-color 120ms var(--ease)}
+.chip,.ghost,.ib,.tab,.pre,.search,.coachbtn,.rmore,tbody tr{transition:color 120ms var(--ease),background-color 120ms var(--ease),border-color 120ms var(--ease)}
 :focus-visible{outline:1px solid var(--focus); outline-offset:2px}
 </style>
 
@@ -718,22 +712,16 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
 </div>
 
 <nav class="nav" aria-label="Sections">
-<div class="tabs" id="tabGroups">
-  <button class="tab" type="button" data-grp="dyn" aria-pressed="false">My Dynasty</button>
-  <button class="tab" type="button" data-grp="prog" aria-pressed="true">Programs</button>
-  <button class="tab" type="button" data-grp="plan" aria-pressed="false">Plan</button>
-  <button class="tab" type="button" data-grp="ref" aria-pressed="false">Reference</button>
-</div>
-<div class="subtabs" id="subtabs" role="tablist" aria-label="Views">
-  <button class="stab" role="tab" id="tabDyn" hidden aria-controls="viewDyn" aria-selected="false" tabindex="-1" type="button">My Dynasty</button>
-  <button class="stab" role="tab" id="tabBoard" aria-controls="viewBoard" aria-selected="true" type="button">Board</button>
-  <button class="stab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
-  <button class="stab" role="tab" id="tabCoach" aria-controls="viewCoach" aria-selected="false" tabindex="-1" type="button">Coach Database</button>
-  <button class="stab" role="tab" id="tabRand" aria-controls="viewRand" aria-selected="false" tabindex="-1" type="button">Randomizer</button>
-  <button class="stab" role="tab" id="tabHouse" hidden aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
-  <button class="stab" role="tab" id="tabRec" hidden aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
-  <button class="stab" role="tab" id="tabSlide" hidden aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
-  <button class="stab" role="tab" id="tabAb" hidden aria-controls="viewAb" aria-selected="false" tabindex="-1" type="button">Abilities</button>
+<div class="tabs" role="tablist" aria-label="Views">
+  <button class="tab" role="tab" id="tabDyn" aria-controls="viewDyn" aria-selected="false" tabindex="-1" type="button">My Dynasty</button>
+  <button class="tab" role="tab" id="tabBoard" aria-controls="viewBoard" aria-selected="true" type="button">Board</button>
+  <button class="tab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
+  <button class="tab" role="tab" id="tabCoach" aria-controls="viewCoach" aria-selected="false" tabindex="-1" type="button">Coach Database</button>
+  <button class="tab" role="tab" id="tabRand" aria-controls="viewRand" aria-selected="false" tabindex="-1" type="button">Randomizer</button>
+  <button class="tab" role="tab" id="tabHouse" aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
+  <button class="tab" role="tab" id="tabRec" aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
+  <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
+  <button class="tab" role="tab" id="tabAb" aria-controls="viewAb" aria-selected="false" tabindex="-1" type="button">Abilities</button>
 </div>
 </nav>
 
@@ -1187,9 +1175,6 @@ addEventListener("keydown", e => { if (e.key === "Escape" && picked) closeTeam()
 
 /* ---- tabs ---- */
 const TABS = [["board","#tabBoard","#viewBoard"],["dyn","#tabDyn","#viewDyn"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["rec","#tabRec","#viewRec"],["slide","#tabSlide","#viewSlide"],["ab","#tabAb","#viewAb"]];
-// Top-level groups; each remembers the view it was last on.
-const GROUPS = {dyn:["dyn"], prog:["board","pipe","coach","rand"], plan:["house","rec"], ref:["slide","ab"]}, gLast = {};
-const grpOf = k => Object.keys(GROUPS).find(g => GROUPS[g].includes(k));
 let curTab = "board";
 function showTab(which){
   curTab = which;
@@ -1199,18 +1184,14 @@ function showTab(which){
     $(vw).hidden = k !== which;
     $(tb).setAttribute("aria-selected", k === which);
     $(tb).tabIndex = k === which ? 0 : -1;
-    $(tb).hidden = grpOf(k) !== grpOf(which);
   }
-  const g = grpOf(which); gLast[g] = which;
-  document.querySelectorAll("#tabGroups [data-grp]").forEach(b => b.setAttribute("aria-pressed", b.dataset.grp === g));
-  $("#subtabs").hidden = GROUPS[g].length < 2;
   setRail();
 }
 for (const [k, tb] of TABS) $(tb).addEventListener("click", () => showTab(k));
-$("#tabGroups").addEventListener("click", e => { const b = e.target.closest("[data-grp]"); if (b) showTab(gLast[b.dataset.grp] || GROUPS[b.dataset.grp][0]); });
-$("#subtabs").addEventListener("keydown", e => {
+$(".tabs").addEventListener("keydown", e => {
   if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-  const vs = GROUPS[grpOf(curTab)], i = vs.indexOf(curTab), to = vs[(i + (e.key === "ArrowRight" ? 1 : vs.length - 1)) % vs.length];
+  const vs = [...document.querySelectorAll(".tabs .tab")].map(b => TABS.find(t => t[1] === "#" + b.id)[0]);
+  const i = vs.indexOf(curTab), to = vs[(i + (e.key === "ArrowRight" ? 1 : vs.length - 1)) % vs.length];
   showTab(to); $(TABS.find(t => t[0] === to)[1]).focus();
 });
 

@@ -61,19 +61,16 @@ const inPage = async () => {
   for (const [nm, r, want] of tok) ok(r?.style.getPropertyValue("--ground").trim() === want, `Theme: ${nm} --ground should be ${want}`);
   const wm = getComputedStyle($(".wordmark"));
   ok(/^Inter/.test(wm.fontFamily) && parseFloat(wm.fontSize) >= 36 && getComputedStyle($(".wordmark em")).fontStyle === "normal", `Theme: wordmark is ${wm.fontFamily} ${wm.fontSize}`);
-  // Navigation: four group tabs; each shows only its own sub-tabs and remembers the last one used.
-  const grp = async g => { $(`#tabGroups [data-grp="${g}"]`).click(); await wait(50); };
-  const subs = () => [...$$("#subtabs .stab")].filter(b => !b.hidden).map(b => b.id).join(",");
-  ok(subs() === "tabBoard,tabPipe,tabCoach,tabRand" && !$("#viewBoard").hidden, `Nav: Programs should be the default group, sub-tabs ${subs()}`);
-  await grp("ref"); ok(subs() === "tabSlide,tabAb" && !$("#viewSlide").hidden, `Nav: Reference should open Sliders, sub-tabs ${subs()}`);
-  $("#tabAb").click(); await grp("plan"); ok(subs() === "tabHouse,tabRec" && !$("#viewHouse").hidden, "Nav: Plan should open House Rules");
-  await grp("ref"); ok(!$("#viewAb").hidden, "Nav: a group should reopen the view it was last on");
-  await grp("dyn"); ok($("#subtabs").hidden && !$("#viewDyn").hidden, "Nav: My Dynasty has no sub-tab row");
-  ok($('#tabGroups [data-grp="dyn"]').getAttribute("aria-pressed") === "true", "Nav: active group not marked");
-  $("#tabDyn").click(); $("#subtabs").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-  ok(curTab === "dyn", "Nav: arrow keys should stay inside the group");
-  await grp("prog"); $("#tabBoard").click(); $("#tabBoard").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
-  ok(curTab === "rand", `Nav: ArrowLeft from Board should wrap to Randomizer, got ${curTab}`);
+  // Navigation: one row of nine tabs, all visible; arrow keys move along the row and wrap.
+  const tabs = () => [...$$(".tabs .tab")].filter(b => !b.hidden && b.offsetParent).map(b => b.id).join(",");
+  ok(tabs() === "tabDyn,tabBoard,tabPipe,tabCoach,tabRand,tabHouse,tabRec,tabSlide,tabAb" && !$("#viewBoard").hidden && curTab === "board", `Nav: expected all nine tabs with Board open, got ${tabs()}`);
+  ok(!$("#tabGroups") && !$("#subtabs") && $(".tabs").getAttribute("role") === "tablist", "Nav: grouped navigation should be gone");
+  $("#tabAb").click(); await wait(50); ok(!$("#viewAb").hidden && $("#tabAb").getAttribute("aria-selected") === "true", "Nav: clicking Abilities should open it");
+  $("#tabAb").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+  ok(curTab === "dyn", `Nav: ArrowRight from Abilities should wrap to My Dynasty, got ${curTab}`);
+  $("#tabDyn").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+  ok(curTab === "board", `Nav: ArrowRight from My Dynasty should go to Board, got ${curTab}`);
+  ok(tabs().split(",").length === 9, "Nav: tabs should stay visible after switching");
 
   await open("tabBoard");
   ok($$("#rows tr").length >= 100, `Board: expected 100+ team rows, got ${$$("#rows tr").length}`);

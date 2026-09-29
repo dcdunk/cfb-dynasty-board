@@ -28,7 +28,7 @@ Everything else is derived from `DATA` at load (`confs`, `COACHES`, `PIPES`, `PO
 
 ## Tabs and their code
 
-Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is two rows: four group tabs (`#tabGroups`, `GROUPS`: My Dynasty; Programs = Board, Pipelines, Coach Database, Randomizer; Plan = House Rules, Recruiting & NIL; Reference = Sliders, Abilities) and a sub-tab row (`#subtabs`, the `#tab*` buttons) showing only the current group's views, hidden for single-view groups. Each group reopens the view it was last on (`gLast`). A new tab needs a `TABS` entry, a `GROUPS` slot and a `.stab` button (add `hidden` unless it is in Programs).
+Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is one row of nine tabs (`.tabs`, a tablist of `.tab` buttons: My Dynasty, Board, Program Pipelines, Coach Database, Randomizer, House Rules, Recruiting & NIL, Sliders, Abilities); Board opens by default, arrow keys follow the row order, and on phones the row scrolls sideways. The owner removed the grouped two-row navigation (Sept 2026); don't bring it back. A new tab needs a `TABS` entry and a `.tab` button.
 
 | Tab | Purpose | Main functions |
 |---|---|---|
