@@ -2293,8 +2293,12 @@ const GS = [
   ...COACHES.map(c => ({n:c.name, s:`${c.role} · ${c.team}`, go:() => { showTab("coach"); $("#cq").value = c.name; cQuery = norm(c.name); cDraw(); }})),
   ...[...Object.keys(ABPHYS), ...Object.keys(ABMENT)].map(n => ({n, s:"Player ability", go:() => gsAb("player", n)})),
   ...[...new Set(CARCH.flatMap(a => a.br.flatMap(([, ab]) => ab.map(([n]) => n))))].map(n => ({n, s:"Coach ability", go:() => gsAb("coach", n)})),
+  ...ABARCH.map(([p, n]) => ({n, s:`${p} archetype`, go:() => { abP = p; gsArch("player", "#abGrid .sl-card h3", n); }})),
+  ...CARCH.map(a => ({n:a.n, s:"Coach archetype", go:() => { abC = CGROUP.find(g => g[1].includes(a.n))[0]; gsArch("coach", "#abCGrid .ab-ah", a.n); }})),
   ...HRULES.map(r => ({n:r.n, s:"House rule", go:() => showTab("house")}))];
 function gsAb(m, n){ showTab("ab"); abM = m; $("#abQ").value = n; abDraw(); }
+// Opens Abilities on the archetype's position or group and scrolls to its card (heading text starts with the name).
+function gsArch(m, sel, n){ gsAb(m, ""); [...document.querySelectorAll(sel)].find(h => h.firstChild?.textContent.trim() === n || h.textContent.trim().startsWith(n))?.scrollIntoView({block:"start"}); }
 // Same ranking as teamMatches: name starts with query, then a word starts with it, then contains it. Capped at 40.
 function gsFind(q){
   const v = norm(q.trim()); if (!v) return GS.filter(g => g.s === "Tab");

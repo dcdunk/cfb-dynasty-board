@@ -152,6 +152,9 @@ const inPage = async () => {
   await gs("portal king"); ok(curTab === "ab" && abM === "coach" && $("#abQ").value === "Portal King", "Search: coach ability should open Abilities in coach mode");
   await gs("dot!"); ok(curTab === "ab" && abM === "player" && $("#abQ").value === "Dot!", "Search: player ability should open Abilities in player mode");
   const gsC = COACHES[0].name; await gs(gsC); ok(curTab === "coach" && $("#cq").value === gsC && $$("#crows tr").length >= 1, `Search: coach ${gsC} should open Coach Database filtered`);
+  await gs("elusive bruiser"); ok(curTab === "ab" && abM === "player" && abP === "HB" && $("#abQ").value === "", `Search: player archetype should open Abilities on HB, got ${abM} ${abP}`);
+  await gs("master motivator"); ok(curTab === "ab" && abM === "coach" && abC === "Motivator", `Search: coach archetype should open the Motivator group, got ${abM} ${abC}`);
+  abP = "QB"; abC = "Recruiter";
   await gs("pipeline purist"); ok(curTab === "house", "Search: house rule should open House Rules");
   $("#cq").value = ""; cQuery = ""; cDraw(); $("#abQ").value = ""; abM = "player"; abDraw(); showTab("board");
 
