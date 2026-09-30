@@ -59,6 +59,9 @@ const inPage = async () => {
   for (const [nm, r, want] of tok) for (const v of ["--ground", "--panel", "--text", "--accent", "--cta", "--on-cta"])
     ok(r && r.style.getPropertyValue(v).trim(), `Theme: ${nm} token block missing ${v}`);
   for (const [nm, r, want] of tok) ok(r?.style.getPropertyValue("--ground").trim() === want, `Theme: ${nm} --ground should be ${want}`);
+  // Accent is electric blue; the logo takes the favicon's slate and amber (deeper amber in light mode).
+  for (const [nm, r, want] of [[...tok[0].slice(0, 2), "#1F5FD1,#141A20,#B06D0E"], [...tok[1].slice(0, 2), "#5B9BFF,#E5E5E6,#E8A33D"], [...tok[2].slice(0, 2), "#5B9BFF,#E5E5E6,#E8A33D"]])
+    ok(["--accent", "--logo", "--logo-em"].map(v => r?.style.getPropertyValue(v).trim()).join() === want, `Theme: ${nm} accent/logo colors should be ${want}`);
   // Light/dark toggle sits next to Coach, flips the theme, saves it, and its label says what a click does.
   { const b = $("#themeBtn"), root = document.documentElement, t0 = root.dataset.theme, eff = () => root.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     ok(b && b.nextElementSibling === $("#pOpen") && b.querySelector("svg"), "Theme: toggle should sit just left of the Coach button");

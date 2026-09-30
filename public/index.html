@@ -14,8 +14,9 @@
   --ground:#F7F8F8; --panel:#FFFFFF; --raise:#F1F2F4;
   --text:#08090A; --dim:#62666D; --faint:#8A8F98;
   --line:#E0E2E6; --hair:#ECEEF0;
-  --accent:#6B7800; --accent-soft:#EEF3C2; --accent-ink:#4D5700;
-  --cta:#E4F222; --on-cta:#08090A;
+  --accent:#1F5FD1; --accent-soft:#E3EDFD; --accent-ink:#1A4FAF;
+  --cta:#1F5FD1; --on-cta:#FFFFFF;
+  --logo:#141A20; --logo-em:#B06D0E;
   --focus:#08090A;
   --pip-off:#D9DCE1;
   --shadow:rgba(8,9,10,.12) 0 4px 32px;
@@ -27,8 +28,9 @@
     --ground:#08090A; --panel:#0F1011; --raise:#161718;
     --text:#E5E5E6; --dim:#8A8F98; --faint:#62666D;
     --line:#23252A; --hair:#1A1B1E;
-    --accent:#E4F222; --accent-soft:rgba(228,242,34,.10); --accent-ink:#E4F222;
-    --cta:#E4F222; --on-cta:#08090A;
+    --accent:#5B9BFF; --accent-soft:rgba(91,155,255,.12); --accent-ink:#5B9BFF;
+    --cta:#5B9BFF; --on-cta:#08090A;
+    --logo:#E5E5E6; --logo-em:#E8A33D;
     --focus:#D0D6E0;
     --pip-off:#23252A;
     --shadow:rgba(8,9,10,.6) 0 4px 32px;
@@ -39,8 +41,9 @@
   --ground:#08090A; --panel:#0F1011; --raise:#161718;
   --text:#E5E5E6; --dim:#8A8F98; --faint:#62666D;
   --line:#23252A; --hair:#1A1B1E;
-  --accent:#E4F222; --accent-soft:rgba(228,242,34,.10); --accent-ink:#E4F222;
-  --cta:#E4F222; --on-cta:#08090A;
+  --accent:#5B9BFF; --accent-soft:rgba(91,155,255,.12); --accent-ink:#5B9BFF;
+  --cta:#5B9BFF; --on-cta:#08090A;
+  --logo:#E5E5E6; --logo-em:#E8A33D;
   --focus:#D0D6E0;
   --pip-off:#23252A;
   --shadow:rgba(8,9,10,.6) 0 4px 32px;
@@ -66,7 +69,9 @@ body{
   font-size:clamp(36px,5.6vw,60px); line-height:.95; letter-spacing:-.015em;
   margin:0; text-wrap:balance;
 }
-.wordmark em{font-style:normal;color:var(--accent)}
+.wordmark{color:var(--logo)}
+/* logo colors come from the favicon: slate #141A20 and amber #E8A33D (deeper amber in light mode for contrast) */
+.wordmark em{font-style:normal;color:var(--logo-em)}
 .standfirst{color:var(--dim); font-size:12.5px; max-width:56ch; padding-bottom:5px}
 .counts{margin-left:auto; display:flex; gap:22px; padding-bottom:4px}
 .count b{display:block; font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums;
@@ -709,7 +714,7 @@ body.coach-on .dossier{right:400px; width:min(640px,calc(100vw - 400px)); z-inde
 body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
 .mono,code,kbd{font-feature-settings:"cv01","ss03"; letter-spacing:-.013em}
 .wordmark,.dname,.bname,.result .rname{font-weight:510; letter-spacing:-.022em}
-.wordmark em{color:var(--accent)}
+.wordmark em{color:var(--logo-em)}
 .rand h2,.house .hh,.sl .hh,.pcard .pname,.rec .arch{font-weight:590; letter-spacing:-.012em}
 .pre b,.ab-clist .ab-nm,.phead h2{letter-spacing:-.011em}
 .tab{font-weight:510}
