@@ -391,6 +391,14 @@ const coachRun = async cs => {
 const cr = await send("Runtime.evaluate", { expression: `(${coachRun})(${JSON.stringify(cases)})`, awaitPromise: true, returnByValue: true });
 fails.push(...(cr.result.exceptionDetails ? ["Coach suite crashed: " + cr.result.exceptionDetails.exception?.description] : cr.result.result.value));
 
+// Refresh keeps the open tab: the tab sits in the URL hash, and Board is the bare URL.
+const ev = async x => (await send("Runtime.evaluate", { expression: x, returnByValue: true })).result.result?.value;
+const hb = await ev(`showTab("board"); location.hash`), ha = await ev(`$("#tabAb").click(); location.hash`);
+if (hb !== "" || ha !== "#abilities") fails.push(`Refresh: tab should set the URL hash (board "${hb}", abilities "${ha}")`);
+await new Promise(r => { loaded = r; send("Page.reload"); });
+const after = await ev(`[curTab, $("#viewAb").hidden, $("#viewBoard").hidden, $("#tabAb").getAttribute("aria-selected")].join()`);
+if (after !== "ab,false,true,true") fails.push(`Refresh: reloading on #abilities should reopen Abilities, got ${after}`);
+
 chrome.kill(); await new Promise(r => chrome.once("exit", r));
 try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch {} // leftover temp files are harmless
 // Worker: www must 301 to the main domain, keeping the path.

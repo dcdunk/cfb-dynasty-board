@@ -625,12 +625,14 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl .ab-src{margin-top:30px}
 /* ability tier metals (CollegeFootball.gg tier colors, solid with black text): meaning colors, deliberately outside the design system; same in both themes */
 .mt0{--mt:#CD7F32} .mt1{--mt:#C0C0C0} .mt2{--mt:#FFD700} .mt3{--mt:#A93BCB}
-.mt{display:inline-flex; align-items:baseline; gap:4px; padding:1px 6px; border-radius:4px; border:1px solid var(--mt);
-  background:var(--mt); color:#000; font:510 11.5px "JetBrains Mono",monospace; white-space:nowrap}
+.mt{display:inline-flex; align-items:center; gap:4px; padding:2px 6px; border-radius:4px; border:1px solid var(--mt);
+  background:var(--mt); color:#000; font:590 13px "JetBrains Mono",monospace; white-space:nowrap}
 .ab-list .mt,.ab-legend .mt{color:#000}
-.mt small{font-size:9.5px; color:rgba(0,0,0,.65)}
-.ab-gate{grid-column:2 / -1; display:flex; flex-direction:column; gap:6px; margin-top:-2px}
-.ab-gl{display:flex; flex-wrap:wrap; align-items:center; gap:4px}
+.mt small{display:inline-flex; align-items:center; gap:2px; font-size:11.5px; color:rgba(0,0,0,.65)}
+/* skill point icon: the game's gold helmet diamond, clipped to the diamond so no background shows */
+.spi{display:inline-block; width:14px; height:14px; background:url(ab/sp.png) center/cover; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); vertical-align:-1px}
+.ab-gate{grid-column:1 / -1; display:flex; flex-direction:column; gap:6px; margin-top:-2px}
+.ab-gl{display:flex; flex-wrap:wrap; align-items:center; gap:3px}
 .ab-list .ab-gr{font-size:11px; color:var(--faint); margin-right:2px; width:100%}
 .ab-gr em{font-style:normal; font-weight:590; color:var(--dim)}
 .ab-legend .mt{margin-right:4px}
@@ -955,7 +957,7 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
   </header>
   <div id="abPlayer">
     <p class="hint ab-intro">Physical abilities come from a player's archetype and unlock as the player's ratings climb, in Bronze, Silver, Gold and Platinum tiers. Mental abilities aren't tied to an archetype. Pick a position to see its archetypes.</p>
-    <p class="hint ab-legend"><span class="mt mt0">Bronze</span><span class="mt mt1">Silver</span><span class="mt mt2">Gold</span><span class="mt mt3">Platinum</span> Each chip is the minimum rating to unlock that tier in Dynasty, with the skill point (SP) cost in small type. Two numbers mean two ratings must both reach it. Heisman, a fifth tier, isn't unlocked this way.</p>
+    <p class="hint ab-legend"><span class="mt mt0">Bronze</span><span class="mt mt1">Silver</span><span class="mt mt2">Gold</span><span class="mt mt3">Platinum</span> Each chip is the minimum rating to unlock that tier in Dynasty, with the skill point cost (<i class="spi"></i> SP) in small type. Two numbers mean two ratings must both reach it. Heisman, a fifth tier, isn't unlocked this way.</p>
     <div class="chips" id="abPos" role="group" aria-label="Position" style="margin:16px 0"></div>
     <div class="sl-grid" id="abGrid"></div>
     <h2 class="hh" style="margin:34px 0 6px">Mental abilities</h2>
@@ -1213,8 +1215,11 @@ addEventListener("keydown", e => { if (e.key === "Escape" && picked) closeTeam()
 /* ---- tabs ---- */
 const TABS = [["board","#tabBoard","#viewBoard"],["dyn","#tabDyn","#viewDyn"],["rand","#tabRand","#viewRand"],["coach","#tabCoach","#viewCoach"],["pipe","#tabPipe","#viewPipe"],["house","#tabHouse","#viewHouse"],["rec","#tabRec","#viewRec"],["slide","#tabSlide","#viewSlide"],["ab","#tabAb","#viewAb"]];
 let curTab = "board";
+// The open tab lives in the URL hash (#abilities) so a refresh or a shared link reopens it. Board is the bare URL.
+const TSLUG = {board:"", dyn:"my-dynasty", rand:"randomizer", coach:"coaches", pipe:"pipelines", house:"house-rules", rec:"recruiting", slide:"sliders", ab:"abilities"};
 function showTab(which){
   curTab = which;
+  try { history.replaceState(null, "", TSLUG[which] ? "#" + TSLUG[which] : location.pathname + location.search); } catch (e) {}
   if (which === "rec") recDraw();
   if (which === "dyn") dDraw();
   for (const [k, tb, vw] of TABS) {
@@ -2200,7 +2205,7 @@ const MTL = ["Bronze", "Silver", "Gold", "Platinum"];
 // One line per sub-position: four metal chips with the minimum rating(s) and the SP cost to unlock that tier.
 const abGate = g => g ? `<div class="ab-gate">${g.map(([sp, r1, g1, r2, g2, c]) => { const a = g1.split(" "), b = g2 ? g2.split(" ") : [], k = c.split(" ");
   return `<div class="ab-gl"><span class="ab-gr">${sp ? `<em>${sp}</em> · ` : ""}${esc(r1)}${r2 ? " + " + esc(r2) : ""}</span>${MTL.map((m, i) =>
-    `<span class="mt mt${i}" title="${m}: ${a[i]} ${esc(r1)}${r2 ? `, ${b[i]} ${esc(r2)}` : ""}, ${k[i]} SP">${a[i]}${r2 ? "·" + b[i] : ""}<small>${k[i]}</small></span>`).join("")}</div>`; }).join("")}</div>` : "";
+    `<span class="mt mt${i}" title="${m}: ${a[i]} ${esc(r1)}${r2 ? `, ${b[i]} ${esc(r2)}` : ""}, ${k[i]} SP">${a[i]}${r2 ? "·" + b[i] : ""}<small><i class="spi"></i>${k[i]}</small></span>`).join("")}</div>`; }).join("")}</div>` : "";
 const abRow = (n, arch) => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}</span>${abGate(arch && ABGATE[arch]?.[n])}</li>`;
 
 /* ---- coach abilities ---- */
@@ -3209,6 +3214,7 @@ $("#pIn").addEventListener("input", pGrow);
 $("#pIn").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#pForm").requestSubmit(); } });
 $("#pForm").addEventListener("submit", e => { e.preventDefault(); const v = $("#pIn").value; $("#pIn").value = ""; pGrow(); pAsk(v); });
 draw();
+{ const k = Object.keys(TSLUG).find(k => TSLUG[k] && "#" + TSLUG[k] === location.hash); if (k) showTab(k); }
 </script>
 
 </body></html>
