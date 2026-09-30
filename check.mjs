@@ -238,6 +238,8 @@ const inPage = async () => {
   const op = [...$$("#abGrid li")].find(li => /Off Platform/.test(li.textContent)), opm = [...op.querySelectorAll(".mt")];
   ok(opm.length === 4 && opm.map(m => m.className).join() === "mt mt0,mt mt1,mt mt2,mt mt3" && opm[0].title === "Bronze: 90 Throw Power, 82 Short Accuracy, 3 SP" && opm[3].title === "Platinum: 96 Throw Power, 86 Short Accuracy, 9 SP",
     `Abilities: Off Platform gates wrong: ${opm.map(m => m.title)}`);
+  ok(getComputedStyle(opm[3]).color === "rgb(255, 255, 255)" && /^rgba\(255, 255, 255/.test(getComputedStyle(opm[3].querySelector("small")).color) && getComputedStyle(opm[0].querySelector("small")).color.startsWith("rgba(0, 0, 0"),
+    "Abilities: Platinum chip number and cost should be white, other chips dark");
   $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
   ok(/Puts more pressure on the quarterback/.test($("#abGrid").textContent), "Abilities: descriptions should show on the cards without clicking");
