@@ -28,7 +28,7 @@ Everything else is derived from `DATA` at load (`confs`, `COACHES`, `PIPES`, `PO
 
 ## Tabs and their code
 
-Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is one row of nine tabs (`.tabs`, a tablist of `.tab` buttons: My Dynasty, Board, Program Pipelines, Coach Database, Randomizer, House Rules, Recruiting & NIL, Sliders, Abilities); Board opens by default, arrow keys follow the row order, and on phones the row scrolls sideways. The owner removed the grouped two-row navigation (Sept 2026); don't bring it back. A new tab needs a `TABS` entry, a `TSLUG` entry and a `.tab` button. The open tab is kept in the URL hash (`#abilities`, Board = bare URL) via `showTab`, so refresh and shared links reopen it.
+Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is one row of nine tabs (`.tabs`, a tablist of `.tab` buttons: My Dynasty, Board, Program Pipelines, Coach Database, Randomizer, House Rules, Recruiting & NIL, Sliders, Abilities); Board opens by default, arrow keys follow the row order, and on phones the row scrolls sideways; picking a tab slides it to the row's left edge (`tabSlide`, no-op when all tabs fit). The owner removed the grouped two-row navigation (Sept 2026); don't bring it back. A new tab needs a `TABS` entry, a `TSLUG` entry and a `.tab` button. The open tab is kept in the URL hash (`#abilities`, Board = bare URL) via `showTab`, so refresh and shared links reopen it.
 
 | Tab | Purpose | Main functions |
 |---|---|---|

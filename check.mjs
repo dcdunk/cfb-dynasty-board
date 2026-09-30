@@ -82,6 +82,12 @@ const inPage = async () => {
   $("#tabDyn").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
   ok(curTab === "board", `Nav: ArrowRight from My Dynasty should go to Board, got ${curTab}`);
   ok(tabs().split(",").length === 9, "Nav: tabs should stay visible after switching");
+  // Narrow row (phone width): picking a tab slides it to the left edge so later tabs come into view.
+  const tRow = $(".tabs"); tRow.style.width = "340px"; $("#tabCoach").click(); await wait(700);
+  const gap = $("#tabCoach").getBoundingClientRect().left - tRow.getBoundingClientRect().left - parseFloat(getComputedStyle(tRow).paddingLeft);
+  ok(tRow.scrollLeft > 0 && Math.abs(gap) < 2, `Nav: on a narrow tRow the picked tab should slide to the left edge (scrollLeft ${tRow.scrollLeft}, off by ${gap}px)`);
+  $("#tabDyn").click(); await wait(700); ok(tRow.scrollLeft === 0, `Nav: picking the first tab should slide the tRow back, got ${tRow.scrollLeft}`);
+  tRow.style.width = ""; $("#tabBoard").click(); await wait(50);
 
   await open("tabBoard");
   ok($$("#rows tr").length >= 100, `Board: expected 100+ team rows, got ${$$("#rows tr").length}`);

@@ -1224,7 +1224,14 @@ const TABS = [["board","#tabBoard","#viewBoard"],["dyn","#tabDyn","#viewDyn"],["
 let curTab = "board";
 // The open tab lives in the URL hash (#abilities) so a refresh or a shared link reopens it. Board is the bare URL.
 const TSLUG = {board:"", dyn:"my-dynasty", rand:"randomizer", coach:"coaches", pipe:"pipelines", house:"house-rules", rec:"recruiting", slide:"sliders", ab:"abilities"};
-function showTab(which){
+// When the tab row is too narrow to show all nine (phones, narrow windows), scroll the picked tab to the row's left edge
+// so the tabs after it come into view. When everything fits the row can't scroll, so nothing moves.
+function tabSlide(b, instant){
+  const row = $(".tabs"); if (row.scrollWidth <= row.clientWidth) return;
+  const left = row.scrollLeft + b.getBoundingClientRect().left - row.getBoundingClientRect().left - parseFloat(getComputedStyle(row).paddingLeft);
+  row.scrollTo({left, behavior: instant || matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+}
+function showTab(which, instant){
   curTab = which;
   try { history.replaceState(null, "", TSLUG[which] ? "#" + TSLUG[which] : location.pathname + location.search); } catch (e) {}
   if (which === "rec") recDraw();
@@ -1234,6 +1241,7 @@ function showTab(which){
     $(tb).setAttribute("aria-selected", k === which);
     $(tb).tabIndex = k === which ? 0 : -1;
   }
+  tabSlide($(TABS.find(t => t[0] === which)[1]), instant);
   setRail();
 }
 for (const [k, tb] of TABS) $(tb).addEventListener("click", () => showTab(k));
@@ -1241,7 +1249,7 @@ $(".tabs").addEventListener("keydown", e => {
   if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
   const vs = [...document.querySelectorAll(".tabs .tab")].map(b => TABS.find(t => t[1] === "#" + b.id)[0]);
   const i = vs.indexOf(curTab), to = vs[(i + (e.key === "ArrowRight" ? 1 : vs.length - 1)) % vs.length];
-  showTab(to); $(TABS.find(t => t[0] === to)[1]).focus();
+  showTab(to); $(TABS.find(t => t[0] === to)[1]).focus({preventScroll: true});
 });
 
 /* ---- coach database ---- */
@@ -3221,7 +3229,7 @@ $("#pIn").addEventListener("input", pGrow);
 $("#pIn").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("#pForm").requestSubmit(); } });
 $("#pForm").addEventListener("submit", e => { e.preventDefault(); const v = $("#pIn").value; $("#pIn").value = ""; pGrow(); pAsk(v); });
 draw();
-{ const k = Object.keys(TSLUG).find(k => TSLUG[k] && "#" + TSLUG[k] === location.hash); if (k) showTab(k); }
+{ const k = Object.keys(TSLUG).find(k => TSLUG[k] && "#" + TSLUG[k] === location.hash); if (k) showTab(k, true); }
 </script>
 
 </body></html>
