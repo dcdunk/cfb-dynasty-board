@@ -623,11 +623,12 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .ab-meta dd{margin:2px 0 0; max-width:48ch}
 .ab-list b small{font-weight:400; color:var(--dim); font-size:10.5px}
 .sl .ab-src{margin-top:30px}
-/* ability tier metals: meaning colors, deliberately outside the design system; same in both themes */
-.mt0{--mt:#B8733D} .mt1{--mt:#9BA3AE} .mt2{--mt:#D4A21C} .mt3{--mt:#5FB8C9}
+/* ability tier metals (CollegeFootball.gg tier colors, solid with black text): meaning colors, deliberately outside the design system; same in both themes */
+.mt0{--mt:#CD7F32} .mt1{--mt:#C0C0C0} .mt2{--mt:#FFD700} .mt3{--mt:#A93BCB}
 .mt{display:inline-flex; align-items:baseline; gap:4px; padding:1px 6px; border-radius:4px; border:1px solid var(--mt);
-  background:color-mix(in srgb,var(--mt) 16%,transparent); color:var(--text); font:510 11.5px "JetBrains Mono",monospace; white-space:nowrap}
-.mt small{font-size:9.5px; color:var(--dim)}
+  background:var(--mt); color:#000; font:510 11.5px "JetBrains Mono",monospace; white-space:nowrap}
+.ab-list .mt,.ab-legend .mt{color:#000}
+.mt small{font-size:9.5px; color:rgba(0,0,0,.65)}
 .ab-gate{grid-column:2 / -1; display:flex; flex-direction:column; gap:6px; margin-top:-2px}
 .ab-gl{display:flex; flex-wrap:wrap; align-items:center; gap:4px}
 .ab-list .ab-gr{font-size:11px; color:var(--faint); margin-right:2px; width:100%}
@@ -960,7 +961,7 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
     <h2 class="hh" style="margin:34px 0 6px">Mental abilities</h2>
     <p class="hint" style="margin-bottom:16px">Any player can have these. In Road to Glory you pick three, and each stays active only while its meter stays high.</p>
     <ul class="ab-list ab-ment" id="abMent"></ul>
-    <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files. Unlock ratings and SP costs are CFB 27 game-file data from <a href="https://prestonchoate.dev/cfb-data-mining/player-ratings-and-animations/" target="_blank" rel="noopener">prestonchoate.dev</a>.</p>
+    <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files. Unlock ratings and SP costs come from CFB 27 game-file data.</p>
   </div>
   <div id="abCoach" hidden>
     <p class="hint ab-intro">Coaches earn coach points (CP) and spend them on abilities, tier by tier. Each archetype's perk earns extra coach XP. Base archetypes are open from the start; the rest unlock by hitting a goal and spending CP. Pick an archetype.</p>
