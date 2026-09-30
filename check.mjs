@@ -138,6 +138,22 @@ const inPage = async () => {
   ok($("#pq").closest(".search").querySelector(".cb-none"), "Picker: no empty-state message");
   $("#pq").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
   ok($("#pq").value === "Oregon State", "Picker: Escape should restore current team");
+  // Global search: Ctrl+K opens, finds each kind of thing, Enter jumps there
+  const gs = async (q, keys = []) => { dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true })); await wait(20);
+    ok($("#gs").open, "Search: Ctrl+K should open the dialog"); type("#gsq", q);
+    for (const k of [...keys, "Enter"]) $("#gsq").dispatchEvent(new KeyboardEvent("keydown", { key: k })); await wait(50);
+    ok(!$("#gs").open, `Search: Enter on "${q}" should close the dialog`); };
+  const gsTop = q => { $("#gsq").value = q; $("#gsq").dispatchEvent(new Event("input")); return $("#gsl [data-i] .cb-n")?.innerText; };
+  $("#gs").showModal(); ok(gsTop("") === "My Dynasty" && $$("#gsl [data-i]").length === 9, "Search: empty query should list the nine tabs");
+  ok(gsTop("ore") === "Oregon", `Search: "ore" should rank Oregon first, got ${gsTop("ore")}`);
+  ok(gsTop("zzqx") === undefined && $("#gsl .cb-none"), "Search: no empty-state message"); $("#gs").close();
+  await gs("slid"); ok(curTab === "slide", `Search: "slid" should open Sliders, got ${curTab}`);
+  await gs("georgia"); ok($("#dname").innerText.trim() === "Georgia", "Search: 'georgia' should open the Georgia dossier"); closeTeam(); await wait(50);
+  await gs("portal king"); ok(curTab === "ab" && abM === "coach" && $("#abQ").value === "Portal King", "Search: coach ability should open Abilities in coach mode");
+  await gs("dot!"); ok(curTab === "ab" && abM === "player" && $("#abQ").value === "Dot!", "Search: player ability should open Abilities in player mode");
+  const gsC = COACHES[0].name; await gs(gsC); ok(curTab === "coach" && $("#cq").value === gsC && $$("#crows tr").length >= 1, `Search: coach ${gsC} should open Coach Database filtered`);
+  await gs("pipeline purist"); ok(curTab === "house", "Search: house rule should open House Rules");
+  $("#cq").value = ""; cQuery = ""; cDraw(); $("#abQ").value = ""; abM = "player"; abDraw(); showTab("board");
 
   await open("tabHouse");
   type("#hq", "tide");

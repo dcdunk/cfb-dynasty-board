@@ -487,6 +487,14 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .cb-s{margin-left:auto; font-size:11.5px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px}
 .cb li.cb-none{cursor:default; color:var(--faint); font-size:12.5px}
+/* global search (Cmd+K) */
+.gs{width:min(560px,calc(100% - 32px)); margin:12vh auto auto; padding:0; border:1px solid var(--line); border-radius:12px; background:var(--panel); color:var(--text)}
+.gs::backdrop{background:rgba(8,9,10,.5)}
+@media (max-width:600px){.coachbtn.gsbtn{font-size:0; gap:0} .gsbtn kbd{display:none}}
+.gs .search{border:0; border-bottom:1px solid var(--line); padding:12px 14px}
+.gs .cb{position:static; min-width:0; max-height:55vh; overflow:auto; border:0; margin:0}
+.gs kbd,.gsbtn kbd{font:11px "JetBrains Mono",monospace; color:var(--faint); border:1px solid var(--line); border-radius:4px; padding:1px 5px}
+
 
 /* ---------- recruiting & NIL ---------- */
 .rec-ctl{display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; flex:0 1 480px; justify-content:flex-end}
@@ -716,11 +724,17 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
     <div class="count"><b id="cTitles">144</b><span>Titles</span></div>
   </div>
   <div class="mhact">
+  <button class="coachbtn gsbtn" id="gsOpen" type="button" aria-haspopup="dialog" aria-label="Search everything" title="Search everything (Ctrl+K or /)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search <kbd>/</kbd></button>
   <button class="coachbtn themebtn" id="themeBtn" type="button"></button>
   <button class="coachbtn" id="pOpen" type="button" aria-controls="pChat" aria-expanded="false" title="Plan a dynasty with Coach"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1"/><rect x="17.5" y="13" width="4" height="6" rx="1"/><path d="M19.5 19v.5a2.5 2.5 0 0 1-2.5 2.5h-4"/></svg>Coach</button>
   </div>
 </div>
 
+<dialog class="gs" id="gs" aria-label="Search everything">
+  <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="gsq" type="search" placeholder="Team, coach, ability, rule or tab" autocomplete="off" spellcheck="false" role="combobox" aria-controls="gsl" aria-expanded="true" aria-autocomplete="list"><kbd>Esc</kbd></label>
+  <ul class="cb" id="gsl" role="listbox"></ul>
+</dialog>
 <nav class="nav" aria-label="Sections">
 <div class="tabs" role="tablist" aria-label="Views">
   <button class="tab" role="tab" id="tabDyn" aria-controls="viewDyn" aria-selected="false" tabindex="-1" type="button">My Dynasty</button>
@@ -2080,7 +2094,7 @@ const ABPHYS = {
   "On Time":"Anticipation throws get an accuracy boost.", "Magician":"?Makes plays out of a broken pocket.", "Mobile Deadeye":"More accurate passes on the run.",
   "Downhill":"Breaks more tackles when running at full speed.", "Extender":"Breaks more sacks when moving in the pocket.", "Option King":"Cleaner, more reliable option pitches.",
   "Dot!":"Accuracy bonus when throwing to an open receiver.", "Mobile Resistance":"Holds up under pressure when throwing on the run.", "Resistance":"Holds up under pressure in the pocket.",
-  "Step Up":"Better passing from inside the pocket.", "Sleight Of Hand":"Play action fakes fool defenders more often.", "Shifty":"?Sharper, harder to tackle cuts in the open field.",
+  "Step Up":"Better passing from inside the pocket.", "Sleight Of Hand":"Play action fakes fool defenders more often.", "Human Joystick":"Keeps more speed through cuts and turns at full speed.",
   "Side Step":"?Quicker lateral moves to slip defenders.", "Workhorse":"Takes less wear and tear over a game.", "360":"?More effective spin moves.",
   "Safety Valve":"Higher chance to secure a catch out of the backfield.", "Takeoff":"Faster release into the route.", "Recoup":"Recovers from fatigue faster.",
   "Ball Security":"Lower fumble chance anywhere on the field.", "Balanced":"Resists hit stick strips.", "Arm Bar":"More effective stiff arms.",
@@ -2113,22 +2127,22 @@ const ABARCH = [
   ["QB","Backfield Creator",["Off Platform","Pull Down","On Time","Magician","Mobile Deadeye"]],
   ["QB","Dual Threat",["Downhill","Extender","Option King","Dot!","Mobile Resistance"]],
   ["QB","Pocket Passer",["Resistance","Step Up","Sleight Of Hand","Dot!","On Time"]],
-  ["QB","Pure Runner",["Downhill","Option King","Shifty","Side Step","Workhorse"]],
+  ["QB","Pure Runner",["Downhill","Option King","Human Joystick","Side Step","Workhorse"]],
   ["HB","Backfield Threat",["360","Safety Valve","Takeoff","Side Step","Recoup"]],
   ["HB","Contact Seeker",["Downhill","Workhorse","Ball Security","Balanced"]],
-  ["HB","East/West Playmaker",["Recoup","Shifty","Side Step","360","Arm Bar"]],
-  ["HB","Elusive Bruiser",["Shifty","Headfirst","Side Step","Downhill","Arm Bar"]],
+  ["HB","East/West Playmaker",["Recoup","Human Joystick","Side Step","360","Arm Bar"]],
+  ["HB","Elusive Bruiser",["Human Joystick","Headfirst","Side Step","Downhill","Arm Bar"]],
   ["HB","North/South Receiver",["Balanced","Arm Bar","Safety Valve","Headfirst","Downhill"]],
   ["HB","North/South Blocker",["Headfirst","Balanced","Sidekick","Ball Security","Strong Grip"]],
   ["FB","Blocking",["Strong Grip","Second Level","Pocket Shield","Sidekick","Screen Enforcer"]],
   ["FB","Utility",["Safety Valve","Balanced","Screen Enforcer","Sidekick","Recoup"]],
   ["WR","Contested Specialist",["50/50","Workhorse","Balanced","Headfirst","Downhill"]],
   ["WR","Elusive Route Runner",["360","Cutter","Double Dip","Recoup","Side Step"]],
-  ["WR","Gadget",["Side Step","Shifty","Dot!","Cutter","Extender"]],
+  ["WR","Gadget",["Side Step","Human Joystick","Dot!","Cutter","Extender"]],
   ["WR","Gritty Possession",["Second Level","Outside Shield","Strong Grip","Workhorse","Sure Hands"]],
   ["WR","Physical Route Runner",["Downhill","Press Pro","Sure Hands","50/50","Cutter"]],
   ["WR","Route Artist",["Cutter","Lay Out","Recoup","Double Dip","Sure Hands"]],
-  ["WR","Speedster",["Side Step","Double Dip","Takeoff","Recoup","Shifty"]],
+  ["WR","Speedster",["Side Step","Double Dip","Takeoff","Recoup","Human Joystick"]],
   ["TE","Gritty Possession",["Workhorse","Strong Grip","Sure Hands","Outside Shield"]],
   ["TE","Physical Route Runner",["Balanced","50/50","Cutter","Downhill","Sure Hands"]],
   ["TE","Pure Possession",["Sure Hands","Wear Down","Strong Grip","Outside Shield","Balanced"]],
@@ -2163,7 +2177,7 @@ const abNorm = s => " " + s.toLowerCase().replace(/[^a-z0-9/!]+/g, " ").trim() +
 const abFind = q => { const s = abNorm(q); return Object.keys({...ABPHYS, ...ABMENT}).filter(n => s.includes(abNorm(n))).sort((a, b) => b.length - a.length)[0]; };
 // Real CFB 27 icons pulled from the game files (public/ab: p player, c coach ability, a archetype badge). Only names in these lists have one.
 const abSlug = n => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const ABICO = new Set(["360", "50-50", "adrenaline", "aftershock", "arm-bar", "balanced", "ball-security", "ballhawk", "best-friend", "blanket-coverage", "blow-up", "bouncer", "chip-shot", "clearheaded", "clutch-kicker", "coffin-corner", "cutter", "deep-range", "defensive-rally", "dot", "double-dip", "downhill", "extender", "fan-favorite", "field-flip", "field-general", "grip-breaker", "ground-n-pound", "hammer", "headfirst", "headstrong", "house-call", "inside-disruptor", "inside-shield", "instinct", "jammer", "knockout", "lay-out", "legion", "magician", "mega-leg", "mobile-deadeye", "mobile-resistance", "off-platform", "offensive-rally", "on-time", "option-disruptor", "option-king", "option-shield", "outside-disruptor", "outside-shield", "pa-shield", "pocket-disruptor", "pocket-shield", "press-pro", "pull-down", "quick-drop", "quick-jump", "quick-step", "recoup", "resistance", "road-dog", "robber", "rollercoaster", "safety-valve", "screen-enforcer", "second-level", "shifty", "side-step", "sidekick", "sleight-of-hand", "step-up", "strong-grip", "sure-hands", "take-down", "takeoff", "team-player", "the-natural", "wear-down", "winning-time", "workhorse"]), CICO = new Set(["battery-pack", "bundle-discount", "camouflaged-coverage", "cardio-kings", "caught-napping", "chew-up-yards", "clean-sheet-defense", "clean-sheet-offense", "delay-sunday", "demoralizing", "dream-school", "family-atmosphere", "fresh-legs", "friends-family-discount", "full-refund", "gas-tank", "gasoline", "gift-of-gab", "giving-back", "hands-off", "hater-blockers", "he-shed", "home-field-advantage", "hometown-discount", "household-name", "invest", "keep-blocks-longer", "keep-em-coming", "let-s-run-it-back", "lower-the-bar", "making-inroads", "master-of-disguise", "no-free-yards", "no-mid-here", "not-intimidated", "not-so-fast", "nothing-deep", "on-their-heels", "polished", "portal-preview", "puncher-s-chance", "road-warriors", "roster-retainer", "second-chance-keeper", "senior-superlatives", "share-the-wealth", "signing-bonus", "smart-goals", "stretch-the-field", "take-what-s-there", "teflon", "tipped-your-hand", "to-the-whistle", "too-loud", "unfriendly-confines", "we-see-you", "wear-em-down"]);
+const ABICO = new Set(["360", "50-50", "adrenaline", "aftershock", "arm-bar", "balanced", "ball-security", "ballhawk", "best-friend", "blanket-coverage", "blow-up", "bouncer", "chip-shot", "clearheaded", "clutch-kicker", "coffin-corner", "cutter", "deep-range", "defensive-rally", "dot", "double-dip", "downhill", "extender", "fan-favorite", "field-flip", "field-general", "grip-breaker", "ground-n-pound", "hammer", "headfirst", "headstrong", "house-call", "inside-disruptor", "inside-shield", "instinct", "jammer", "knockout", "lay-out", "legion", "magician", "mega-leg", "mobile-deadeye", "mobile-resistance", "off-platform", "offensive-rally", "on-time", "option-disruptor", "option-king", "option-shield", "outside-disruptor", "outside-shield", "pa-shield", "pocket-disruptor", "pocket-shield", "press-pro", "pull-down", "quick-drop", "quick-jump", "quick-step", "recoup", "resistance", "road-dog", "robber", "rollercoaster", "safety-valve", "screen-enforcer", "second-level", "human-joystick", "side-step", "sidekick", "sleight-of-hand", "step-up", "strong-grip", "sure-hands", "take-down", "takeoff", "team-player", "the-natural", "wear-down", "winning-time", "workhorse"]), CICO = new Set(["battery-pack", "bundle-discount", "camouflaged-coverage", "cardio-kings", "caught-napping", "chew-up-yards", "clean-sheet-defense", "clean-sheet-offense", "delay-sunday", "demoralizing", "dream-school", "family-atmosphere", "fresh-legs", "friends-family-discount", "full-refund", "gas-tank", "gasoline", "gift-of-gab", "giving-back", "hands-off", "hater-blockers", "he-shed", "home-field-advantage", "hometown-discount", "household-name", "invest", "keep-blocks-longer", "keep-em-coming", "let-s-run-it-back", "lower-the-bar", "making-inroads", "master-of-disguise", "no-free-yards", "no-mid-here", "not-intimidated", "not-so-fast", "nothing-deep", "on-their-heels", "polished", "portal-preview", "puncher-s-chance", "road-warriors", "roster-retainer", "second-chance-keeper", "senior-superlatives", "share-the-wealth", "signing-bonus", "smart-goals", "stretch-the-field", "take-what-s-there", "teflon", "tipped-your-hand", "to-the-whistle", "too-loud", "unfriendly-confines", "we-see-you", "wear-em-down"]);
 const abImg = (dir, n) => (dir === "p" ? ABICO : dir === "c" ? CICO : {has: () => true}).has(abSlug(n)) ? `<img class="ab-ico${dir === "a" ? " ab-badge" : ""}" src="ab/${dir}/${abSlug(n)}.png" alt="">` : "";
 let abP = "QB", abM = "player", abC = "Recruiter";
 const abRow = n => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}</span></li>`;
@@ -2272,6 +2286,49 @@ $("#abMode").addEventListener("click", e => { const b = e.target.closest("[data-
 $("#abArch").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) { abC = b.dataset.c; $("#abQ").value = ""; abDraw(); } });
 $("#abQ").addEventListener("input", abDraw);
 abDraw();
+/* ---- global search (Cmd/Ctrl+K or /): jumps to any tab, team, coach, ability or house rule ---- */
+const GS = [
+  ...[...document.querySelectorAll(".tabs .tab")].map(b => ({n:b.textContent, s:"Tab", go:() => showTab(TABS.find(t => t[1] === "#" + b.id)[0])})),
+  ...DATA.map(t => ({n:t.n, s:`${t.nk} · ${t.c}`, x:t.nk + " " + t.ab, go:() => openTeam(t.n)})),
+  ...COACHES.map(c => ({n:c.name, s:`${c.role} · ${c.team}`, go:() => { showTab("coach"); $("#cq").value = c.name; cQuery = norm(c.name); cDraw(); }})),
+  ...[...Object.keys(ABPHYS), ...Object.keys(ABMENT)].map(n => ({n, s:"Player ability", go:() => gsAb("player", n)})),
+  ...[...new Set(CARCH.flatMap(a => a.br.flatMap(([, ab]) => ab.map(([n]) => n))))].map(n => ({n, s:"Coach ability", go:() => gsAb("coach", n)})),
+  ...HRULES.map(r => ({n:r.n, s:"House rule", go:() => showTab("house")}))];
+function gsAb(m, n){ showTab("ab"); abM = m; $("#abQ").value = n; abDraw(); }
+// Same ranking as teamMatches: name starts with query, then a word starts with it, then contains it. Capped at 40.
+function gsFind(q){
+  const v = norm(q.trim()); if (!v) return GS.filter(g => g.s === "Tab");
+  const score = g => { const n = norm(g.n);
+    return n.startsWith(v) ? 0 : n.split(/[\s-]+/).some(w => w.startsWith(v)) ? 1 : n.includes(v) || norm(g.x || "").includes(v) ? 2 : 9; };
+  return GS.map(g => [score(g), g]).filter(x => x[0] < 9).sort((a, b) => a[0] - b[0]).slice(0, 40).map(x => x[1]);
+}
+let gsHits = [], gsAct = 0;
+function gsDraw(){
+  const q = $("#gsq").value; gsHits = gsFind(q); gsAct = 0;
+  $("#gsl").innerHTML = gsHits.length ? gsHits.map((g, i) => `<li role="option" id="gs-${i}" data-i="${i}" aria-selected="${i === 0}"><span class="cb-n">${hl(g.n, q)}</span><span class="cb-s">${esc(g.s)}</span></li>`).join("")
+    : `<li class="cb-none">Nothing matches “${esc(q.trim())}”</li>`;
+  gsMove(0);
+}
+function gsMove(i){
+  gsAct = i; [...$("#gsl").querySelectorAll("[data-i]")].forEach((li, j) => li.setAttribute("aria-selected", j === i));
+  const li = $("#gs-" + i); if (li) { $("#gsq").setAttribute("aria-activedescendant", li.id); li.scrollIntoView({block:"nearest"}); }
+}
+function gsGo(i){ const g = gsHits[i]; if (!g) return; $("#gs").close(); g.go(); }
+function gsShow(){ if (picked) closeTeam(); $("#gsq").value = ""; gsDraw(); $("#gs").showModal(); $("#gsq").focus(); }
+$("#gsOpen").addEventListener("click", gsShow);
+$("#gsq").addEventListener("input", gsDraw);
+$("#gsq").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (gsHits.length) gsMove((gsAct + (e.key === "ArrowDown" ? 1 : gsHits.length - 1)) % gsHits.length); }
+  else if (e.key === "Enter") { e.preventDefault(); gsGo(gsAct); }
+});
+$("#gsl").addEventListener("mousedown", e => { const li = e.target.closest("[data-i]"); if (li) { e.preventDefault(); gsGo(+li.dataset.i); } });
+$("#gs").addEventListener("click", e => { if (e.target === $("#gs")) $("#gs").close(); });
+$("#gs").addEventListener("keydown", e => { if (e.key === "Escape") e.stopPropagation(); });
+addEventListener("keydown", e => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
+  if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing)) {
+    if ($("#gs").open) return; e.preventDefault(); gsShow(); }
+});
 // Coach: templated answers for ability questions ("what abilities does a Speed Rusher get?", "what does Dot! do?").
 const ABPOSW = {QB:"quarterback", HB:"running back|halfback|rb", FB:"fullback", WR:"receiver|wideout", TE:"tight end", OL:"lineman|offensive line|ol",
   DL:"defensive line|edge|dt|de", LB:"linebacker", CB:"corner", S:"safety", "K/P":"kicker|punter|k|p"};
