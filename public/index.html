@@ -2094,7 +2094,7 @@ const ABPHYS = {
   "On Time":"Anticipation throws get an accuracy boost.", "Magician":"?Makes plays out of a broken pocket.", "Mobile Deadeye":"More accurate passes on the run.",
   "Downhill":"Breaks more tackles when running at full speed.", "Extender":"Breaks more sacks when moving in the pocket.", "Option King":"Cleaner, more reliable option pitches.",
   "Dot!":"Accuracy bonus when throwing to an open receiver.", "Mobile Resistance":"Holds up under pressure when throwing on the run.", "Resistance":"Holds up under pressure in the pocket.",
-  "Step Up":"Better passing from inside the pocket.", "Sleight Of Hand":"Play action fakes fool defenders more often.", "Human Joystick":"Keeps more speed through cuts and turns at full speed.",
+  "Step Up":"Better passing from inside the pocket.", "Sleight Of Hand":"Play action fakes fool defenders more often.", "Shifty":"?Sharper, harder to tackle cuts in the open field.",
   "Side Step":"?Quicker lateral moves to slip defenders.", "Workhorse":"Takes less wear and tear over a game.", "360":"?More effective spin moves.",
   "Safety Valve":"Higher chance to secure a catch out of the backfield.", "Takeoff":"Faster release into the route.", "Recoup":"Recovers from fatigue faster.",
   "Ball Security":"Lower fumble chance anywhere on the field.", "Balanced":"Resists hit stick strips.", "Arm Bar":"More effective stiff arms.",
@@ -2127,22 +2127,22 @@ const ABARCH = [
   ["QB","Backfield Creator",["Off Platform","Pull Down","On Time","Magician","Mobile Deadeye"]],
   ["QB","Dual Threat",["Downhill","Extender","Option King","Dot!","Mobile Resistance"]],
   ["QB","Pocket Passer",["Resistance","Step Up","Sleight Of Hand","Dot!","On Time"]],
-  ["QB","Pure Runner",["Downhill","Option King","Human Joystick","Side Step","Workhorse"]],
+  ["QB","Pure Runner",["Downhill","Option King","Shifty","Side Step","Workhorse"]],
   ["HB","Backfield Threat",["360","Safety Valve","Takeoff","Side Step","Recoup"]],
   ["HB","Contact Seeker",["Downhill","Workhorse","Ball Security","Balanced"]],
-  ["HB","East/West Playmaker",["Recoup","Human Joystick","Side Step","360","Arm Bar"]],
-  ["HB","Elusive Bruiser",["Human Joystick","Headfirst","Side Step","Downhill","Arm Bar"]],
+  ["HB","East/West Playmaker",["Recoup","Shifty","Side Step","360","Arm Bar"]],
+  ["HB","Elusive Bruiser",["Shifty","Headfirst","Side Step","Downhill","Arm Bar"]],
   ["HB","North/South Receiver",["Balanced","Arm Bar","Safety Valve","Headfirst","Downhill"]],
   ["HB","North/South Blocker",["Headfirst","Balanced","Sidekick","Ball Security","Strong Grip"]],
   ["FB","Blocking",["Strong Grip","Second Level","Pocket Shield","Sidekick","Screen Enforcer"]],
   ["FB","Utility",["Safety Valve","Balanced","Screen Enforcer","Sidekick","Recoup"]],
   ["WR","Contested Specialist",["50/50","Workhorse","Balanced","Headfirst","Downhill"]],
   ["WR","Elusive Route Runner",["360","Cutter","Double Dip","Recoup","Side Step"]],
-  ["WR","Gadget",["Side Step","Human Joystick","Dot!","Cutter","Extender"]],
+  ["WR","Gadget",["Side Step","Shifty","Dot!","Cutter","Extender"]],
   ["WR","Gritty Possession",["Second Level","Outside Shield","Strong Grip","Workhorse","Sure Hands"]],
   ["WR","Physical Route Runner",["Downhill","Press Pro","Sure Hands","50/50","Cutter"]],
   ["WR","Route Artist",["Cutter","Lay Out","Recoup","Double Dip","Sure Hands"]],
-  ["WR","Speedster",["Side Step","Double Dip","Takeoff","Recoup","Human Joystick"]],
+  ["WR","Speedster",["Side Step","Double Dip","Takeoff","Recoup","Shifty"]],
   ["TE","Gritty Possession",["Workhorse","Strong Grip","Sure Hands","Outside Shield"]],
   ["TE","Physical Route Runner",["Balanced","50/50","Cutter","Downhill","Sure Hands"]],
   ["TE","Pure Possession",["Sure Hands","Wear Down","Strong Grip","Outside Shield","Balanced"]],
@@ -2177,7 +2177,7 @@ const abNorm = s => " " + s.toLowerCase().replace(/[^a-z0-9/!]+/g, " ").trim() +
 const abFind = q => { const s = abNorm(q); return Object.keys({...ABPHYS, ...ABMENT}).filter(n => s.includes(abNorm(n))).sort((a, b) => b.length - a.length)[0]; };
 // Real CFB 27 icons pulled from the game files (public/ab: p player, c coach ability, a archetype badge). Only names in these lists have one.
 const abSlug = n => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const ABICO = new Set(["360", "50-50", "adrenaline", "aftershock", "arm-bar", "balanced", "ball-security", "ballhawk", "best-friend", "blanket-coverage", "blow-up", "bouncer", "chip-shot", "clearheaded", "clutch-kicker", "coffin-corner", "cutter", "deep-range", "defensive-rally", "dot", "double-dip", "downhill", "extender", "fan-favorite", "field-flip", "field-general", "grip-breaker", "ground-n-pound", "hammer", "headfirst", "headstrong", "house-call", "inside-disruptor", "inside-shield", "instinct", "jammer", "knockout", "lay-out", "legion", "magician", "mega-leg", "mobile-deadeye", "mobile-resistance", "off-platform", "offensive-rally", "on-time", "option-disruptor", "option-king", "option-shield", "outside-disruptor", "outside-shield", "pa-shield", "pocket-disruptor", "pocket-shield", "press-pro", "pull-down", "quick-drop", "quick-jump", "quick-step", "recoup", "resistance", "road-dog", "robber", "rollercoaster", "safety-valve", "screen-enforcer", "second-level", "human-joystick", "side-step", "sidekick", "sleight-of-hand", "step-up", "strong-grip", "sure-hands", "take-down", "takeoff", "team-player", "the-natural", "wear-down", "winning-time", "workhorse"]), CICO = new Set(["battery-pack", "bundle-discount", "camouflaged-coverage", "cardio-kings", "caught-napping", "chew-up-yards", "clean-sheet-defense", "clean-sheet-offense", "delay-sunday", "demoralizing", "dream-school", "family-atmosphere", "fresh-legs", "friends-family-discount", "full-refund", "gas-tank", "gasoline", "gift-of-gab", "giving-back", "hands-off", "hater-blockers", "he-shed", "home-field-advantage", "hometown-discount", "household-name", "invest", "keep-blocks-longer", "keep-em-coming", "let-s-run-it-back", "lower-the-bar", "making-inroads", "master-of-disguise", "no-free-yards", "no-mid-here", "not-intimidated", "not-so-fast", "nothing-deep", "on-their-heels", "polished", "portal-preview", "puncher-s-chance", "road-warriors", "roster-retainer", "second-chance-keeper", "senior-superlatives", "share-the-wealth", "signing-bonus", "smart-goals", "stretch-the-field", "take-what-s-there", "teflon", "tipped-your-hand", "to-the-whistle", "too-loud", "unfriendly-confines", "we-see-you", "wear-em-down"]);
+const ABICO = new Set(["360", "50-50", "adrenaline", "aftershock", "arm-bar", "balanced", "ball-security", "ballhawk", "best-friend", "blanket-coverage", "blow-up", "bouncer", "chip-shot", "clearheaded", "clutch-kicker", "coffin-corner", "cutter", "deep-range", "defensive-rally", "dot", "double-dip", "downhill", "extender", "fan-favorite", "field-flip", "field-general", "grip-breaker", "ground-n-pound", "hammer", "headfirst", "headstrong", "house-call", "inside-disruptor", "inside-shield", "instinct", "jammer", "knockout", "lay-out", "legion", "magician", "mega-leg", "mobile-deadeye", "mobile-resistance", "off-platform", "offensive-rally", "on-time", "option-disruptor", "option-king", "option-shield", "outside-disruptor", "outside-shield", "pa-shield", "pocket-disruptor", "pocket-shield", "press-pro", "pull-down", "quick-drop", "quick-jump", "quick-step", "recoup", "resistance", "road-dog", "robber", "rollercoaster", "safety-valve", "screen-enforcer", "second-level", "shifty", "side-step", "sidekick", "sleight-of-hand", "step-up", "strong-grip", "sure-hands", "take-down", "takeoff", "team-player", "the-natural", "wear-down", "winning-time", "workhorse"]), CICO = new Set(["battery-pack", "bundle-discount", "camouflaged-coverage", "cardio-kings", "caught-napping", "chew-up-yards", "clean-sheet-defense", "clean-sheet-offense", "delay-sunday", "demoralizing", "dream-school", "family-atmosphere", "fresh-legs", "friends-family-discount", "full-refund", "gas-tank", "gasoline", "gift-of-gab", "giving-back", "hands-off", "hater-blockers", "he-shed", "home-field-advantage", "hometown-discount", "household-name", "invest", "keep-blocks-longer", "keep-em-coming", "let-s-run-it-back", "lower-the-bar", "making-inroads", "master-of-disguise", "no-free-yards", "no-mid-here", "not-intimidated", "not-so-fast", "nothing-deep", "on-their-heels", "polished", "portal-preview", "puncher-s-chance", "road-warriors", "roster-retainer", "second-chance-keeper", "senior-superlatives", "share-the-wealth", "signing-bonus", "smart-goals", "stretch-the-field", "take-what-s-there", "teflon", "tipped-your-hand", "to-the-whistle", "too-loud", "unfriendly-confines", "we-see-you", "wear-em-down"]);
 const abImg = (dir, n) => (dir === "p" ? ABICO : dir === "c" ? CICO : {has: () => true}).has(abSlug(n)) ? `<img class="ab-ico${dir === "a" ? " ab-badge" : ""}" src="ab/${dir}/${abSlug(n)}.png" alt="">` : "";
 let abP = "QB", abM = "player", abC = "Recruiter";
 const abRow = n => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}</span></li>`;
