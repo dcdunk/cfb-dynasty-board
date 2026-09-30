@@ -235,9 +235,18 @@ const inPage = async () => {
   // Player abilities: position chips, archetype cards, ability detail, search, mental list.
   await open("tabAb");
   ok($$("#abGrid .sl-card").length === 4 && /Backfield Creator/.test($("#abGrid").textContent), "Abilities: QB should show 4 archetypes");
+  const op = [...$$("#abGrid li")].find(li => /Off Platform/.test(li.textContent)), opm = [...op.querySelectorAll(".mt")];
+  ok(opm.length === 4 && opm.map(m => m.className).join() === "mt mt0,mt mt1,mt mt2,mt mt3" && opm[0].title === "Bronze: 90 Throw Power, 82 Short Accuracy, 3 SP" && opm[3].title === "Platinum: 96 Throw Power, 86 Short Accuracy, 9 SP",
+    `Abilities: Off Platform gates wrong: ${opm.map(m => m.title)}`);
   $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
   ok(/Puts more pressure on the quarterback/.test($("#abGrid").textContent), "Abilities: descriptions should show on the cards without clicking");
+  // Unlock gates (CFB 27 game files): every archetype ability has Bronze-Platinum gates, split DE/DT only where they differ
+  ok(ABARCH.every(([p, n, ab]) => ab.every(x => ABGATE[p + "|" + n]?.[x]?.every(g => g[2].split(" ").length === 4 && g[5].split(" ").length === 4))), "Abilities: every archetype ability needs 4 unlock gates and costs");
+  const gr = [...$$("#abGrid .sl-card")].find(c => /^Power Rusher/.test(c.querySelector("h3").textContent));
+  const gb = [...gr.querySelectorAll("li")].find(li => /Grip Breaker/.test(li.querySelector("b").textContent));
+  ok(gb.querySelectorAll(".ab-gl").length === 2 && /DE/.test(gb.textContent) && /DT/.test(gb.textContent) && gb.querySelectorAll(".mt").length === 8, "Abilities: DL Power Rusher Grip Breaker should show separate DE and DT gates");
+  ok(!$("#abMent .mt"), "Abilities: mental abilities have no unlock gates");
   find("#abQ", "sure hands");
   ok($$("#abGrid .sl-card").length === 6, `Abilities: Sure Hands should be in 6 archetypes, got ${$$("#abGrid .sl-card").length}`);
   find("#abQ", "");
