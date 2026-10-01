@@ -4,19 +4,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single self-contained file, `public/index.html` (~700 KB), for a College Football 27 dynasty-mode companion. No build and no package.json. Open it in a browser to run it. The only external requests are Google Fonts, plus Coach's AI model download, which starts the first time a visitor opens Coach.
+A static site for a College Football 27 dynasty-mode companion: `public/index.html` plus one stylesheet and plain script files (split out of a single file in Sept 2026). No build, no package.json, no npm. Open `public/index.html` in a browser to run it (works straight from disk too). The only external requests are Google Fonts, plus Coach's AI model download, which starts the first time a visitor opens Coach.
 
 ## Deploy
 
-Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets (`wrangler.jsonc`, directory `./public`). Pushing to `main` runs `.github/workflows/deploy.yml`: it runs `check.mjs`, and only if that passes it runs `wrangler deploy`. Anything in `public/` is published, so keep dev files out of it. `public/_redirects` keeps the old `/dynasty-board` URL working. `src/index.js` runs before assets (`run_worker_first`) and 301s `www.` to the main domain; everything else goes to `env.ASSETS`.
+Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets (`wrangler.jsonc`, directory `./public`). Pushing to `main` runs `.github/workflows/deploy.yml`: it runs `check.mjs`, and only if that passes it runs `wrangler deploy`. Anything in `public/` is published, so keep dev files out of it. `public/_redirects` keeps the old `/dynasty-board` URL working. There is no Worker code: `wrangler.jsonc` serves `./public` as static assets only, so every request is a free static-asset request (Workers Free caps Worker invocations at 100,000/day; static asset requests are unlimited). `www.cfbdynastyboard.com` → `cfbdynastyboard.com` (301, path and query kept) is a Cloudflare Redirect Rule named "www to root" (dashboard: Rules > Redirect Rules), created Sept 2026. Both custom domains stay in `wrangler.jsonc` so `www` keeps its proxied DNS record for that rule; check.mjs enforces this. Don't add `main`/`run_worker_first` back for redirects.
 
-## Layout of the file
+## Layout of the files
 
-- Lines ~10-708: one `<style>` block. Colors are CSS tokens on `:root`, with dark mode under `prefers-color-scheme` and `[data-theme]` overrides. The look follows the "Linear Design System" in Claude Design (dark surfaces, Inter + JetBrains Mono), except the accent, which the owner changed from lime to electric blue (Sept 2026), plus a light theme the system doesn't define. Rules: weights only 400/510/590, uppercase only on labels under 12px, radii 4 (badges) / 6 (controls) / 12 (cards, the max), borders instead of shadows. Primary buttons use `--cta`/`--on-cta` (blue `#5B9BFF` with dark text in dark mode, `#1F5FD1` with white text in light); `--accent` is the same blue for text and bars. The wordmark uses `--logo`/`--logo-em`, taken from the favicon (slate `#141A20`, amber `#E8A33D`; `#B06D0E` in light mode for contrast). Colors that carry meaning (pipeline tiers `--t0..5`, map labels, errors, the CP coin) are deliberately outside the system. The system's rules live in a block at the end of the style tag. check.mjs verifies all three token blocks.
-- Lines ~477-645: static HTML for the nine tabs (`#viewBoard`, `#viewDyn`, `#viewRand`, `#viewCoach`, `#viewPipe`, `#viewHouse`, `#viewRec`, `#viewSlide`, `#viewAb`) plus the team dossier drawer (`#dossier`, `#scrim`).
-- Lines ~646-1661: one `<script>`, plain JS with no framework. UI is rendered by building HTML strings into `innerHTML`.
+```
+public/index.html        page skeleton: head, masthead, static HTML for the nine tabs, dossier, then the <script src> tags
+public/css/site.css      every style
+public/js/data/teams.js  const DATA (one ~540 KB line)
+public/js/data/map.js    const MAP (one ~56 KB line)
+public/js/core.js        shared constants, sort state, $, fmt, norm/esc/hl text helpers
+public/js/board.js       Board: chips, search, table, dossier (draw, openTeam)
+public/js/tabs.js        TABS, TSLUG, showTab, tabSlide, setRail
+public/js/picker.js      combo() program picker, teamMatches
+public/js/coaches.js     Coach Database (COACHES, cDraw)
+public/js/randomizer.js  Randomizer
+public/js/pipelines.js   Program Pipelines map
+public/js/house.js       House Rules, custom rules/presets, rule editor, hMap region maps
+public/js/sliders.js     Sliders
+public/js/abilities.js   Abilities (ABARCH, ABGATE, ABMENT, CARCH, abDraw, cDrawAb)
+public/js/search.js      global search (GS, gsFind)
+public/js/recruiting.js  Recruiting & NIL
+public/js/dynasty.js     My Dynasty
+public/js/coach-chat.js  Coach sidebar (pAbil, pPlan, pAsk, AI, wiring for the chat box)
+public/js/theme.js       light/dark toggle
+public/js/start.js       runs last: first draw(), then reopen the tab in the URL hash
+```
 
-**Line 650 (`const DATA = [...]`) is ~540 KB on one line and line 1044 (`const MAP = {...}`) is ~56 KB.** Never `Read` or `cat` those lines whole. Inspect them with `sed -n 650p public/index.html | head -c 3000`, or by loading them in node. Edit them with a script, never by hand.
+- **Plain classic scripts, not ES modules.** All files share one global scope, exactly like the old single `<script>`, so a function or `const` in one file is visible in the others. Order matters: index.html loads them in the order above, and a file's top-level code can only use things from files loaded before it (calls inside functions or event handlers run later, so they can reach anything). Don't switch to `import`/`export`: modules don't load from `file://`, and the code relies on the shared scope. A new file needs a `<script src>` tag in the right spot.
+- The tiny inline `<script>` in `<head>` (theme from `theme-v1`) stays inline on purpose so the page doesn't flash the wrong theme.
+- Paths inside `site.css` are relative to `css/` (e.g. `url(../ab/sp.png)`).
+- **Styles:** colors are CSS tokens on `:root`, with dark mode under `prefers-color-scheme` and `[data-theme]` overrides. The look follows the "Linear Design System" in Claude Design (dark surfaces, Inter + JetBrains Mono), except the accent, which the owner changed from lime to electric blue (Sept 2026), plus a light theme the system doesn't define. Rules: weights only 400/510/590, uppercase only on labels under 12px, radii 4 (badges) / 6 (controls) / 12 (cards, the max), borders instead of shadows. Primary buttons use `--cta`/`--on-cta` (blue `#5B9BFF` with dark text in dark mode, `#1F5FD1` with white text in light); `--accent` is the same blue for text and bars. The wordmark uses `--logo`/`--logo-em`, taken from the favicon (slate `#141A20`, amber `#E8A33D`; `#B06D0E` in light mode for contrast). Colors that carry meaning (pipeline tiers `--t0..5`, map labels, errors, the CP coin, ability metal chips) are deliberately outside the system. The system's rules live in a block at the end of site.css. check.mjs verifies all three token blocks.
+- UI is plain JS with no framework, rendered by building HTML strings into `innerHTML`.
+
+**`js/data/teams.js` (`const DATA = [...]`) is ~540 KB on one line and `js/data/map.js` (`const MAP = {...}`) is ~56 KB on one line.** Never `Read` or `cat` those lines whole. Inspect them with `head -c 3000 public/js/data/teams.js`, or by loading them in node. Edit them with a script, never by hand.
 
 ## Data model
 
@@ -58,7 +83,7 @@ Changing the shape of either object breaks saved data for existing users. Bump t
 
 ## Verifying changes
 
-`check.mjs` is the test. It loads the page in headless Chrome with an empty profile, clicks through all nine tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error. It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
+`check.mjs` is the test. It serves the page's folder from a small local http server (so the linked stylesheet and scripts load like on the live site) and opens it in headless Chrome with an empty profile, clicks through all nine tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error and on any file the page requests from its own folder that comes back missing (a broken `<script src>`, css or icon path). It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
 
 ```bash
 node check.mjs

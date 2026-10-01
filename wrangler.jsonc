@@ -1,10 +1,10 @@
 {
-  // Static site: everything in ./public is served as-is, via src/index.js (www redirect). public/index.html is the home page.
+  // Static site: everything in ./public is served as-is, with no Worker code, so every request is a free static-asset request.
+  // www.cfbdynastyboard.com -> cfbdynastyboard.com is a Redirect Rule in the Cloudflare dashboard (Rules > Redirect Rules), not code.
+  // The www custom domain stays attached so www keeps a proxied DNS record for that rule to act on.
   "name": "cfb-dynasty-board",
-  "main": "src/index.js",
   "compatibility_date": "2026-09-01",
-  // run_worker_first so the www redirect in src/index.js sees every request
-  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  "assets": { "directory": "./public" },
   "routes": [
     { "pattern": "cfbdynastyboard.com", "custom_domain": true },
     { "pattern": "www.cfbdynastyboard.com", "custom_domain": true }

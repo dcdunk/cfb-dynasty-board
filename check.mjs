@@ -3,11 +3,22 @@
 import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { basename, dirname, extname, join, resolve, sep } from "node:path";
 
 const CHROME = process.env.CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const PAGE = pathToFileURL(resolve(process.argv[2] || join(import.meta.dirname, "public/index.html"))).href;
+// Serve the page's folder over local http (like the live site): Chrome blocks reading a linked stylesheet's rules from file://.
+const FILE = resolve(process.argv[2] || join(import.meta.dirname, "public/index.html")), ROOT = dirname(FILE);
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".ico": "image/x-icon", ".json": "application/json" };
+const server = createServer(async (req, res) => {
+  const path = resolve(ROOT, "." + decodeURIComponent(new URL(req.url, "http://x").pathname));
+  if (path !== ROOT && !path.startsWith(ROOT + sep)) { res.writeHead(403).end(); return; }
+  try { const body = await readFile(path); res.writeHead(200, { "content-type": TYPES[extname(path)] || "application/octet-stream" }).end(body); }
+  catch { res.writeHead(404).end(); }
+});
+await new Promise(r => server.listen(0, "127.0.0.1", r));
+const PAGE = `http://127.0.0.1:${server.address().port}/${basename(FILE)}`;
 const profile = mkdtempSync(join(tmpdir(), "board-check-")); // fresh profile = empty localStorage
 
 const chrome = spawn(CHROME, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`,
@@ -29,8 +40,11 @@ ws.addEventListener("message", ({ data }) => {
   if (m.method === "Runtime.exceptionThrown") errors.push("JS error: " + m.params.exceptionDetails.exception?.description);
   if (m.method === "Runtime.consoleAPICalled" && m.params.type === "error") errors.push("console.error: " + m.params.args.map(a => a.value ?? a.description).join(" "));
   if (m.method === "Page.loadEventFired") loaded?.();
+  // Every file the page loads from its own folder (css, js, data, icons) must exist.
+  if (m.method === "Network.responseReceived" && m.params.response.url.startsWith(PAGE.replace(/[^/]*$/, "")) && m.params.response.status >= 400)
+    errors.push(`Missing file: ${m.params.response.url} (${m.params.response.status})`);
 });
-await send("Runtime.enable"); await send("Page.enable");
+await send("Runtime.enable"); await send("Page.enable"); await send("Network.enable");
 // Never let the test browser start Coach's 1.8 GB AI model download.
 await send("Page.addScriptToEvaluateOnNewDocument", { source: "window.__noAI = true" });
 await new Promise(r => { loaded = r; send("Page.navigate", { url: PAGE }); });
@@ -50,8 +64,8 @@ const inPage = async () => {
 
   ok(document.querySelector('link[rel="icon"]'), "Favicon link missing");
   // Theme tokens (Linear design system): both themes resolve, and the wordmark stays Inter at display size.
-  // Read the rules themselves: computed colors would depend on the OS light/dark setting.
-  const rules = [...[...document.styleSheets].find(s => s.ownerNode.tagName === "STYLE" && s.cssRules.length > 50).cssRules];
+  // Read the rules in css/site.css themselves: computed colors would depend on the OS light/dark setting.
+  const rules = [...[...document.styleSheets].find(s => s.href?.endsWith("/css/site.css")).cssRules];
   const media = rules.find(r => r.media && /prefers-color-scheme: dark/.test(r.media.mediaText));
   const tok = [["light", rules.find(r => r.selectorText === ":root" && r.style.getPropertyValue("--ground")), "#F7F8F8"],
     ["dark (toggle)", rules.find(r => r.selectorText === ':root[data-theme="dark"]'), "#08090A"],
@@ -410,15 +424,14 @@ await new Promise(r => { loaded = r; send("Page.reload"); });
 const after = await ev(`[curTab, $("#viewAb").hidden, $("#viewBoard").hidden, $("#tabAb").getAttribute("aria-selected")].join()`);
 if (after !== "ab,false,true,true") fails.push(`Refresh: reloading on #abilities should reopen Abilities, got ${after}`);
 
-chrome.kill(); await new Promise(r => chrome.once("exit", r));
+chrome.kill(); await new Promise(r => chrome.once("exit", r)); server.close();
 try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch {} // leftover temp files are harmless
-// Worker: www must 301 to the main domain, keeping the path.
-const worker = (await import("./src/index.js")).default;
-const env = { ASSETS: { fetch: () => new Response("site") } };
-const www = await worker.fetch(new Request("https://www.cfbdynastyboard.com/a?b=1"), env);
-if (www.status !== 301 || www.headers.get("location") !== "https://cfbdynastyboard.com/a?b=1") fails.push("Worker: www redirect broken");
-if (await (await worker.fetch(new Request("https://cfbdynastyboard.com/"), env)).text() !== "site") fails.push("Worker: main domain not served");
+// Deploy config: static assets only, no Worker code (www -> main domain is a Cloudflare Redirect Rule in the dashboard),
+// so every request is a free static-asset request. Both hostnames stay attached so www keeps a proxied DNS record.
+const wr = JSON.parse((await readFile(join(import.meta.dirname, "wrangler.jsonc"), "utf8")).replace(/^\s*\/\/.*$/gm, ""));
+if (wr.main || wr.assets?.run_worker_first || wr.assets?.directory !== "./public") fails.push("wrangler.jsonc: should serve ./public as static assets with no Worker script (no main, no run_worker_first)");
+if (!["cfbdynastyboard.com", "www.cfbdynastyboard.com"].every(h => wr.routes?.some(r => r.pattern === h && r.custom_domain))) fails.push("wrangler.jsonc: both custom domains must stay attached");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log(`PASS: all 9 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, www redirect. No JS errors.`);
+console.log(`PASS: all 9 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, static deploy config. No JS errors.`);
 process.exit(0);
