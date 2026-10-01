@@ -5,10 +5,15 @@ const PIPES = [...new Set(DATA.flatMap(t => t.pl.map(p => p[0])))].sort();
 const PORDER = DATA.map(t => t.n).sort((a, b) => a.localeCompare(b));
 let pTeam = "UCLA", pPipe = "";
 (function buildMap(){
+  // Split states (CA, TX, FL, GA) clip their region polygons to the state outline. The clipPaths sit in one <defs>
+  // at the top of the svg rather than inline next to what they clip: an inline clipPath has been seen to render
+  // unclipped (Texas regions drawn as rectangles), and defs-first is the layout browsers handle most reliably.
+  let defs = "";
   const shapes = Object.entries(MAP.states).map(([s, d]) => {
     const split = Object.entries(MAP.split).filter(([, v]) => v.s === s);
     let out = `<path id="st-${s}" class="st" d="${d}"/>`;
-    if (split.length) out += `<clipPath id="cp-${s}"><path d="${d}"/></clipPath><g clip-path="url(#cp-${s})">` +
+    if (split.length) defs += `<clipPath id="cp-${s}"><path d="${d}"/></clipPath>`;
+    if (split.length) out += `<g clip-path="url(#cp-${s})">` +
       split.map(([p, v]) => `<polygon class="sub" data-reg="${p}" points="${v.pts.map(q => q.join(",")).join(" ")}"/>`).join("") + `</g>`;
     return out;
   }).join("");
@@ -16,7 +21,7 @@ let pTeam = "UCLA", pPipe = "";
     const w = p.length * 5.6 + 12;
     return `<g class="lbl" data-lab="${p}" hidden><rect x="${(x - w / 2).toFixed(1)}" y="${y - 8}" width="${w.toFixed(1)}" height="16" rx="2"/><text x="${x}" y="${y + 3.5}" text-anchor="middle">${p}</text></g>`;
   }).join("");
-  $("#pmap").innerHTML = `<svg viewBox="0 0 959 593" role="img" aria-label="Map of pipeline regions"><g id="pshapes">${shapes}</g><g class="bd">${MAP.borders}</g><g id="plabels">${labels}</g></svg>`;
+  $("#pmap").innerHTML = `<svg viewBox="0 0 959 593" role="img" aria-label="Map of pipeline regions"><defs>${defs}</defs><g id="pshapes">${shapes}</g><g class="bd">${MAP.borders}</g><g id="plabels">${labels}</g></svg>`;
   $("#ppipe").innerHTML += PIPES.map(p => `<option value="${p}">${p}</option>`).join("");
   $("#ptiers").innerHTML = [5,4,3,2,1,0].map(i => `<div><i style="background:var(--t${i})"></i>Tier ${i} &middot; ${TIERN[i]}</div>`).join("") +
     `<div><i style="background:var(--pip-off);opacity:.55"></i>No pipeline</div>`;

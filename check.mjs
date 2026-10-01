@@ -320,6 +320,11 @@ const inPage = async () => {
   // Split states (CA, TX, FL) must clip to their own outline; duplicate clipPath ids across maps drew them as rectangles.
   const ids = [...$$("clipPath")].map(c => c.id);
   ok(ids.length === new Set(ids).size, "Maps: duplicate clipPath ids");
+  // Clip shapes live in a <defs> at the top of each map, and every clipped group points at exactly one of them.
+  ok(ids.length > 4 && [...$$("clipPath")].every(c => c.parentElement.tagName.toLowerCase() === "defs" && c.parentElement.parentElement.firstElementChild === c.parentElement),
+    "Maps: every clipPath should sit in a <defs> that is the svg's first child");
+  ok([...$$("[clip-path]")].every(g => $$(`#${CSS.escape(g.getAttribute("clip-path").slice(5, -1))}`).length === 1), "Maps: every clip-path should point at exactly one clipPath");
+  ok(["CA", "TX", "FL", "GA"].every(st => $(`#pmap #cp-${st}`) && $(`#pmap [clip-path="url(#cp-${st})"] [data-reg]`)), "Maps: the pipeline map should clip CA, TX, FL and GA");
 
   await open("tabSlide");
   const row = name => [...$$("#slGrid tr")].find(r => r.cells[0]?.innerText === name)?.innerText.replace(/\s+/g, " ");

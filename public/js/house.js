@@ -265,6 +265,8 @@ const TYEARS = {"Texas A&M":[1919,1939],"Indiana":[2025],"Ohio State":[1942,1954
 const tYears = t => (TYEARS[t.n] || []).map(String);
 let hMapN = 0;
 function hMap(regs, tiers){
+  // clipPaths go in one <defs> at the top of the svg (see buildMap in pipelines.js for why).
+  let defs = "";
   const on = new Set(regs), k = ++hMapN, fill = r => !tiers ? "" : ` style="fill:${tiers[r] != null ? `var(--t${tiers[r]})` : "var(--accent-soft)"}"`;
   const shapes = Object.entries(MAP.states).map(([s, d]) => {
     const split = Object.entries(MAP.split).filter(([, v]) => v.s === s);
@@ -272,13 +274,14 @@ function hMap(regs, tiers){
       const lit = [...on].find(p => !MAP.split[p] && (MAP.reg[p] || []).includes(s));
       return `<path class="hs${lit ? " on" : ""}" d="${d}"${lit ? fill(lit) : ""}/>`;
     }
-    return `<path class="hs" d="${d}"/><clipPath id="hcp${k}-${s}"><path d="${d}"/></clipPath><g clip-path="url(#hcp${k}-${s})">` +
+    defs += `<clipPath id="hcp${k}-${s}"><path d="${d}"/></clipPath>`;
+    return `<path class="hs" d="${d}"/><g clip-path="url(#hcp${k}-${s})">` +
       split.map(([p, v]) => `<polygon class="hp${on.has(p) ? " on" : ""}"${on.has(p) ? fill(p) : ""} points="${v.pts.map(q => q.join(",")).join(" ")}"/>`).join("") + `</g>`;
   }).join("");
   const shown = [...new Set([...on].map(r => tiers && tiers[r] != null ? tiers[r] : -1))].sort((a, b) => b - a);
   const legend = tiers ? `<div class="hleg">${shown.map(x => x < 0 ? `<span><i class="sw" style="background:var(--accent-soft)"></i>No pipeline</span>`
     : `<span><i class="sw" style="background:var(--t${x})"></i>${TIERN[x]}</span>`).join("")}</div>` : "";
-  return `<figure class="hmap" style="margin:12px 0 0"><svg viewBox="0 0 959 593" role="img" aria-label="Map of allowed recruiting regions">${shapes}<g class="bd">${MAP.borders}</g></svg><figcaption>Shaded: where you may recruit (${on.size} of 42 regions)</figcaption>${legend}</figure>`;
+  return `<figure class="hmap" style="margin:12px 0 0"><svg viewBox="0 0 959 593" role="img" aria-label="Map of allowed recruiting regions"><defs>${defs}</defs>${shapes}<g class="bd">${MAP.borders}</g></svg><figcaption>Shaded: where you may recruit (${on.size} of 42 regions)</figcaption>${legend}</figure>`;
 }
 function preBtn(p, ok, ps){
   const on = H.pre === p.id && !H.edited && /^(Preset|Your preset) · /.test(H.src);
