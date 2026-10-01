@@ -58,7 +58,7 @@ Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS`
 | Tab | Purpose | Main functions |
 |---|---|---|
 | Board | Sortable team table (`COLS`), conference chips, search | `rowsFor`, `draw`, `openTeam`/`body` (dossier) |
-| My Dynasty | Saved dynasties (`D`, `dyn-v1`): a snapshot of a team + its House rules ids + source label. Created from House rules ("Save to My Dynasty", `#hdyn`) or the tab button (`dAdd`). The view shows the rules read-only, then `recBody(t, true)` (the Recruiting & NIL plan, renumbered, with every pipeline). "Edit rules in House Rules" loads it into `H` with `H.dyn` set, and House rules shows "Update dynasty" (`#hdupd`) while the team matches. Archive/restore flips `arch`; no delete | `dDraw`, `dAdd`, `hDyn` |
+| My Dynasty | Saved dynasties (`D`, `dyn-v1`): a snapshot of a team + its House rules ids + source label. Created from House rules ("Save to My Dynasty", `#hdyn`) or the tab button (`dAdd`). The view shows the rules read-only, then `recBody(t, true)` (the Recruiting & NIL plan, renumbered, with every pipeline). "Edit rules in House Rules" loads it into `H` with `H.dyn` set, and House rules shows "Update dynasty" (`#hdupd`) while the team matches. Archive/restore flips `arch`; no delete. Back up / Restore (`#dBackup`, `#dRestore`): one JSON file `{app:"cfb-dynasty-board", v:1, made, data:{key: raw localStorage string}}` with the keys in `BAKKEYS` (not `coach-v1`). Restore replaces (keys missing from the file are cleared), asks first via `confirm` when dynasties or custom rules exist, then reloads so the normal loaders run; `dyn-restored` in sessionStorage shows the note after reload | `dDraw`, `dAdd`, `hDyn`, `dBackupData`, `dReadBackup`, `dRestoreText` |
 | Randomizer | Filtered random team roll (`RG`, `rSel`) | `rPool`, `rDraw`, `rollIt` |
 | Coaches | Sortable staff table (`CCOLS`) | `cDraw` |
 | Pipelines | Recruiting pipeline map per team | `buildMap`, `paintMap`, `pDraw`, `pSet` |
@@ -79,7 +79,7 @@ House rules are the most intricate part: `HRULES` (built-in rules, each with cat
 - `coach-v1`: Coach transcript (last 60 messages), current plan, undo history (10), last team, preferred difficulty (`pSave`/`pLoad`). Plans store the team by name; `pDe` drops unknown rule ids.
 - `theme-v1`: `"light"` or `"dark"` from the header toggle (`#themeBtn`, next to Coach). Applied by a small script before the `<style>` block so there is no flash; no value means follow the system setting.
 
-Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
+Back up / Restore on My Dynasty copies `dyn-v1`, `house-v1`, `house-custom-v1`, `rec-v1` and `theme-v1` to and from a file, so old backup files must keep loading too. Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
 
 ## Verifying changes
 

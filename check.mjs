@@ -238,6 +238,22 @@ const inPage = async () => {
   ok($$("#dList [data-d]").length === 1 && /Archived dynasty/.test($("#dView").textContent) && !$("#dEdit"), "My Dynasty: archive list should show it read-only");
   $("#dArch").click(); await wait(50);
   ok($$("#dList [data-d]").length === 2 && /Active \(2\)/.test($("#dSeg").textContent), "My Dynasty: restore should bring it back to active");
+  // Backup and restore: the file holds the saved keys (not Coach's chat), bad files are refused, cancel changes nothing, restore replaces.
+  ok($("#dBackup") && $("#dRestore") && $("#viewDyn").contains($("#dBackup")), "Backup: buttons should be on the My Dynasty tab");
+  const bk = dBackupData(), bkText = JSON.stringify(bk);
+  ok(bk.app === "cfb-dynasty-board" && JSON.parse(bk.data["dyn-v1"]).list.length === 2 && "house-v1" in bk.data && !("coach-v1" in bk.data), `Backup: file contents wrong: ${Object.keys(bk.data)}`);
+  ok(dReadBackup("not json").err && dReadBackup('{"app":"other","data":{}}').err && dReadBackup(JSON.stringify({app:"cfb-dynasty-board", data:{"dyn-v1":"{bad"}})).err, "Backup: bad files should be refused");
+  ok(dReadBackup(bkText).n === 2, "Backup: a good file should read back with 2 dynasties");
+  dRestoreText("not json"); ok($("#dBakMsg").classList.contains("err") && !$("#dBakMsg").hidden, "Backup: a bad file should show an error");
+  let asked = ""; const realConfirm = window.confirm; window.confirm = m => { asked = m; return false; };
+  const dynBefore = localStorage.getItem("dyn-v1"); dRestoreText(JSON.stringify({app:"cfb-dynasty-board", v:1, data:{"dyn-v1":JSON.stringify({list:[], cur:"", arch:false})}}));
+  window.confirm = realConfirm;
+  ok(/replaces/.test(asked) && /2 dynasties/.test(asked) && /0 dynasties/.test(asked) && localStorage.getItem("dyn-v1") === dynBefore && /canceled/.test($("#dBakMsg").textContent),
+    `Backup: with saved dynasties, restore should ask first and cancel should change nothing (asked: ${asked.slice(0, 120)})`);
+  const snap = Object.fromEntries(BAKKEYS.map(k => [k, localStorage.getItem(k)]));
+  dApplyBackup({"dyn-v1":JSON.stringify({list:[D.list[0]], cur:"", arch:false})});
+  ok(dCount(localStorage.getItem("dyn-v1")) === 1 && localStorage.getItem("house-v1") === null, "Backup: restore should replace, clearing keys the backup doesn't have");
+  for (const [k, v] of Object.entries(snap)) v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
   hSetTeam("Georgia");
   // Split states (CA, TX, FL) must clip to their own outline; duplicate clipPath ids across maps drew them as rectangles.
   const ids = [...$$("clipPath")].map(c => c.id);
@@ -420,7 +436,11 @@ fails.push(...(cr.result.exceptionDetails ? ["Coach suite crashed: " + cr.result
 const ev = async x => (await send("Runtime.evaluate", { expression: x, returnByValue: true })).result.result?.value;
 const hb = await ev(`showTab("board"); location.hash`), ha = await ev(`$("#tabAb").click(); location.hash`);
 if (hb !== "" || ha !== "#abilities") fails.push(`Refresh: tab should set the URL hash (board "${hb}", abilities "${ha}")`);
+// Restore end to end: apply a backup with one dynasty, reload like the Restore button does, and the page should load it and say so.
+await ev(`dApplyBackup({"dyn-v1": JSON.stringify({list:[{id:"dz", name:"Restored Owls", team:"Temple", rules:[], src:"", made:0, arch:false}], cur:"dz", arch:false})}); sessionStorage.setItem("dyn-restored", "1")`);
 await new Promise(r => { loaded = r; send("Page.reload"); });
+const rs = await ev(`[D.list.length, D.list[0]?.name, $("#dBakMsg").textContent, $("#dBakMsg").hidden].join("|")`);
+if (rs !== "1|Restored Owls|Restored from backup: 1 dynasty.|false") fails.push(`Restore: after reload expected the restored dynasty and a note, got ${rs}`);
 const after = await ev(`[curTab, $("#viewAb").hidden, $("#viewBoard").hidden, $("#tabAb").getAttribute("aria-selected")].join()`);
 if (after !== "ab,false,true,true") fails.push(`Refresh: reloading on #abilities should reopen Abilities, got ${after}`);
 

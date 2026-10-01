@@ -211,6 +211,12 @@
     <button class="ghost pri" id="dNew" type="button" style="margin:18px 0; width:100%">Save House Rules as a dynasty</button>
     <div class="seg" id="dSeg" role="group" aria-label="Active or archived dynasties"></div>
     <ul class="dlist" id="dList"></ul>
+    <div class="dbak">
+      <p class="hint">Back up your dynasties, house rules, custom rules and settings to a file, or restore them from one. Use it to move them to another browser or device.</p>
+      <div class="dbak-b"><button class="ghost" id="dBackup" type="button">Back up to a file</button><button class="ghost" id="dRestore" type="button">Restore from a file</button></div>
+      <input type="file" id="dFile" accept=".json,application/json" hidden>
+      <p class="hint dbak-msg" id="dBakMsg" role="status" hidden></p>
+    </div>
   </div>
   <div id="dView" aria-live="polite"></div>
 </section>
