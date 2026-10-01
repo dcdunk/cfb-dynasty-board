@@ -487,6 +487,14 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 @media (max-width:600px){.coachbtn.gsbtn{font-size:0; gap:0} .gsbtn kbd{display:none}}
 .gs .search{border:0; border-bottom:1px solid var(--line); padding:12px 14px}
 .gs .cb{position:static; min-width:0; max-height:55vh; overflow:auto; border:0; margin:0}
+.ks{padding:6px 18px 16px}
+.ks-h{display:flex; align-items:center; justify-content:space-between; padding:10px 0 4px}
+.ks-h h2{margin:0; font-size:15px; font-weight:590}
+.ks-h .ib{background:none; border:0; padding:4px; cursor:pointer}
+.ks h3{margin:14px 0 4px; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:510}
+.ks dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 16px; align-items:baseline; font-size:13px}
+.ks dt{white-space:nowrap} .ks dd{margin:0; color:var(--dim)}
+.ks dt kbd + kbd{margin-left:3px}
 .gs kbd,.gsbtn kbd{font:11px "JetBrains Mono",monospace; color:var(--faint); border:1px solid var(--line); border-radius:4px; padding:1px 5px}
 
 

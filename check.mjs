@@ -179,6 +179,12 @@ const inPage = async () => {
   await gs("master motivator"); ok(curTab === "ab" && abM === "coach" && abC === "Motivator", `Search: coach archetype should open the Motivator group, got ${abM} ${abC}`);
   abP = "QB"; abC = "Recruiter";
   await gs("pipeline purist"); ok(curTab === "house", "Search: house rule should open House Rules");
+  // Keyboard shortcuts panel: ? opens it (not while typing), it lists every group, the close button works, and search finds it.
+  $("#hq").focus(); dispatchEvent(new KeyboardEvent("keydown", { key: "?" })); ok(!$("#ks").open, "Shortcuts: ? typed in a text box should not open the panel"); $("#hq").blur();
+  dispatchEvent(new KeyboardEvent("keydown", { key: "?" }));
+  ok($("#ks").open && [...$$("#ksL h3")].map(h => h.textContent).join("|") === "Anywhere|Tabs|Tables and team details|Search and program boxes|Coach" && $$("#ksL kbd").length > 15, "Shortcuts: ? should open the full list");
+  $("#ksX").click(); ok(!$("#ks").open, "Shortcuts: close button should close it");
+  await gs("keyboard"); ok($("#ks").open, "Shortcuts: searching 'keyboard' should open the panel"); $("#ks").close();
   $("#cq").value = ""; cQuery = ""; cDraw(); $("#abQ").value = ""; abM = "player"; abDraw(); showTab("board");
 
   await open("tabHouse");

@@ -47,7 +47,7 @@ public/js/start.js       runs last: first draw(), then reopen the tab in the URL
 
 `DATA` is an array of ~138 teams with short keys, e.g. `n` name, `nk` nickname, `ab` abbrev, `c` conference, `o/of/df` overall/offense/defense ratings, `p` prestige, `sl` "City, ST" location, `pl` recruiting pipelines as `[state, tier, weight]`, `st` coaching staff (flattened into `COACHES`), `h` hashtags. Look at a record before assuming a key's meaning. `hMap(regs, tiers?)` draws a region map; its clipPath ids are unique per call because split states (CA, TX, FL) break when two maps share ids and one is hidden. `MAP` holds US state SVG paths (`states`) plus recruiting regions (`reg`, `split`).
 
-Every "Search a program" box uses the shared `combo(input, pick, current)` picker (ranking in `teamMatches`); don't reintroduce `<datalist>`. Global search (`#gs` dialog, opened by the masthead Search button, Ctrl/Cmd+K or `/`) indexes tabs, teams, coaches, player/coach abilities and house rules in `GS`, ranked by `gsFind`; new searchable things get a `GS` entry with a `go` action.
+Every "Search a program" box uses the shared `combo(input, pick, current)` picker (ranking in `teamMatches`); don't reintroduce `<datalist>`. Global search (`#gs` dialog, opened by the masthead Search button, Ctrl/Cmd+K or `/`) indexes tabs, teams, coaches, player/coach abilities and house rules in `GS`, ranked by `gsFind`; new searchable things get a `GS` entry with a `go` action. `?` (or searching "keyboard") opens the keyboard shortcuts panel (`#ks`, list in `KS` in search.js); when you add or change a key handler, update `KS` too.
 
 Everything else is derived from `DATA` at load (`confs`, `COACHES`, `PIPES`, `PORDER`), so adding a team only means editing `DATA`.
 
