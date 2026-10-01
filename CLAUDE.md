@@ -13,15 +13,17 @@ Live at https://cfbdynastyboard.com as a Cloudflare Worker serving static assets
 ## Layout of the files
 
 ```
-public/index.html        page skeleton: head, masthead, static HTML for the nine tabs, dossier, then the <script src> tags
+public/index.html        page skeleton: head, masthead, static HTML for the ten tabs, dossier, then the <script src> tags
 public/css/site.css      every style
 public/js/data/teams.js  const DATA (one ~540 KB line)
 public/js/data/map.js    const MAP (one ~56 KB line)
+public/js/data/ratings.js const RATINGS: EA extended player ratings (one ~1.8 MB line), loaded on demand by players.js, not by a <script> tag
 public/js/core.js        shared constants, sort state, $, fmt, norm/esc/hl text helpers
-public/js/board.js       Board: chips, search, table, dossier (draw, openTeam)
+public/js/board.js       Program Database (ids/keys still say board): chips, search, table, dossier (draw, openTeam)
 public/js/tabs.js        TABS, TSLUG, showTab, tabSlide, setRail
 public/js/picker.js      combo() program picker, teamMatches
 public/js/coaches.js     Coach Database (COACHES, cDraw)
+public/js/players.js     Player Database (PLAYERS, plDraw, plOpen)
 public/js/randomizer.js  Randomizer
 public/js/pipelines.js   Program Pipelines map
 public/js/house.js       House Rules, custom rules/presets, rule editor, hMap region maps
@@ -53,14 +55,15 @@ Everything else is derived from `DATA` at load (`confs`, `COACHES`, `PIPES`, `PO
 
 ## Tabs and their code
 
-Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is one row of nine tabs (`.tabs`, a tablist of `.tab` buttons: My Dynasty, Board, Program Pipelines, Coach Database, Randomizer, House Rules, Recruiting & NIL, Sliders, Abilities); Board opens by default, arrow keys follow the row order, and on phones the row scrolls sideways; picking a tab slides it to the row's left edge (`tabSlide`, no-op when all tabs fit). The owner removed the grouped two-row navigation (Sept 2026); don't bring it back. A new tab needs a `TABS` entry, a `TSLUG` entry and a `.tab` button. The open tab is kept in the URL hash (`#abilities`, Board = bare URL) via `showTab`, so refresh and shared links reopen it.
+Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is one row of ten tabs (`.tabs`, a tablist of `.tab` buttons: My Dynasty, Program Database, Program Pipelines, Coach Database, Player Database, Randomizer, House Rules, Recruiting & NIL, Sliders, Abilities); Program Database opens by default, arrow keys follow the row order, and on phones the row scrolls sideways; picking a tab slides it to the row's left edge (`tabSlide`, no-op when all tabs fit). The owner removed the grouped two-row navigation (Sept 2026); don't bring it back. A new tab needs a `TABS` entry, a `TSLUG` entry and a `.tab` button. The open tab is kept in the URL hash (`#abilities`, Program Database = bare URL) via `showTab`, so refresh and shared links reopen it.
 
 | Tab | Purpose | Main functions |
 |---|---|---|
-| Board | Sortable team table (`COLS`), conference chips, search | `rowsFor`, `draw`, `openTeam`/`body` (dossier) |
+| Program Database (`#tabBoard`, key `board`, bare URL; renamed from "Board" Sept 2026) | Sortable team table (`COLS`), conference chips, search | `rowsFor`, `draw`, `openTeam`/`body` (dossier) |
 | My Dynasty | Saved dynasties (`D`, `dyn-v1`): a snapshot of a team + its House rules ids + source label. Created from House rules ("Save to My Dynasty", `#hdyn`) or the tab button (`dAdd`). The view shows the rules read-only, then `recBody(t, true)` (the Recruiting & NIL plan, renumbered, with every pipeline). "Edit rules in House Rules" loads it into `H` with `H.dyn` set, and House rules shows "Update dynasty" (`#hdupd`) while the team matches. Archive/restore flips `arch`; no delete. Back up / Restore (`#dBackup`, `#dRestore`): one JSON file `{app:"cfb-dynasty-board", v:1, made, data:{key: raw localStorage string}}` with the keys in `BAKKEYS` (not `coach-v1`). Restore replaces (keys missing from the file are cleared), asks first via `confirm` when dynasties or custom rules exist, then reloads so the normal loaders run; `dyn-restored` in sessionStorage shows the note after reload | `dDraw`, `dAdd`, `hDyn`, `dBackupData`, `dReadBackup`, `dRestoreText` |
 | Randomizer | Filtered random team roll (`RG`, `rSel`) | `rPool`, `rDraw`, `rollIt` |
 | Coaches | Sortable staff table (`CCOLS`) | `cDraw` |
+| Player Database (`#tabPlay`, `#players`) | Every roster player from `t.r` (`PLAYERS`: name, pos, yr, ovr, dev, spd, team, conf). Position chips reuse the dossier's `POSG`; conference, class year (prefix match, so `SR*` redshirts count) and dev trait selects stack with the search. Sortable headers (`PLCOLS`; year sorts in class order via `PLYR`). Draws 200 rows at a time with "Show more" (`PLPAGE`). A row opens the player card (`#plc`): all 53 EA ratings in `PLGRP` groups (the position's group first via `PLFIRST`), EA overall for the ratings week, height/weight/jersey/hometown, and an Open-team button. Every rating except speed is also a sortable table column after Spd (`PLRCOLS`, short game-style labels in `PLABR`, `r:<key>` sort keys), inside one scroll box (`.plscroll`) where the header row and the Pos + Player columns stay pinned. Extended ratings come from `js/data/ratings.js` (`RATINGS.p[team][rosterName]`), loaded by `plRatings()` when this tab opens (`showTab` calls `plShow`), never by other tabs; ~800 deep-roster players have none. The table's Ovr/Spd stay the site's roster values; the card shows EA's current-week overall. Global search includes every player; `plOpen(name)` lands here with other filters cleared | `plDraw`, `plList`, `plOpen`, `plCard`, `plRatings` |
 | Pipelines | Recruiting pipeline map per team | `buildMap`, `paintMap`, `pDraw`, `pSet` |
 | House rules | Generates self-imposed challenge rules for a team | `hDraw`, `hDeal`, `hApplyPreset`, `hToggleRule`, `hText` |
 | Recruiting & NIL | Program-level, year-agnostic strategy (users may take a job in year 5): prestige band (`ARCH`), NIL rank, lasting vs earned grades (`GLAST`), tier-colored pipelines, checklist. Deliberately avoids this save's roster/uncommitted NIL. Follows the House rules team unless the `#rLink` toggle is off (saved in `rec-v1`). Mechanics cited on the page; `recHours` interpolates between the only two published points | `recDraw`, `recPick` |
@@ -69,6 +72,10 @@ Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS`
 | Sliders | Matt10's slider sets, hand-transcribed from his forum image (`SLDIFF`, `SLPEN`, `SLFIX`). Rows with a third value are highlighted as changed from the previous version (old value only in the cell's hover title). Update the version, date and `#slNew` notes when he posts a new set | `slDraw` |
 
 House rules are the most intricate part: `HRULES` (built-in rules, each with category `c` from `HCATS` and strain level `l` 1-3), `HPRE` presets, `HSTRICT` difficulty weights, `HTOK` text tokens filled per team by `fillTok`, and `HMAPS` region helpers. User-created rules/presets live in `HU` and merge in via `huSync`.
+
+## EA extended ratings
+
+`public/js/data/ratings.js` is copied from EA's public College Football 27 ratings pages (owner's decision, Sept 2026, after being told EA's User Agreement section 2 prohibits copying EA content without authorization). EA updates ratings weekly. Refresh with `node tools/ea-ratings.mjs` (one request per team, 1 second apart, ~2.5 minutes; raw download cached in `.ea-cache/`, which is git-ignored), then run `node check.mjs`. Team ids and EA url names are in `tools/ea-teams.json`; EA-to-site team name differences are the `TA` map in the script. Never edit ratings.js by hand.
 
 ## Persistence
 
@@ -83,7 +90,7 @@ Back up / Restore on My Dynasty copies `dyn-v1`, `house-v1`, `house-custom-v1`, 
 
 ## Verifying changes
 
-`check.mjs` is the test. It serves the page's folder from a small local http server (so the linked stylesheet and scripts load like on the live site) and opens it in headless Chrome with an empty profile, clicks through all nine tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error and on any file the page requests from its own folder that comes back missing (a broken `<script src>`, css or icon path). It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
+`check.mjs` is the test. It serves the page's folder from a small local http server (so the linked stylesheet and scripts load like on the live site) and opens it in headless Chrome with an empty profile, clicks through all ten tabs, opens a dossier, searches, rolls, steps the pipeline map, deals house rules, and spot-checks slider values. It fails on any JS error and on any file the page requests from its own folder that comes back missing (a broken `<script src>`, css or icon path). It needs Node 22+ and Google Chrome, with no npm install. Run it after every change:
 
 ```bash
 node check.mjs

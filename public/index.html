@@ -30,6 +30,10 @@
     <input id="gsq" type="search" placeholder="Team, coach, ability, rule or tab" autocomplete="off" spellcheck="false" role="combobox" aria-controls="gsl" aria-expanded="true" aria-autocomplete="list"><kbd>Esc</kbd></label>
   <ul class="cb" id="gsl" role="listbox"></ul>
 </dialog>
+<dialog class="gs plc" id="plc" aria-labelledby="plcN">
+  <div class="ks-h"><h2 id="plcN"></h2><button class="ib" id="plcX" type="button" aria-label="Close"><kbd>Esc</kbd></button></div>
+  <div id="plcB"></div>
+</dialog>
 <dialog class="gs ks" id="ks" aria-labelledby="ksT">
   <div class="ks-h"><h2 id="ksT">Keyboard shortcuts</h2><button class="ib" id="ksX" type="button" aria-label="Close"><kbd>Esc</kbd></button></div>
   <div id="ksL"></div>
@@ -37,9 +41,10 @@
 <nav class="nav" aria-label="Sections">
 <div class="tabs" role="tablist" aria-label="Views">
   <button class="tab" role="tab" id="tabDyn" aria-controls="viewDyn" aria-selected="false" tabindex="-1" type="button">My Dynasty</button>
-  <button class="tab" role="tab" id="tabBoard" aria-controls="viewBoard" aria-selected="true" type="button">Board</button>
+  <button class="tab" role="tab" id="tabBoard" aria-controls="viewBoard" aria-selected="true" type="button">Program Database</button>
   <button class="tab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
   <button class="tab" role="tab" id="tabCoach" aria-controls="viewCoach" aria-selected="false" tabindex="-1" type="button">Coach Database</button>
+  <button class="tab" role="tab" id="tabPlay" aria-controls="viewPlay" aria-selected="false" tabindex="-1" type="button">Player Database</button>
   <button class="tab" role="tab" id="tabRand" aria-controls="viewRand" aria-selected="false" tabindex="-1" type="button">Randomizer</button>
   <button class="tab" role="tab" id="tabHouse" aria-controls="viewHouse" aria-selected="false" tabindex="-1" type="button">House Rules</button>
   <button class="tab" role="tab" id="tabRec" aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
@@ -117,6 +122,36 @@
       </table>
     </div>
     <div class="empty" id="cempty" hidden>No coach matches that search.</div>
+  </div>
+</section>
+
+<section id="viewPlay" role="tabpanel" aria-labelledby="tabPlay" hidden>
+  <div class="rail">
+    <div class="rail-in">
+      <label class="search">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>
+        <input id="plq" type="search" placeholder="Search player or school" aria-label="Search player or school" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="chips" id="plpos" role="group" aria-label="Filter by position"></div>
+      <div class="plsel">
+        <select id="plconf" aria-label="Conference"></select>
+        <select id="plyr" aria-label="Class year"><option value="">All years</option><option>FR</option><option>SO</option><option>JR</option><option>SR</option></select>
+        <select id="pldev" aria-label="Dev trait"><option value="">Any dev trait</option><option value="1">Impact</option><option value="2">Star</option><option value="3">Elite</option><option value="0">Normal</option></select>
+      </div>
+      <span class="spacer"></span>
+      <span class="sub" aria-live="polite"><b class="mono" id="plN" style="color:var(--text)">11,730</b> players</span>
+    </div>
+  </div>
+  <div class="sheet">
+    <div class="scroller plscroll" tabindex="0" aria-label="Player ratings table, scrolls sideways">
+      <table class="ctab ptab">
+        <thead><tr id="plhrow"></tr></thead>
+        <tbody id="plrows"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="plempty" hidden>No player matches those filters.</div>
+    <button class="rmore" id="plmore" type="button" hidden></button>
+    <p class="hint plsrc">Scroll sideways for every rating, or click a player for their card. Ratings after Spd are EA SPORTS College Football 27 <span id="plIt">Week 3</span> ratings; a few deep-roster players don't have them.</p>
   </div>
 </section>
 
@@ -295,6 +330,7 @@
 <script src="js/tabs.js"></script>
 <script src="js/picker.js"></script>
 <script src="js/coaches.js"></script>
+<script src="js/players.js"></script>
 <script src="js/randomizer.js"></script>
 <script src="js/pipelines.js"></script>
 <script src="js/house.js"></script>

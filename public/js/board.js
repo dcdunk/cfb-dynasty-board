@@ -1,4 +1,4 @@
-// Board tab: conference chips and search, the sortable team table, and the team dossier drawer.
+// Program Database tab (internally "board": #tabBoard, #viewBoard): conference chips and search, the sortable team table, and the team dossier drawer.
 /* ---- controls ---- */
 const confs = ["All", ...[...new Set(DATA.map(t => t.c))].sort()];
 $("#chips").innerHTML = confs.map(c =>

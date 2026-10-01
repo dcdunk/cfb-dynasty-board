@@ -241,7 +241,37 @@ h3{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(-
 .tab[aria-selected="true"]{color:var(--text); border-bottom-color:var(--accent)}
 .tabs .tab{font-size:13.5px; padding:11px 12px 10px}
 .tab:focus-visible{outline:2px solid var(--focus); outline-offset:-2px}
-#viewBoard .rail, #viewCoach .rail{margin-top:0}
+#viewBoard .rail, #viewCoach .rail, #viewPlay .rail{margin-top:0}
+.plsel{display:flex; flex-wrap:wrap; gap:6px}
+.plsel select{font:inherit; font-size:12.5px; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--text); padding:5px 8px}
+.ptab .yr{font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--dim)}
+#plmore{display:block; margin:14px auto 0}
+.plsrc{margin-top:16px}
+/* Player Database: one scroll box (both directions) so the header row and the Pos + Player columns stay pinned */
+.plscroll{overflow:auto; max-height:max(60vh, calc(100vh - var(--railh,47px) - 40px)); border-bottom:1px solid var(--line)}
+#viewPlay thead th{position:sticky; top:0}
+.ptab th:nth-child(1), .ptab td:nth-child(1){position:sticky; left:0; width:56px; min-width:56px; max-width:56px; background:var(--ground); z-index:2}
+.ptab th:nth-child(2), .ptab td:nth-child(2){position:sticky; left:56px; min-width:210px; background:var(--ground); z-index:2; box-shadow:1px 0 0 var(--line)}
+#viewPlay thead th:nth-child(-n+2){z-index:22}
+@media (max-width:600px){.ptab th:nth-child(2), .ptab td:nth-child(2){min-width:140px; max-width:140px; white-space:normal} .ptab th:nth-child(1), .ptab td:nth-child(1){width:44px; min-width:44px; max-width:44px} .ptab th:nth-child(2), .ptab td:nth-child(2){left:44px}}
+.ptab tbody tr:hover td{background:var(--raise)}
+.ptab th.gs0, .ptab td.gs0{border-left:1px solid var(--line)}
+.ptab td.rt{color:var(--dim)}
+/* player card */
+.gs.plc{width:min(720px,calc(100% - 32px)); padding:6px 18px 18px; max-height:calc(100vh - 80px); overflow:auto}
+.plc-sub{color:var(--dim); font-size:13px; margin:0 0 12px}
+.plc-top{display:flex; flex-wrap:wrap; gap:8px 22px; align-items:flex-end; padding:10px 0 14px; border-bottom:1px solid var(--line)}
+.plc-top div{display:flex; flex-direction:column}
+.plc-top b{font:590 22px "JetBrains Mono",monospace}
+.plc-top span{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
+.plc-top .plc-go{margin-left:auto}
+.plc-g{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:4px 22px}
+.plc h3{grid-column:1 / -1; margin:16px 0 4px; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:510}
+.plc-r{display:grid; grid-template-columns:1fr 28px 64px; align-items:center; gap:8px; font-size:12.5px; padding:2px 0}
+.plc-r b{font:510 12.5px "JetBrains Mono",monospace; text-align:right}
+.plc-r i{height:5px; border-radius:3px; background:var(--hair); position:relative; overflow:hidden}
+.plc-r i::after{content:""; position:absolute; inset:0 auto 0 0; width:var(--v); background:var(--accent)}
+.plc-none{color:var(--dim); font-size:13px; padding:14px 0}
 .ctab{min-width:760px}
 .ctab .role{font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--dim); width:64px}
 .ctab td.l{white-space:normal}

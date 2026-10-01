@@ -54,7 +54,7 @@ const inPage = async () => {
   const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const fails = [], ok = (cond, msg) => { if (!cond) fails.push(msg); };
-  const views = { tabBoard: "viewBoard", tabDyn: "viewDyn", tabRand: "viewRand", tabCoach: "viewCoach", tabPipe: "viewPipe", tabHouse: "viewHouse", tabRec: "viewRec", tabSlide: "viewSlide", tabAb: "viewAb" };
+  const views = { tabBoard: "viewBoard", tabDyn: "viewDyn", tabRand: "viewRand", tabCoach: "viewCoach", tabPlay: "viewPlay", tabPipe: "viewPipe", tabHouse: "viewHouse", tabRec: "viewRec", tabSlide: "viewSlide", tabAb: "viewAb" };
   const open = async tab => {
     $("#" + tab).click(); await wait(50);
     for (const [t, v] of Object.entries(views)) ok($("#" + v).hidden === (t !== tab), `${tab}: #${v} visibility wrong`);
@@ -86,16 +86,16 @@ const inPage = async () => {
     localStorage.removeItem("theme-v1"); if (t0) root.dataset.theme = t0; else delete root.dataset.theme; }
   const wm = getComputedStyle($(".wordmark"));
   ok(/^Inter/.test(wm.fontFamily) && parseFloat(wm.fontSize) >= 36 && getComputedStyle($(".wordmark em")).fontStyle === "normal", `Theme: wordmark is ${wm.fontFamily} ${wm.fontSize}`);
-  // Navigation: one row of nine tabs, all visible; arrow keys move along the row and wrap.
+  // Navigation: one row of ten tabs, all visible; arrow keys move along the row and wrap.
   const tabs = () => [...$$(".tabs .tab")].filter(b => !b.hidden && b.offsetParent).map(b => b.id).join(",");
-  ok(tabs() === "tabDyn,tabBoard,tabPipe,tabCoach,tabRand,tabHouse,tabRec,tabSlide,tabAb" && !$("#viewBoard").hidden && curTab === "board", `Nav: expected all nine tabs with Board open, got ${tabs()}`);
+  ok(tabs() === "tabDyn,tabBoard,tabPipe,tabCoach,tabPlay,tabRand,tabHouse,tabRec,tabSlide,tabAb" && !$("#viewBoard").hidden && curTab === "board", `Nav: expected all ten tabs with Board open, got ${tabs()}`);
   ok(!$("#tabGroups") && !$("#subtabs") && $(".tabs").getAttribute("role") === "tablist", "Nav: grouped navigation should be gone");
   $("#tabAb").click(); await wait(50); ok(!$("#viewAb").hidden && $("#tabAb").getAttribute("aria-selected") === "true", "Nav: clicking Abilities should open it");
   $("#tabAb").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
   ok(curTab === "dyn", `Nav: ArrowRight from Abilities should wrap to My Dynasty, got ${curTab}`);
   $("#tabDyn").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-  ok(curTab === "board", `Nav: ArrowRight from My Dynasty should go to Board, got ${curTab}`);
-  ok(tabs().split(",").length === 9, "Nav: tabs should stay visible after switching");
+  ok(curTab === "board", `Nav: ArrowRight from My Dynasty should go to Program Database, got ${curTab}`);
+  ok(tabs().split(",").length === 10, "Nav: tabs should stay visible after switching");
   // Narrow row (phone width): picking a tab slides it to the left edge so later tabs come into view.
   const tRow = $(".tabs"); tRow.style.width = "340px"; $("#tabCoach").click(); await wait(700);
   const gap = $("#tabCoach").getBoundingClientRect().left - tRow.getBoundingClientRect().left - parseFloat(getComputedStyle(tRow).paddingLeft);
@@ -132,6 +132,50 @@ const inPage = async () => {
   ok($("#crows mark.hit")?.innerText.toLowerCase() === part.toLowerCase(), "Coaches: match not highlighted");
   $("#cq").value = "temple"; $("#cq").dispatchEvent(new Event("input"));
   ok($$("#crows tr").length >= 3 && [...$$("#crows tr")].every(r => r.dataset.n === "Temple"), "Coaches: school search 'temple' should list Temple's staff");
+  // Player Database: every roster player, filters stack, sorting, paging, a row opens the team, global search finds players.
+  ok(typeof RATINGS === "undefined", "Players: other tabs should never load the ratings file");
+  await open("tabPlay"); await plRatings(); await wait(50);
+  const plRows = () => [...$$("#plrows tr")];
+  ok(PLAYERS.length === DATA.reduce((n, t) => n + t.r.length, 0) && $("#plN").textContent === fmt(PLAYERS.length) && plRows().length === 200 && !$("#plmore").hidden,
+    `Players: should count every player and draw the first 200, got ${$("#plN").textContent} / ${plRows().length}`);
+  ok(+plRows()[0].cells[5].textContent >= +plRows()[199].cells[5].textContent, "Players: default sort should be overall, high to low");
+  $("#plmore").click(); ok(plRows().length === 400, "Players: Show more should add 200 rows");
+  $('#plpos [data-p="QB"]').click(); $("#plconf").value = "SEC"; $("#plconf").dispatchEvent(new Event("change"));
+  $("#plyr").value = "SO"; $("#plyr").dispatchEvent(new Event("change"));
+  const qbs = PLAYERS.filter(p => p.pos === "QB" && p.conf === "SEC" && p.yr.startsWith("SO"));
+  ok(plRows().length === qbs.length && qbs.length > 0 && plRows().every(r => r.cells[0].textContent === "QB" && r.cells[3].textContent === "SEC" && r.cells[4].textContent.startsWith("SO")),
+    `Players: QB + SEC + SO filters should stack, got ${plRows().length} vs ${qbs.length}`);
+  $('#plhrow [data-k="spd"]').click(); ok(+plRows()[0].cells[6].textContent === Math.max(...qbs.map(p => p.spd)), "Players: clicking Spd should sort by speed");
+  $('#plhrow [data-k="yr"]').click(); $("#plyr").value = ""; $("#plyr").dispatchEvent(new Event("change"));
+  const yrs = plRows().map(r => ["FR", "SO", "JR", "SR"].indexOf(r.cells[4].textContent.slice(0, 2)));
+  ok(yrs.every((y, i) => !i || y >= yrs[i - 1]) && yrs[0] === 0 && yrs.at(-1) === 3, `Players: year should sort in class order FR to SR, got ${yrs.join("")}`);
+  const star = PLAYERS.find(p => p.dev === 3);
+  plOpen(star.name); ok(curTab === "play" && plRows().some(r => r.cells[1].textContent.includes(star.name)) && $("#plconf").value === "" && plPos === "All", "Players: plOpen should show that player with filters cleared");
+  // Extended ratings (EA, js/data/ratings.js): load on demand, a row opens the player card, the card's button opens the team.
+  ok(typeof RATINGS === "object", "Players: opening the tab should have loaded the ratings file");
+  const sm = PLAYERS.find(p => p.name === star.name && p.team === star.team);
+  await plCard(sm.i); ok($("#plc").open, "Players: a card should open");
+  ok(PLGRP.flatMap(g => g[1]).sort().join() === [...RATINGS.k].sort().join(), "Players: every rating key should be in exactly one card group");
+  const rr = RATINGS.p[sm.team]?.[sm.name];
+  ok(rr && rr[5].length === RATINGS.k.length * 2 && $$("#plcB .plc-r").length === RATINGS.k.length && $("#plcB .plc-top b").textContent === String(rr[0]),
+    `Players: card for ${sm.name} should show all ${RATINGS.k.length} ratings and EA's overall`);
+  ok($("#plcB h3").textContent === PLFIRST[sm.pos], `Players: card should lead with the ${PLFIRST[sm.pos]} group for a ${sm.pos}`);
+  const nRated = Object.values(RATINGS.p).reduce((n, o) => n + Object.keys(o).length, 0);
+  ok(nRated > 10800 && Object.keys(RATINGS.p).length === DATA.length, `Players: ratings should cover 10,800+ players on all teams, got ${nRated}`);
+  $("#plcB [data-team]").click(); await wait(50); ok(!$("#plc").open && $("#dname").innerText.trim() === sm.team, "Players: Open team on the card should open the dossier"); closeTeam(); await wait(50);
+  plOpen(""); plRows()[0].click(); await wait(80); ok($("#plc").open && $("#plcN").textContent.includes(PLAYERS[+plRows()[0].dataset.i].name), "Players: clicking a row should open that player's card"); $("#plc").close();
+  const unrated = PLAYERS.find(p => !RATINGS.p[p.team]?.[p.name]); await plCard(unrated.i); ok(/doesn't list/.test($("#plcB").textContent), "Players: unrated players should say so"); $("#plc").close();
+  // Every rating is a sortable column after Spd; Pos and Player stay pinned while the table scrolls sideways.
+  const nCols = 7 + RATINGS.k.length - 1;
+  ok($$("#plhrow th").length === nCols && plRows()[0].cells.length === nCols, `Players: expected ${nCols} columns (all ratings but speed), got ${$$("#plhrow th").length}`);
+  $('#plhrow [data-k="r:press"]').click(); await wait(50);
+  const prc = [...$$("#plhrow th")].findIndex(th => th.dataset.k === "r:press"), pr = plRows().map(r => +r.cells[prc].textContent);
+  ok(pr[0] === Math.max(...PLAYERS.map(p => plStat(p, "press") ?? -1)) && pr.every((v, i) => !i || v <= pr[i - 1]), `Players: clicking PRS should sort by press, high to low, got ${pr.slice(0, 3)}`);
+  const sc = $(".plscroll"); sc.scrollLeft = 2000; await wait(30);
+  ok(sc.scrollLeft > 0 && Math.abs(plRows()[0].cells[1].getBoundingClientRect().left - sc.getBoundingClientRect().left - 56) < 2, "Players: the Player column should stay pinned when scrolling sideways");
+  sc.scrollLeft = 0; $('#plhrow [data-k="ovr"]').click(); await wait(30);
+  $("#plq").value = "zzqx"; $("#plq").dispatchEvent(new Event("input")); ok(!$("#plempty").hidden && $("#plmore").hidden, "Players: no matches should show the empty message");
+  plOpen("");
   ok($("#crows td.sub mark.hit")?.innerText === "Temple", "Coaches: school match not highlighted");
   $("#cq").value = ""; $("#cq").dispatchEvent(new Event("input"));
 
@@ -167,7 +211,7 @@ const inPage = async () => {
     for (const k of [...keys, "Enter"]) $("#gsq").dispatchEvent(new KeyboardEvent("keydown", { key: k })); await wait(50);
     ok(!$("#gs").open, `Search: Enter on "${q}" should close the dialog`); };
   const gsTop = q => { $("#gsq").value = q; $("#gsq").dispatchEvent(new Event("input")); return $("#gsl [data-i] .cb-n")?.innerText; };
-  $("#gs").showModal(); ok(gsTop("") === "My Dynasty" && $$("#gsl [data-i]").length === 9, "Search: empty query should list the nine tabs");
+  $("#gs").showModal(); ok(gsTop("") === "My Dynasty" && $$("#gsl [data-i]").length === 10, "Search: empty query should list the ten tabs");
   ok(gsTop("ore") === "Oregon", `Search: "ore" should rank Oregon first, got ${gsTop("ore")}`);
   ok(gsTop("zzqx") === undefined && $("#gsl .cb-none"), "Search: no empty-state message"); $("#gs").close();
   await gs("slid"); ok(curTab === "slide", `Search: "slid" should open Sliders, got ${curTab}`);
@@ -185,6 +229,9 @@ const inPage = async () => {
   ok($("#ks").open && [...$$("#ksL h3")].map(h => h.textContent).join("|") === "Anywhere|Tabs|Tables and team details|Search and program boxes|Coach" && $$("#ksL kbd").length > 15, "Shortcuts: ? should open the full list");
   $("#ksX").click(); ok(!$("#ks").open, "Shortcuts: close button should close it");
   await gs("keyboard"); ok($("#ks").open, "Shortcuts: searching 'keyboard' should open the panel"); $("#ks").close();
+  const uniq = PLAYERS.find(p => p.dev === 3 && PLAYERS.filter(q => norm(q.name) === norm(p.name)).length === 1 && !COACHES.some(c => norm(c.name).startsWith(norm(p.name))) && !DATA.some(t => norm(t.n).startsWith(norm(p.name))));
+  await gs(uniq.name); ok(curTab === "play" && $("#plq").value === uniq.name && $$("#plrows tr").length >= 1, `Players: global search for ${uniq.name} should open Player Database`);
+  plOpen(""); showTab("board");
   $("#cq").value = ""; cQuery = ""; cDraw(); $("#abQ").value = ""; abM = "player"; abDraw(); showTab("board");
 
   await open("tabHouse");
@@ -459,5 +506,5 @@ if (wr.main || wr.assets?.run_worker_first || wr.assets?.directory !== "./public
 if (!["cfbdynastyboard.com", "www.cfbdynastyboard.com"].every(h => wr.routes?.some(r => r.pattern === h && r.custom_domain))) fails.push("wrangler.jsonc: both custom domains must stay attached");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log(`PASS: all 9 tabs, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, static deploy config. No JS errors.`);
+console.log(`PASS: all 10 tabs, player database, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, static deploy config. No JS errors.`);
 process.exit(0);
