@@ -174,6 +174,15 @@ const inPage = async () => {
   const sc = $(".plscroll"); sc.scrollLeft = 2000; await wait(30);
   ok(sc.scrollLeft > 0 && Math.abs(plRows()[0].cells[1].getBoundingClientRect().left - sc.getBoundingClientRect().left - 56) < 2, "Players: the Player column should stay pinned when scrolling sideways");
   sc.scrollLeft = 0; $('#plhrow [data-k="ovr"]').click(); await wait(30);
+  // Program dropdown shows one team's roster; Ovr is EA's current-week overall where EA lists the player.
+  plOpen(""); $("#plteam").value = "Temple"; $("#plteam").dispatchEvent(new Event("change"));
+  const tem = DATA.find(t => t.n === "Temple").r.length;
+  ok($$("#plteam option").length === DATA.length + 1 && plRows().length === Math.min(tem, 200) && plRows().every(r => r.cells[2].textContent === "Temple") && $("#plN").textContent === String(tem),
+    `Players: picking Temple should list its ${tem} players, got ${plRows().length}`);
+  ok(plRows().every(r => { const p = PLAYERS[+r.dataset.i], e = RATINGS.p[p.team]?.[p.name]; return +r.cells[5].textContent === (e ? e[0] : p.ovr0); }), "Players: Ovr should be EA's overall, or the roster value when EA doesn't list the player");
+  ok(plRows().every(r => { const p = PLAYERS[+r.dataset.i], e = RATINGS.p[p.team]?.[p.name]; return +r.cells[6].textContent === (e ? plStat(p, "speed") : p.spd0); }), "Players: Spd should be EA's speed, or the roster value when EA doesn't list the player");
+  ok(PLAYERS.some(p => p.ovr0 != null && p.ovr !== p.ovr0), "Players: some overalls should have changed to EA's current week");
+  plOpen(""); ok($("#plteam").value === "", "Players: plOpen should clear the program filter");
   $("#plq").value = "zzqx"; $("#plq").dispatchEvent(new Event("input")); ok(!$("#plempty").hidden && $("#plmore").hidden, "Players: no matches should show the empty message");
   plOpen("");
   ok($("#crows td.sub mark.hit")?.innerText === "Temple", "Coaches: school match not highlighted");

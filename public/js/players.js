@@ -5,23 +5,24 @@ const PLAYERS = DATA.flatMap(t => t.r.map(p => ({name:p[0], pos:p[1], yr:p[2], o
 PLAYERS.forEach((p, i) => p.i = i);
 const PLCOLS = [
   {k:"pos", t:"Pos", cls:"l"}, {k:"name", t:"Player", cls:"l"}, {k:"team", t:"School", cls:"l"}, {k:"conf", t:"Conf", cls:"l"},
-  {k:"yr", t:"Yr", cls:"l"}, {k:"ovr", t:"Ovr"}, {k:"spd", t:"Spd"}];
+  {k:"yr", t:"Yr", cls:"l"}, {k:"ovr", t:"Ovr", title:"Overall: EA's current ratings week when EA lists the player"}, {k:"spd", t:"Spd", title:"Speed: EA's current ratings week when EA lists the player"}];
 const PLYR = ["FR", "SO", "JR", "SR"]; // class order for sorting by year (a trailing * is a redshirt)
 const PLPAGE = 200; // rows drawn at a time; "Show more" adds another page
 let plKey = "ovr", plDir = -1, plPos = "All", plQuery = "", plShown = PLPAGE;
 $("#plpos").innerHTML = POSG.map(g => `<button class="chip" type="button" data-p="${g[0]}" aria-pressed="${g[0] === "All"}">${g[0] === "All" ? "All positions" : g[0]}</button>`).join("");
+$("#plteam").innerHTML = `<option value="">All programs</option>` + DATA.map(t => t.n).sort((a, b) => a.localeCompare(b)).map(n => `<option>${esc(n)}</option>`).join("");
 $("#plconf").innerHTML = `<option value="">All conferences</option>` + [...new Set(DATA.map(t => t.c))].sort().map(c => `<option>${esc(c)}</option>`).join("");
 const plRedraw = () => { plShown = PLPAGE; plDraw(); };
 $("#plpos").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return;
   plPos = b.dataset.p; [...$("#plpos").children].forEach(x => x.setAttribute("aria-pressed", x === b)); plRedraw(); });
 $("#plq").addEventListener("input", e => { plQuery = norm(e.target.value.trim()); plRedraw(); });
-for (const id of ["#plconf", "#plyr", "#pldev"]) $(id).addEventListener("change", plRedraw);
+for (const id of ["#plteam", "#plconf", "#plyr", "#pldev"]) $(id).addEventListener("change", plRedraw);
 $("#plhrow").addEventListener("click", e => { const th = e.target.closest("th"); if (!th) return;
   const k = th.dataset.k; if (k === plKey) plDir *= -1; else { plKey = k; plDir = k === "ovr" || k === "spd" || k.startsWith("r:") ? -1 : 1; } plRedraw(); });
 $("#plmore").addEventListener("click", () => { plShown += PLPAGE; plDraw(); });
 function plList(){
-  const grp = POSG.find(g => g[0] === plPos)[1], conf = $("#plconf").value, yr = $("#plyr").value, dev = $("#pldev").value;
-  return PLAYERS.filter(p => (!grp || grp.includes(p.pos)) && (!conf || p.conf === conf) && (!yr || p.yr.startsWith(yr)) && (dev === "" || p.dev === +dev)
+  const grp = POSG.find(g => g[0] === plPos)[1], team = $("#plteam").value, conf = $("#plconf").value, yr = $("#plyr").value, dev = $("#pldev").value;
+  return PLAYERS.filter(p => (!grp || grp.includes(p.pos)) && (!team || p.team === team) && (!conf || p.conf === conf) && (!yr || p.yr.startsWith(yr)) && (dev === "" || p.dev === +dev)
       && (!plQuery || norm(p.name).includes(plQuery) || norm(p.team).includes(plQuery)))
     .sort((a, b) => { const v = p => plKey === "yr" ? PLYR.indexOf(p.yr.slice(0, 2)) : plKey.startsWith("r:") ? plStat(p, plKey.slice(2)) ?? -1 : p[plKey];
       const x = v(a), y = v(b), d = typeof x === "string" ? x.localeCompare(y) : x - y;
@@ -50,7 +51,7 @@ function plDraw(){
 // Global search and other tabs land here with a name in the search box and every other filter cleared.
 function plOpen(q){
   plPos = "All"; [...$("#plpos").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.p === "All"));
-  for (const id of ["#plconf", "#plyr", "#pldev"]) $(id).value = "";
+  for (const id of ["#plteam", "#plconf", "#plyr", "#pldev"]) $(id).value = "";
   $("#plq").value = q; plQuery = norm(q); plShown = PLPAGE; showTab("play"); plDraw();
 }
 $("#plrows").addEventListener("click", e => { const tr = e.target.closest("tr"); if (tr) plCard(+tr.dataset.i); });
@@ -92,7 +93,7 @@ let plRatP = null;
 function plRatings(){
   return plRatP ||= new Promise(r => { if (typeof RATINGS === "object") return r(RATINGS);
     const s = document.createElement("script"); s.src = "js/data/ratings.js";
-    s.onload = () => { $("#plIt").textContent = RATINGS.it; r(RATINGS); }; s.onerror = () => { plRatP = null; r(null); }; document.head.append(s); });
+    s.onload = () => { $("#plIt").textContent = RATINGS.it; plUseEaOvr(); r(RATINGS); }; s.onerror = () => { plRatP = null; r(null); }; document.head.append(s); });
 }
 // [ovr, height, weight, jersey, hometown, ratings string] for a PLAYERS row, or undefined if EA doesn't list them.
 const plRow = p => typeof RATINGS === "object" ? RATINGS.p[p.team]?.[p.name] : undefined;
@@ -117,10 +118,13 @@ $("#plcX").addEventListener("click", () => $("#plc").close());
 $("#plc").addEventListener("click", e => { if (e.target === $("#plc")) $("#plc").close(); });
 $("#plc").addEventListener("keydown", e => { if (e.key === "Escape") e.stopPropagation(); });
 function plHead(){
-  $("#plhrow").innerHTML = PLCOLS.map(c => `<th class="${c.cls || ""}" data-k="${c.k}" scope="col">${c.t}<span class="car"></span></th>`).join("")
+  $("#plhrow").innerHTML = PLCOLS.map(c => `<th class="${c.cls || ""}" data-k="${c.k}" scope="col"${c.title ? ` title="${c.title}"` : ""}>${c.t}<span class="car"></span></th>`).join("")
     + (typeof RATINGS === "object" ? PLRCOLS.map(c => `<th class="${c.first ? "gs0" : ""}" data-k="r:${c.k}" scope="col" title="${c.g}: ${plLbl(c.k)}">${PLABR[c.k]}<span class="car"></span></th>`).join("") : "");
 }
 // The rating columns need js/data/ratings.js, so it loads when this tab is opened (never for other tabs). showTab calls this.
 function plShow(){ if (typeof RATINGS !== "object") plRatings().then(R => { if (R) { plHead(); plDraw(); } }); }
+// Once EA's ratings are in, the table's Ovr and Spd are EA's current week; players EA doesn't list keep the roster values (p.ovr0, p.spd0).
+function plUseEaOvr(){ for (const p of PLAYERS) { const r = plRow(p); if (p.ovr0 == null) { p.ovr0 = p.ovr; p.spd0 = p.spd; }
+  p.ovr = r ? r[0] : p.ovr0; p.spd = r ? plStat(p, "speed") : p.spd0; } }
 plHead();
 plDraw();
