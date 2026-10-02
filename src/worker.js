@@ -1,5 +1,5 @@
-// Coach's understanding step. The only Worker code on the site: wrangler.jsonc runs it first for /api/* only,
-// so every page, script and data file is still a free static-asset request.
+// The only Worker code on the site: wrangler.jsonc runs it first for /api/* only, so every page, script and data file
+// is still a free static-asset request. Two routes: /api/coach (Coach's understanding step) and /api/sync/<id> (device sync).
 // It turns a chat message into a small structured request; the browser's keyword engine still writes every answer from site data.
 // Workers AI free tier: 10,000 neurons/day. Over that, env.AI.run throws and the browser falls back to keyword-only Coach.
 
@@ -63,9 +63,34 @@ export async function understand(env, q, team){
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {status, headers: {"content-type": "application/json", "cache-control": "no-store"}});
 
+/* ---- Device sync: one encrypted blob per sync code, in D1 (table sync: id, ver, data, iv, updated).
+   The browser encrypts with a key made from the sync code and sends only a hash of the code as the id,
+   so this database never sees the code or anything readable. ver makes writes compare-and-swap:
+   a PUT names the version it started from, and a stale one gets 409 so the browser merges and tries again. ---- */
+const SYNC_ID = /^[0-9a-f]{64}$/, SYNC_MAX = 300000;   // ~300 KB of ciphertext is far more than a heavy user saves
+async function sync(req, env, id){
+  if (!SYNC_ID.test(id)) return json({error: "bad id"}, 400);
+  const {success} = await env.SYNC_RL.limit({key: req.headers.get("cf-connecting-ip") || "anon"});
+  if (!success) return json({error: "rate"}, 429);
+  if (req.method === "GET") {
+    const row = await env.DB.prepare("SELECT ver, data, iv, updated FROM sync WHERE id = ?").bind(id).first();
+    return row ? json(row) : json({error: "none"}, 404);
+  }
+  if (req.method === "DELETE") { await env.DB.prepare("DELETE FROM sync WHERE id = ?").bind(id).run(); return json({ok: true}); }
+  if (req.method !== "PUT") return json({error: "method"}, 405);
+  let b; try { b = await req.json(); } catch (e) { return json({error: "bad json"}, 400); }
+  const ver = Number.isInteger(b.ver) && b.ver >= 0 ? b.ver : -1;
+  if (ver < 0 || typeof b.data !== "string" || typeof b.iv !== "string" || b.data.length > SYNC_MAX || b.iv.length > 64) return json({error: "bad body"}, 400);
+  const now = Date.now(), r = ver === 0
+    ? await env.DB.prepare("INSERT OR IGNORE INTO sync (id, ver, data, iv, updated) VALUES (?, 1, ?, ?, ?)").bind(id, b.data, b.iv, now).run()
+    : await env.DB.prepare("UPDATE sync SET ver = ver + 1, data = ?, iv = ?, updated = ? WHERE id = ? AND ver = ?").bind(b.data, b.iv, now, id, ver).run();
+  return r.meta.changes ? json({ver: ver + 1, updated: now}) : json({error: "stale"}, 409);
+}
+
 export default {
   async fetch(req, env){
     const url = new URL(req.url);
+    if (url.pathname.startsWith("/api/sync/")) return sync(req, env, url.pathname.slice(10));
     if (url.pathname !== "/api/coach") return env.ASSETS.fetch(req);
     if (req.method !== "POST") return json({error: "POST only"}, 405);
     // Per-visitor limit so one person or bot can't spend the day's free AI allowance.

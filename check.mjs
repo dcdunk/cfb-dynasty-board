@@ -525,6 +525,50 @@ const inPage = async () => {
     closeTeam(); await wait(300); }
   $("#pOpen").click(); await wait(50);
   ok(!$("#pChat").classList.contains("on") && !document.body.classList.contains("coach-on"), "Coach: headset button should close the sidebar");
+  // Device sync, against an in-memory copy of /api/sync: encrypted storage, joining merges two devices, stale writes retry,
+  // wrong codes and deleted copies turn sync off with a message. Saved data is put back afterwards.
+  { const keep = Object.fromEntries([...SKEYS, "sync-v1"].map(k => [k, localStorage.getItem(k)])), db = new Map(); let stale = 0, reloads = 0;
+    const R = (b, st = 200) => new Response(JSON.stringify(b), {status:st});
+    window.__syncStub = async (url, o) => { const id = url.split("/").pop(), cur = db.get(id);
+      if (o.method === "GET") return cur ? R(cur) : R({error:"none"}, 404);
+      if (o.method === "DELETE") { db.delete(id); return R({ok:true}); }
+      const b = JSON.parse(o.body); if (stale) { stale--; return R({error:"stale"}, 409); }
+      if (b.ver === 0 ? cur : !cur || cur.ver !== b.ver) return R({error:"stale"}, 409);
+      db.set(id, {ver:b.ver + 1, data:b.data, iv:b.iv, updated:Date.now()}); return R({ver:b.ver + 1}); };
+    window.__syncReload = () => reloads++;
+    const dyn = (id, name) => ({id, name, team:"Temple", rules:[], src:"", made:1, arch:false});
+    localStorage.setItem("dyn-v1", JSON.stringify({list:[dyn("da", "Desk Owls")], cur:"da", arch:false})); sOff("");
+    showTab("board"); $("#syncOpen").click(); await wait(20);
+    ok(curTab === "dyn" && /^Sync/.test($("#syncLbl").textContent) && !$("#syncOpen").classList.contains("on") && document.activeElement === $("#sOn"),
+      "Sync: the masthead Sync button should open My Dynasty on the sync section");
+    await sOn();
+    ok(/[Ss]ynced/.test($("#syncLbl").textContent) && $("#syncOpen").classList.contains("on"), "Sync: the masthead button should show synced once sync is on");
+    const code = S.code, row = [...db.values()][0];
+    ok(sValid(code) && db.size === 1 && row.ver === 1 && S.ver === 1 && !/Owls|Temple|dyn-v1/.test(row.data + atob(row.data)), "Sync: turning it on should store one encrypted copy");
+    await sQr(); sDraw(); await wait(50);
+    ok($("#sCodeShow").textContent === sFmt(code) && $("#sQR svg") && /Sync is on/.test($("#dSync").textContent), "Sync: the code and its QR code should show on My Dynasty");
+    // Second device: its own dynasty, joins with the code typed in lowercase; both dynasties end up on both sides.
+    localStorage.setItem("dyn-v1", JSON.stringify({list:[dyn("db", "Phone Owls")], cur:"db", arch:false})); sOff("");
+    await sJoin(sFmt(code).toLowerCase());
+    const names = JSON.parse(localStorage.getItem("dyn-v1")).list.map(d => d.name).sort().join();
+    ok(names === "Desk Owls,Phone Owls" && reloads === 1 && [...db.values()][0].ver === 2 && S.ver === 2, `Sync: joining should merge both devices' dynasties, got ${names}, ${reloads} reloads`);
+    ok(sessionStorage.getItem("sync-note") === "1", "Sync: a merge from another device should leave the 'updated' note for after the reload");
+    // A change here while another device wrote first: the 409 makes it read, merge and write again.
+    const l = JSON.parse(localStorage.getItem("dyn-v1")); l.list.push(dyn("dc", "Third Owls")); localStorage.setItem("dyn-v1", JSON.stringify(l));
+    ok(sChanged(), "Sync: a local edit should be noticed"); stale = 1; await sSync();
+    ok(S.ver === 3 && !sChanged() && !S.err, `Sync: a stale write should retry and succeed (ver ${S.ver}, err "${S.err}")`);
+    // Merge rules: one-sided changes win, deletes on one side stick, both-sided list edits union, single values keep this device's.
+    const m = sMerge({"dyn-v1":"A", "rec-v1":"x", "abfav-v1":'["QB|A"]', "house-v1":"L"}, {"dyn-v1":"A", "rec-v1":null, "abfav-v1":'["QB|B"]', "house-v1":"R"}, {"dyn-v1":"A", "rec-v1":"x", "abfav-v1":"[]", "house-v1":"0"});
+    ok(m["rec-v1"] === null && m["abfav-v1"] === '["QB|A","QB|B"]' && m["house-v1"] === "L" && m["dyn-v1"] === "A", `Sync: merge rules wrong: ${JSON.stringify(m)}`);
+    // Wrong code, a malformed code, then a copy deleted from another device.
+    await sJoin("AAAAA-BBBBB-CCCCC-DDDDD");
+    ok(!S.code && /No synced data uses that code/.test($("#dSync").textContent), "Sync: an unknown code should say so and leave sync off");
+    await sJoin("bad"); ok(/doesn't look like a sync code/.test(S.err), "Sync: a malformed code should be rejected before any request");
+    await sJoin(code); db.clear(); await sSync();
+    ok(!S.code && /deleted from another device/.test(S.err), "Sync: a deleted copy should turn sync off here with a note");
+    window.__syncStub = null; window.__syncReload = null; sessionStorage.removeItem("sync-note");
+    for (const [k, v] of Object.entries(keep)) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
+    S = {code:"", ver:0, last:{}, at:0, err:""}; sDraw(); showTab("board"); }
   return fails;
 };
 const r = await send("Runtime.evaluate", { expression: `(${inPage})()`, awaitPromise: true, returnByValue: true });
@@ -582,8 +626,24 @@ if (wr.ai?.binding !== "AI" || !wr.ratelimits?.some(r => r.name === "COACH_RL"))
   const r5 = await W.default.fetch(post({q:""}), good), j2 = await r2.json();
   if (await r1.text() !== "asset" || j2.kind !== "plan" || j2.teams[0] !== "Oregon" || r3.status !== 429 || r4.status !== 502 || r5.status !== 400)
     fails.push(`Worker: expected asset passthrough, parsed AI JSON, 429, 502 and 400; got ${[await r1.clone().text?.(), JSON.stringify(j2), r3.status, r4.status, r5.status]}`); }
+// The sync route with a fake D1: create, read, compare-and-swap update (stale version gets 409), delete, bad ids rejected.
+{ const W = await import("./src/worker.js"), rows = new Map(), id = "a".repeat(64);
+  const DB = {prepare:sql => ({bind:(...a) => ({
+    first:async () => rows.get(a[0]) || null,
+    run:async () => { let ch = 0;
+      if (/^INSERT/.test(sql)) { if (!rows.has(a[0])) { rows.set(a[0], {ver:1, data:a[1], iv:a[2], updated:a[3]}); ch = 1; } }
+      else if (/^UPDATE/.test(sql)) { const r = rows.get(a[3]); if (r && r.ver === a[4]) { Object.assign(r, {ver:r.ver + 1, data:a[0], iv:a[1], updated:a[2]}); ch = 1; } }
+      else if (/^DELETE/.test(sql)) ch = +rows.delete(a[0]);
+      return {meta:{changes:ch}}; }})})};
+  const env = {ASSETS:{fetch:() => new Response("asset")}, SYNC_RL:{limit:async () => ({success:true})}, DB};
+  const call = (m, b, i = id) => W.default.fetch(new Request("https://x/api/sync/" + i, {method:m, ...(b ? {body:JSON.stringify(b)} : {})}), env);
+  const st = [(await call("GET")).status, (await call("PUT", {ver:0, data:"x", iv:"y"})).status, (await call("PUT", {ver:0, data:"x", iv:"y"})).status,
+    (await call("PUT", {ver:1, data:"x2", iv:"y"})).status, (await call("PUT", {ver:1, data:"x3", iv:"y"})).status, (await (await call("GET")).json()).data,
+    (await call("DELETE")).status, (await call("GET")).status, (await call("GET", null, "nope")).status, (await call("PUT", {ver:0, data:"x".repeat(300001), iv:"y"})).status].join();
+  if (st !== "404,200,409,200,409,x2,200,404,400,400") fails.push(`Worker sync route: expected 404,200,409,200,409,x2,200,404,400,400, got ${st}`); }
+if (!wr.d1_databases?.some(d => d.binding === "DB") || !wr.ratelimits?.some(r => r.name === "SYNC_RL")) fails.push("wrangler.jsonc: needs the DB (D1) binding and the SYNC_RL rate limit for sync");
 if (!["cfbdynastyboard.com", "www.cfbdynastyboard.com"].every(h => wr.routes?.some(r => r.pattern === h && r.custom_domain))) fails.push("wrangler.jsonc: both custom domains must stay attached");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log(`PASS: all 10 tabs, player database, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, Worker, deploy config. No JS errors.`);
+console.log(`PASS: all 10 tabs, player database, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, device sync, Worker, deploy config. No JS errors.`);
 process.exit(0);

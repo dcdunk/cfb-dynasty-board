@@ -10,7 +10,11 @@
   // Workers AI on the free plan: 10,000 neurons/day, about 1,100 Coach messages. Past that, calls fail and Coach falls back to keywords.
   "ai": { "binding": "AI" },
   // Per visitor (IP): 20 Coach AI calls a minute.
-  "ratelimits": [{ "name": "COACH_RL", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } }],
+  // Sync calls per visitor (IP): 60 a minute.
+  "ratelimits": [{ "name": "COACH_RL", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } },
+                 { "name": "SYNC_RL", "namespace_id": "1002", "simple": { "limit": 60, "period": 60 } }],
+  // Device sync storage (D1 free plan: 100,000 writes and 5 million reads a day; past that calls fail, never bill).
+  "d1_databases": [{ "binding": "DB", "database_name": "cfb-dynasty-board-sync", "database_id": "507ff626-50c7-4866-8def-595718344c93" }],
   "routes": [
     { "pattern": "cfbdynastyboard.com", "custom_domain": true },
     { "pattern": "www.cfbdynastyboard.com", "custom_domain": true }

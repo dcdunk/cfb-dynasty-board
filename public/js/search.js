@@ -2,6 +2,7 @@
 /* ---- global search (Cmd/Ctrl+K or /): jumps to any tab, team, coach, ability or house rule ---- */
 const GS = [
   ...[...document.querySelectorAll(".tabs .tab")].map(b => ({n:b.textContent, s:"Tab", go:() => showTab(TABS.find(t => t[1] === "#" + b.id)[0])})),
+  {n:"Sync your devices", s:"My Dynasty", x:"sync phone mobile desktop devices qr code", go:() => $("#syncOpen").click()},
   ...DATA.map(t => ({n:t.n, s:`${t.nk} · ${t.c}`, x:t.nk + " " + t.ab, go:() => openTeam(t.n)})),
   ...COACHES.map(c => ({n:c.name, s:`${c.role} · ${c.team}`, go:() => { showTab("coach"); $("#cq").value = c.name; cQuery = norm(c.name); cDraw(); }})),
   ...[...Object.keys(ABPHYS), ...Object.keys(ABMENT)].map(n => ({n, s:"Player ability", go:() => gsAb("player", n)})),

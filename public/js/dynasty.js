@@ -17,7 +17,7 @@ function dFromCoach(c){
   const t = DATA.find(x => x.n === c.team); if (!t) return null;
   const n = D.list.filter(d => d.team === t.n).length;
   const d = {id:"d" + Date.now().toString(36), name:`${t.n} ${t.nk}${n ? ` ${n + 1}` : ""}`, team:t.n, rules:(c.rules || []).filter(id => HR[id]), src:`Coach · ${c.label}`,
-    made:Date.now(), arch:false, ...(c.goal ? {goal:c.goal, goalName:c.goalName || ""} : {}), ...(c.gd ? {gd:c.gd} : {})};
+    made:Date.now(), arch:false, from:"coach", ...(c.goal ? {goal:c.goal, goalName:c.goalName || ""} : {}), ...(c.gd ? {gd:c.gd} : {})};
   D.list.unshift(d); D.cur = d.id; D.arch = false; dSave(); dDraw();
   return d.id;
 }
@@ -27,7 +27,7 @@ function dDraw(){
   $("#dNew").textContent = `+ Save ${H.team} from House Rules`;
   $("#dSeg").innerHTML = `<button type="button" data-dseg="" aria-pressed="${!D.arch}">Active (${D.list.length - nA})</button><button type="button" data-dseg="1" aria-pressed="${D.arch}">Archived (${nA})</button>`;
   $("#dList").innerHTML = shown.length ? shown.map(d => { const t = DATA.find(x => x.n === d.team);
-    return `<li><button type="button" data-d="${d.id}" aria-pressed="${d.id === D.cur}"><b>${esc(d.name)}</b><small>${dDate(d.made)}</small><span>${esc(t.n)} &middot; ${esc(t.c)} &middot; ${strainLbl(strainOf(d.rules.filter(id => HR[id])))[0]}</span></button></li>`; }).join("")
+    return `<li><button type="button" data-d="${d.id}" aria-pressed="${d.id === D.cur}"><b>${esc(d.name)}${d.from === "coach" ? `<span class="ctag">From Coach</span>` : ""}</b><small>${dDate(d.made)}</small><span>${esc(t.n)} &middot; ${esc(t.c)} &middot; ${strainLbl(strainOf(d.rules.filter(id => HR[id])))[0]}</span></button></li>`; }).join("")
     : `<li class="bempty">${D.arch ? "Nothing archived. Archived dynasties show up here." : "No dynasties yet."}</li>`;
   const d = D.list.find(x => x.id === D.cur);
   if (!d) { $("#dView").innerHTML = D.arch ? "" : `<div class="book"><div class="bempty">Pick a program and its house rules in House Rules, then save it here to keep its pipelines and recruiting &amp; NIL plan in one place.<br><br><button class="ghost pri" type="button" data-go="house">Go to House Rules</button></div></div>`; return; }
@@ -35,7 +35,7 @@ function dDraw(){
   const rules = ids.map(id => { const r = HR[id], reg = r.reg ? r.reg(t) : null;
     return `<li class="rule"><div><span class="rcat">${HCATN[r.c]}</span><div class="rttl">${r.n} ${pips(r.l)}${r.u ? `<span class="ctag">Custom</span>` : ""}</div><p>${r.x(t)}</p>${reg && reg.length ? hMap(reg, tiersOf(t)) : ""}</div></li>`; }).join("");
   $("#dView").innerHTML = `<div class="book">
-    <div class="bhead"><span class="kick">${d.arch ? "Archived dynasty" : "Dynasty"} &middot; started ${dDate(d.made)}</span>
+    <div class="bhead"><span class="kick">${d.arch ? "Archived dynasty" : "Dynasty"} &middot; started ${dDate(d.made)}${d.from === "coach" ? `<span class="ctag" title="Set up by Coach: it keeps Coach's goal and game difficulty">From Coach</span>` : ""}</span>
       <input class="dname" id="dName" value="${esc(d.name)}" maxlength="40" aria-label="Dynasty name" title="Click to rename">
       <div class="bsub"><b>${t.nk}</b> &nbsp;&middot;&nbsp; ${t.c} &nbsp;&middot;&nbsp; ${t.sl} &nbsp;&middot;&nbsp; ${t.p.toFixed(1)}★ prestige &nbsp;&middot;&nbsp; ${fmt(t.nt)} NIL</div>
       ${d.goal ? `<div class="bsub bgoal"><b>Goal${d.goalName ? ` · ${esc(d.goalName)}` : ""}:</b> ${esc(d.goal)}</div>` : ""}

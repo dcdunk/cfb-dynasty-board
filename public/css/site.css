@@ -515,7 +515,7 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 /* global search (Cmd+K) */
 .gs{width:min(560px,calc(100% - 32px)); margin:12vh auto auto; padding:0; border:1px solid var(--line); border-radius:12px; background:var(--panel); color:var(--text)}
 .gs::backdrop{background:rgba(8,9,10,.5)}
-@media (max-width:600px){.coachbtn.gsbtn{font-size:0; gap:0} .gsbtn kbd{display:none}}
+@media (max-width:600px){.coachbtn.gsbtn{font-size:0; gap:0} .gsbtn kbd{display:none} .syncbtn #syncLbl{font-size:12px}}
 .gs .search{border:0; border-bottom:1px solid var(--line); padding:12px 14px}
 .gs .cb{position:static; min-width:0; max-height:55vh; overflow:auto; border:0; margin:0}
 .ks{padding:6px 18px 16px}
@@ -602,7 +602,15 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .dbak-b{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
 .dbak-b .ghost{flex:1 1 140px}
 .dbak-msg{margin-top:10px; color:var(--text)}
-.dbak-msg.err{color:#B3261E}
+.dbak-msg.err,.sync-err{color:#B3261E}
+.sync-h{margin:0 0 6px; font-size:13px; font-weight:590}
+.sync-join{display:flex; gap:8px; margin-top:10px}
+.sync-join input{flex:1; min-width:0; font:13px "JetBrains Mono",monospace; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--text); padding:7px 9px}
+.sync-on{display:flex; flex-direction:column; gap:12px}
+.sync-qr{width:148px; padding:6px; background:#fff; border-radius:6px; line-height:0}
+.sync-qr svg{width:100%; height:auto}
+.sync-code{display:block; margin:6px 0 8px; font:590 15px "JetBrains Mono",monospace; letter-spacing:.04em; color:var(--text); user-select:all; overflow-wrap:anywhere}
+.sync-st{color:var(--dim)}
 :root[data-theme="dark"] .dbak-msg.err{color:#FF8A80}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dbak-msg.err{color:#FF8A80}}
 .dlist button{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 12px; width:100%; text-align:left; font:inherit; color:var(--text);
@@ -723,11 +731,20 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 /* ---------- dynasty planner (chat) ---------- */
 .masthead{position:relative}
 .mhact{position:absolute; top:22px; right:22px; display:flex; gap:8px}
+/* Narrower than this, the floating buttons would cover the intro text or the logo: give them their own row on top. */
+@media (max-width:1199px){.mhact{position:static; order:-1; width:100%; justify-content:flex-end; margin-top:-12px}}
 .themebtn{padding:8px}
 .coachbtn{display:flex; align-items:center; gap:7px; background:var(--panel); color:var(--text);
   border:1px solid var(--line); padding:8px 12px 8px 10px; font:590 13px Inter,sans-serif; cursor:pointer}
 .coachbtn:hover,.coachbtn[aria-expanded="true"]{border-color:var(--accent); color:var(--accent-ink)}
 .coachbtn svg{display:block}
+/* Sync is the masthead's call to action until it's on, then it quiets down to a status button. */
+.syncbtn{background:var(--cta); border-color:var(--cta); color:var(--on-cta)}
+.syncbtn:hover{filter:brightness(1.06); border-color:var(--cta); color:var(--on-cta)}
+.syncbtn.on{background:var(--panel); border-color:var(--line); color:var(--text)}
+.syncbtn.on:hover{filter:none; border-color:var(--accent); color:var(--accent-ink)}
+@keyframes syncflash{from{box-shadow:0 0 0 2px var(--accent)} to{box-shadow:0 0 0 2px transparent}}
+#dSync.flash{animation:syncflash 1.6s ease-out}
 body{transition:margin-right .24s cubic-bezier(.4,0,.2,1)}
 body.coach-on{margin-right:400px}
 .pchat{position:fixed; top:0; right:0; bottom:0; z-index:45; width:400px; background:var(--panel); border-left:1px solid var(--line);
