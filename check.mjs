@@ -150,18 +150,19 @@ const inPage = async () => {
   ok($("#crows mark.hit")?.innerText.toLowerCase() === part.toLowerCase(), "Coaches: match not highlighted");
   $("#cq").value = "temple"; $("#cq").dispatchEvent(new Event("input"));
   ok($$("#crows tr").length >= 3 && [...$$("#crows tr")].every(r => r.dataset.n === "Temple"), "Coaches: school search 'temple' should list Temple's staff");
-  // Coach card: a row opens the coach (not the dossier) with rank, archetype abilities and the school's staff; staff and links work.
-  $("#crows tr").click(); const cc0 = COACHES.find(c => c.team === "Temple" && c.name === $("#crows tr").dataset.c);
-  ok($("#plc").open && !picked && $("#plcN").textContent.includes(cc0.name) && /of \d+ (head coach|offensive coordinator|defensive coordinator)e?s by level/.test($("#plcB").textContent) && $$("#plcB .cc-st").length === 3, "Coach card: a Coach Database row should open the coach card");
-  const ccA = CARCH.find(a => a.n === cc0.arch); ok(!ccA || $$("#plcB > .cc-l li").length === ccA.br.reduce((n, b) => n + b[1].length, 0), "Coach card: should list every ability of the archetype");
+  // Coach card: a row opens the coach (not the dossier) with rank, age, every bought ability (CTREE) and the school's staff; staff and links work.
+  $("#crows tr").click(); const cc0 = COACHES.find(c => c.team === "Temple" && c.name === $("#crows tr").dataset.c); await ccTree(); await wait(30);
+  ok($("#plc").open && !picked && $("#plcN").textContent.includes(cc0.name) && /of \d+ (head coache|offensive coordinator|defensive coordinator)s by level/.test($("#plcB").textContent) && $$("#plcB .cc-st").length === 3, "Coach card: a Coach Database row should open the coach card");
+  const cc0T = CTREE.c["Temple|" + cc0.name]; ok(cc0T && $$("#plcB .cc-arch").length === Object.keys(cc0T[1]).length && $("#plcB .cc-arch .cc-h").textContent.startsWith(cc0.arch) && $("#plcB .cc-arch").open && $$("#plcB .cc-arch[open]").length === 1 && $("#plcB .plc-top").textContent.includes(String(cc0.age) + "Age"), "Coach card: should show age and every owned archetype, main one first");
+  ok(DATA.every(t => t.st.every(c => CTREE.c[t.n + "|" + c[1]])) && Object.values(CTREE.c).every(c => Object.keys(c[1]).every(a => CARCH.some(x => x.n === a))), "Coach data: every coach needs ability data, and every archetype in it must be in CARCH");
   const ccO = $$("#plcB .cc-st")[1]; ccO.click(); ok($("#plcN").textContent.includes(ccO.dataset.coach), "Coach card: tapping another staff member should open them");
-  // Elites and hybrids also own the base archetypes their unlock requires (Scheme Guru -> Tactician, Architect -> Motivator + Tactician).
-  ok(ccBase(CARCH.find(a => a.n === "Scheme Guru")).map(a => a.n).join() === "Tactician" && ccBase(CARCH.find(a => a.n === "Architect")).map(a => a.n).join() === "Motivator,Tactician" && !ccBase(CARCH.find(a => a.n === "CEO")).length, "Coach card: base archetypes from unlock text");
-  const ccG = COACHES.find(c => c.arch === "Scheme Guru"); ccCard(ccG.team, ccG.name); ok([...$$("#plcB .cc-inc summary")].map(x => x.textContent).join().startsWith("Also has Tactician"), "Coach card: a Scheme Guru coach should also show Tactician");
-  const ccTop = COACHES.filter(c => c.role === "HC").sort((a, b) => b.lvl - a.lvl)[0]; ccCard(ccTop.team, ccTop.name); ok($("#plcB").textContent.includes("#1"), "Coach card: the top head coach should rank #1");
-  ok(COACHES.every(c => CARCH.some(a => a.n === (CALIAS[c.arch] || c.arch))), "Coach card: every coach archetype should map to CARCH");
-  const ccS = COACHES.find(c => c.arch === "Schemer"); ccCard(ccS.team, ccS.name); ok($("#plcB .cc-h").textContent.includes("Tactician") && /listed as Schemer/.test($("#plcB").textContent), "Coach card: Schemer should show the Tactician archetype");
-  ccCard(ccTop.team, ccTop.name); $("#plcB [data-arch]").click(); ok(!$("#plc").open && curTab === "ab" && abM === "coach" && CGROUP.find(g => g[0] === abC)[1].includes(CALIAS[ccTop.arch] || ccTop.arch), "Coach card: Abilities link should open that archetype");
+  // Kirby Smart: 73 abilities in 7 archetypes (TeamCrafters 9/25/26); position abilities collapse into one row with group chips; real icons where we have them.
+  await ccCard("Georgia", "Kirby Smart"); ok(/73 bought, across 7 archetypes/.test($("#plcB").textContent) && /Specialty: Defensive Line/.test($("#plcB").textContent), "Coach card: Kirby Smart should show 73 abilities in 7 archetypes and his specialty");
+  const ccAL = [...$$("#plcB .ab-nm")].find(b => b.textContent === "Advanced Look"); ok(ccAL && [...ccAL.parentNode.querySelectorAll(".cc-pos i")].map(i => i.textContent).join() === "DB,DL,K/P,LB,RB" && $("#plcB img.ab-ico[src$='c/gasoline.png']"), "Coach card: grouped position chips and coach ability icons");
+  const ccTop = COACHES.filter(c => c.role === "HC").sort((a, b) => b.lvl - a.lvl)[0]; await ccCard(ccTop.team, ccTop.name); ok($("#plcB").textContent.includes("#1"), "Coach card: the top head coach should rank #1");
+  ok(COACHES.every(c => CARCH.some(a => a.n === c.arch)), "Coach card: every coach archetype should map to CARCH");
+  ok(!COACHES.some(c => c.arch === "Schemer") && COACHES.filter(c => c.arch === "Tactician").length === 10, "Coach data: the old Schemer name should be Tactician");
+  await ccCard(ccTop.team, ccTop.name); $("#plcB [data-arch]").click(); ok(!$("#plc").open && curTab === "ab" && abM === "coach" && CGROUP.find(g => g[0] === abC)[1].includes(ccTop.arch), "Coach card: Abilities link should open that archetype");
   openTeam("Temple"); await wait(50); $("#dbody tr[data-coach]").click(); ok($("#plc").open && $("#plcN").textContent.includes($("#dbody tr[data-coach]").dataset.coach), "Coach card: dossier staff row should open the coach card");
   $("#plcB [data-team]").click(); await wait(50); ok(!$("#plc").open && picked === "Temple", "Coach card: Open team should show the dossier"); closeTeam(); await wait(50); showTab("coach");
   // Player Database: every roster player, filters stack, sorting, paging, a row opens the team, global search finds players.

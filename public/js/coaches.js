@@ -1,7 +1,7 @@
 // Coach Database tab: COACHES (flattened from DATA staff) and the sortable staff table.
 /* ---- coach database ---- */
 const COACHES = DATA.flatMap(t => (t.st || []).map(c =>
-  ({role:c[0], name:c[1], lvl:c[2], gr:c[3], arch:c[4], pipe:c[5], gen:c[7], team:t.n})));
+  ({role:c[0], name:c[1], lvl:c[2], gr:c[3], arch:c[4], pipe:c[5], age:c[6], gen:c[7], team:t.n})));
 const ROLEORD = {HC:0, OC:1, DC:2};
 const CCOLS = [
   {k:"role", t:"Role", cls:"l"}, {k:"name", t:"Coach", cls:"l"}, {k:"team", t:"School", cls:"l"},
@@ -61,33 +61,53 @@ $("#crows").addEventListener("keydown", e => {
 cDraw();
 
 /* ---- coach card: tapping a coach (Coach Database, the dossier's staff, search) opens this in the player card sheet (#plc).
-   Level and grade with the coach's rank among coaches in the same role, pipeline, the archetype's perk and abilities (CARCH),
-   and the rest of that school's staff. ---- */
-// The roster data calls the Tactician base archetype "Schemer" (it has Recruiter and Motivator, every elite incl. Scheme Guru, but never Tactician).
-const CALIAS = {Schemer:"Tactician"};
+   Level, grade, age, rank among coaches in the same role, pipeline, specialty, and every ability the coach has bought,
+   by archetype, from js/data/coaches.js (CTREE: TeamCrafters roster data, built by tools/coach-trees.mjs), loaded on the
+   first card like ratings.js. If that file can't load, the card falls back to what the main archetype can unlock (CARCH). ---- */
 const CROLE = {HC:"Head coach", OC:"Offensive coordinator", DC:"Defensive coordinator"};
-// Archetypes a coach must already own: elites and hybrids name them in their unlock ("spend 200 CP in Tactician",
-// "in both Tactician and Motivator"); Program Builder and CEO say "any archetype", so they add none.
-const ccBase = a => CARCH.filter(b => b !== a && new RegExp(`\\bin (both )?([A-Za-z ]+ and )?${b.n}\\b`).test(a.u));
-const ccArch = (a, listed) => `<h3 class="cc-h">${abImg("a", a.n)}${esc(a.n)} <span>${esc(a.g)} archetype${listed && listed !== a.n ? `, listed as ${esc(listed)}` : ""}</span></h3>`
-  + `${a.perk ? `<p class="cc-p"><b>Perk</b> ${esc(a.perk)}</p>` : ""}<p class="cc-p"><b>Unlock</b> ${esc(a.u)}</p>`
-  + a.br.map(([b, ab]) => `<h4 class="cc-b">${esc(b)}</h4><ul class="cc-l">${ab.map(([n, d]) => `<li><b>${esc(n)}</b> ${esc(d)}</li>`).join("")}</ul>`).join("")
-  + `<button class="ghost cc-more" type="button" data-arch="${esc(a.n)}">Costs and icons in Abilities</button>`;
-function ccCard(team, name){
+let ccP;
+const ccTree = () => ccP ||= new Promise(r => { if (typeof CTREE === "object") return r(CTREE);
+  const s = document.createElement("script"); s.src = "js/data/coaches.js";
+  s.onload = () => r(CTREE); s.onerror = () => { ccP = null; r(null); }; document.head.append(s); });
+// "Advanced Look - DB" -> ["Advanced Look", "DB"]; the game buys position-group abilities once per group.
+const ccPos = n => { const m = n.trim().match(/^(.*?)\s*-\s*([A-Z/]+)$/); return m ? [m[1], m[2]] : [n.trim(), ""]; };
+const ccRow = (n, d, pos) => `<li>${abImg("c", n) || '<span class="ab-slot"></span>'}<div class="ab-tx"><b class="ab-nm">${esc(n)}</b>${pos.length ? `<span class="cc-pos">${pos.map(p => `<i>${esc(p)}</i>`).join("")}</span>` : ""}<span class="ab-ds">${esc(d)}</span></div></li>`;
+// One owned archetype: its perk (the "Core" ability), then each ability once with the position groups it was bought for.
+function ccOwned(arch, ids, T, open){
+  const a = CARCH.find(x => x.n === arch), g = new Map(); let perk = "";
+  for (const i of ids) { const [nm, d, core] = T.a[i]; if (core) { perk = `${nm}: ${d}`; continue; }
+    const [base, pos] = ccPos(nm), k = base.toLowerCase(), cur = g.get(k) || g.set(k, [base, a?.br.flatMap(b => b[1]).find(x => x[0].toLowerCase() === k)?.[1] || d, []]).get(k);
+    if (pos) cur[2].push(pos); }
+  // The main archetype stays open; the others start collapsed so a 70-ability head coach isn't one endless scroll.
+  return `<details class="cc-arch"${open ? " open" : ""}><summary class="cc-h">${abImg("a", arch)}${esc(arch)} <span>${a ? esc(a.g) + " · " : ""}${ids.length} abilit${ids.length === 1 ? "y" : "ies"}</span></summary>`
+    + (perk ? `<p class="cc-p"><b>Perk</b> ${esc(perk)}</p>` : "")
+    + `<ul class="ab-list ab-clist cc-own">${[...g.values()].map(([n, d, pos]) => ccRow(n, d, pos)).join("")}</ul></details>`;
+}
+async function ccCard(team, name){
   const c = COACHES.find(x => x.team === team && x.name === name); if (!c) return;
-  const same = COACHES.filter(x => x.role === c.role), rk = 1 + same.filter(x => x.lvl > c.lvl).length;
-  const a = CARCH.find(x => x.n === (CALIAS[c.arch] || c.arch)), conf = DATA.find(t => t.n === team).c;
-  $("#plcN").innerHTML = `${esc(c.name)}${c.gen ? ` <span class="dev d1">Generic</span>` : ""}`;
-  $("#plcB").innerHTML = `<p class="plc-sub">${CROLE[c.role]} · ${esc(team)} · ${esc(conf)}</p>
-    <div class="plc-top"><div><b>${c.lvl}</b><span>Level</span></div><div><b>${c.gr}</b><span>Grade</span></div>
-    <div><b>#${rk}</b><span>of ${same.length} ${CROLE[c.role].toLowerCase()}s by level</span></div>
+  const same = COACHES.filter(x => x.role === c.role), rk = 1 + same.filter(x => x.lvl > c.lvl).length, conf = DATA.find(t => t.n === team).c;
+  const staff = `<h3 class="cc-h">${esc(team)} staff</h3>${COACHES.filter(x => x.team === team).map(x =>
+    `<button type="button" class="cc-st${x === c ? " on" : ""}" data-coach="${esc(x.name)}" data-n="${esc(team)}"><span class="mono">${x.role}</span><b>${esc(x.name)}</b><span>${esc(x.arch)}</span><span class="mono">${x.lvl}</span></button>`).join("")}`;
+  const top = (T, sp) => `<p class="plc-sub">${CROLE[c.role]} · ${esc(team)} · ${esc(conf)}</p>
+    <div class="plc-top"><div><b>${c.lvl}</b><span>Level</span></div><div><b>${c.gr}</b><span>Grade</span></div><div><b>${c.age}</b><span>Age</span></div>
+    <div><b>#${rk}</b><span>of ${same.length} ${CROLE[c.role].toLowerCase().replace(/h$/, "he")}s by level</span></div>
     <button class="ghost plc-go" type="button" data-team="${esc(team)}">Open ${esc(team)}</button></div>
-    <p class="plc-sub" style="margin-top:10px">Pipeline: ${esc(c.pipe)}</p>
-    ${a ? ccArch(a, c.arch) : `<h3 class="cc-h">${esc(c.arch)}</h3><p class="plc-none">The site doesn't have ability details for the ${esc(c.arch)} archetype yet.</p>`}
-    ${a ? ccBase(a).map(b => `<details class="cc-inc"><summary>Also has ${esc(b.n)} <span>required to unlock ${esc(a.n)}</span></summary>${ccArch(b)}</details>`).join("") : ""}
-    <h3 class="cc-h">${esc(team)} staff</h3>${COACHES.filter(x => x.team === team).map(x =>
-      `<button type="button" class="cc-st${x === c ? " on" : ""}" data-coach="${esc(x.name)}" data-n="${esc(team)}"><span class="mono">${x.role}</span><b>${esc(x.name)}</b><span>${esc(x.arch)}</span><span class="mono">${x.lvl}</span></button>`).join("")}`;
+    <p class="plc-sub" style="margin-top:10px">Pipeline: ${esc(c.pipe)}${sp ? ` · Specialty: ${esc(sp)}` : ""}</p>`;
+  $("#plcN").innerHTML = `${esc(c.name)}${c.gen ? ` <span class="dev d1">Generic</span>` : ""}`;
+  $("#plcB").innerHTML = top() + `<p class="plc-none">Loading abilities…</p>` + staff;
   if (!$("#plc").open) $("#plc").showModal(); $("#plc").scrollTop = 0; $("#plcX").focus();
+  ccCard.at = team + "|" + name;
+  const T = await ccTree(); if (ccCard.at !== team + "|" + name) return;   // another coach was opened meanwhile
+  const own = T?.c[team + "|" + name];
+  if (own) {
+    const archs = Object.keys(own[1]).sort((x, y) => (y === c.arch) - (x === c.arch) || CARCH.findIndex(a => a.n === x) - CARCH.findIndex(a => a.n === y));
+    $("#plcB").innerHTML = top(T, own[0]) + `<h3 class="cc-h cc-sum">Abilities <span>${Object.values(own[1]).flat().length} bought, across ${archs.length} archetype${archs.length > 1 ? "s" : ""} · ${esc(T.v)} roster</span></h3>`
+      + archs.map((x, i) => ccOwned(x, own[1][x], T, !i)).join("") + `<button class="ghost cc-more" type="button" data-arch="${esc(c.arch)}">Costs and tiers in Abilities</button>` + staff;
+    return;
+  }
+  const a = CARCH.find(x => x.n === c.arch);
+  $("#plcB").innerHTML = top() + (a ? `<h3 class="cc-h">${abImg("a", a.n)}What a ${esc(a.n)} can unlock</h3><p class="plc-none">Couldn't load this coach's abilities, so this is the full ${esc(a.n)} list.</p>`
+    + `<ul class="ab-list ab-clist cc-own">${a.br.flatMap(b => b[1]).map(([n, d]) => ccRow(n, d, [])).join("")}</ul>` : "") + staff;
 }
 $("#plcB").addEventListener("click", e => {
   const s = e.target.closest("[data-coach]"); if (s) return ccCard(s.dataset.n, s.dataset.coach);
