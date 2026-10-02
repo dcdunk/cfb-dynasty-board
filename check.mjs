@@ -457,6 +457,15 @@ const inPage = async () => {
     $("#plc").close(); }
   $('#abMode [data-m="player"]').click(); await wait(20);
   $('#abPos [data-p="DL"]').click(); await wait(50);
+  { const n = $('#abGrid [data-abn="DL|Speed Rusher"]'); n.value = "pair with a 3-4"; n.dispatchEvent(new Event("input", { bubbles: true }));
+    ok(JSON.parse(localStorage.getItem("abnote-v1"))["DL|Speed Rusher"] === "pair with a 3-4" && n === n.closest(".sl-card").lastElementChild, "Abilities: an archetype note should sit at the bottom of the card and save as you type");
+    abDraw(); ok($('#abGrid [data-abn="DL|Speed Rusher"]').value === "pair with a 3-4", "Abilities: an archetype note should come back after a redraw");
+    const m = $('#abGrid [data-abn="DL|Speed Rusher"]'); m.value = ""; m.dispatchEvent(new Event("input", { bubbles: true }));
+    ok(!("DL|Speed Rusher" in JSON.parse(localStorage.getItem("abnote-v1"))), "Abilities: clearing a note should remove it"); }
+  { // A long note drawn while Abilities was hidden must still wrap and show in full once the tab opens.
+    ABNOTE["DL|Pure Power"] = "Two-gap anchor for the 3-4, needs 90+ Strength and Block Shedding, look for 6-3 or taller with a long wingspan, recruit one every class"; showTab("board"); abDraw(); showTab("ab"); await wait(30);
+    const n = $('#abGrid [data-abn="DL|Pure Power"]'); ok(n.offsetHeight > 40 && n.scrollHeight <= n.clientHeight + 2, `Abilities: a long archetype note should wrap and show in full (height ${n.offsetHeight}, content ${n.scrollHeight})`);
+    delete ABNOTE["DL|Pure Power"]; abDraw(); }
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
   ok(/Puts more pressure on the quarterback/.test($("#abGrid").textContent), "Abilities: descriptions should show on the cards without clicking");
   // Unlock gates (CFB 27 game files): every archetype ability has Bronze-Platinum gates, split DE/DT only where they differ

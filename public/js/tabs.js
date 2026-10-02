@@ -25,6 +25,8 @@ function showTab(which, instant){
     $(tb).setAttribute("aria-selected", k === which);
     $(tb).tabIndex = k === which ? 0 : -1;
   }
+  // Notes drawn while the tab was hidden couldn't measure their height; size them now that they show.
+  if (which === "ab") document.querySelectorAll("#viewAb .pc-n, #pcNote").forEach(pcFit);
   tabSlide($(TABS.find(t => t[0] === which)[1]), instant);
   setRail();
   mMark();

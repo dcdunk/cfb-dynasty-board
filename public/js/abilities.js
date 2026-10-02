@@ -103,6 +103,7 @@ const ABICO = new Set(["360", "50-50", "adrenaline", "aftershock", "arm-bar", "b
 const abImg = (dir, n) => (dir === "p" ? ABICO : dir === "c" ? CICO : {has: () => true}).has(abSlug(n)) ? `<img class="ab-ico${dir === "a" ? " ab-badge" : ""}" src="ab/${dir}/${abSlug(n)}.png" alt="">` : "";
 let abP = "QB", abM = "player", abC = "Recruiter";
 // Favorite archetypes, saved as "POS|Name" keys; any number per position.
+let ABNOTE = {}; try { ABNOTE = JSON.parse(localStorage.getItem("abnote-v1")) || {}; } catch (e) {}
 let ABFAV = []; try { ABFAV = JSON.parse(localStorage.getItem("abfav-v1")) || []; } catch (e) {}
 function abFav(k){ ABFAV = ABFAV.includes(k) ? ABFAV.filter(x => x !== k) : [...ABFAV, k]; try { localStorage.setItem("abfav-v1", JSON.stringify(ABFAV)); } catch (e) {} abDraw(); }
 const MTL = ["Bronze", "Silver", "Gold", "Platinum"];
@@ -220,8 +221,9 @@ function abDraw(){
   $("#abPos").innerHTML = ABPOS.map(p => { const f = ABFAV.filter(k => k.startsWith(p + "|")).length; return `<button type="button" class="chip" data-p="${p}" aria-pressed="${!q && p === abP}">${p}${f ? ` <span class="abfn" title="${f} favorite${f > 1 ? "s" : ""}">★${f}</span>` : ""}</button>`; }).join("") + `<button type="button" class="chip" data-p="FAV" aria-pressed="${!q && abP === "FAV"}">★ Favorites${ABFAV.length ? ` <span class="abfn">${ABFAV.length}</span>` : ""}</button>`;
   const orph = ["K/P", "Archetype not confirmed", Object.keys(ABPHYS).filter(n => !abWho(n).length)];
   const arch = (q ? [...ABARCH, orph].filter(a => a[2].some(n => n.toLowerCase().includes(q))) : [...ABARCH, orph].filter(a => abP === "FAV" ? ABFAV.includes(a[0] + "|" + a[1]) : a[0] === abP)).filter(a => a[2].length).sort((a, b) => ABFAV.includes(b[0] + "|" + b[1]) - ABFAV.includes(a[0] + "|" + a[1]));
-  $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card"><h3>${esc(n)}<span>${p}${p === "K/P" ? "" : (f => `<button type="button" class="abfav" data-fav="${esc(p + "|" + n)}" aria-pressed="${f}" aria-label="${f ? "Remove" : "Add"} ${esc(n)} ${f ? "from" : "to"} favorites" title="${f ? "Unfavorite" : "Favorite"}">${f ? "★" : "☆"}</button>`)(ABFAV.includes(p + "|" + n))}</span></h3><ul class="ab-list">${ab.map(x => abRow(x, p + "|" + n)).join("")}</ul></section>`).join("")
+  $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card"><h3>${esc(n)}<span>${p}${p === "K/P" ? "" : (f => `<button type="button" class="abfav" data-fav="${esc(p + "|" + n)}" aria-pressed="${f}" aria-label="${f ? "Remove" : "Add"} ${esc(n)} ${f ? "from" : "to"} favorites" title="${f ? "Unfavorite" : "Favorite"}">${f ? "★" : "☆"}</button>`)(ABFAV.includes(p + "|" + n))}</span></h3><ul class="ab-list">${ab.map(x => abRow(x, p + "|" + n)).join("")}</ul><textarea class="pc-n ab-n" data-abn="${esc(p + "|" + n)}" rows="1" maxlength="500" placeholder="Add a note" aria-label="Note for ${esc(n)} ${p}">${esc(ABNOTE[p + "|" + n] || "")}</textarea></section>`).join("")
     : `<p class="hint">${q ? `No archetype has a physical ability matching "${esc(q)}".` : "No favorites yet. Tap the ☆ on an archetype to add it."}</p>`;
+  document.querySelectorAll("#abGrid [data-abn]").forEach(pcFit);
   $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(abRow).join("");
 }
 // Clicking the active Favorites chip again turns the filter off, back to the last position.
@@ -231,6 +233,9 @@ $("#abPos").addEventListener("click", e => { const b = e.target.closest("[data-p
   $("#abQ").value = ""; abDraw(); });
 $("#abMode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (b) { abM = b.dataset.m; $("#abQ").value = ""; abDraw(); } });
 $("#abArch").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) { abC = b.dataset.c; $("#abQ").value = ""; abDraw(); } });
+// Your own note per archetype ("POS|Name": text), saved as you type in abnote-v1; empty notes are removed.
+$("#abGrid").addEventListener("input", e => { const t = e.target.closest("[data-abn]"); if (!t) return; pcFit(t);
+  if (t.value.trim()) ABNOTE[t.dataset.abn] = t.value; else delete ABNOTE[t.dataset.abn]; try { localStorage.setItem("abnote-v1", JSON.stringify(ABNOTE)); } catch (e) {} });
 $("#abGrid").addEventListener("click", e => { const b = e.target.closest("[data-fav]"); if (b) abFav(b.dataset.fav); });
 $("#abQ").addEventListener("input", abDraw);
 
@@ -241,7 +246,7 @@ const pcPos = ABPOS.filter(p => p !== "K/P");
 const pcArch = p => ABARCH.filter(a => a[0] === p).map(a => a[1]);
 const pcOpts = (sel, list, keep, none) => { const v = keep ?? sel.value; sel.innerHTML = (none ? `<option value="">${none}</option>` : "") + list.map(x => `<option>${esc(x)}</option>`).join(""); if (list.includes(v)) sel.value = v; };
 // Note boxes grow to fit their text, so long notes stay fully visible (skipped while hidden, when there's nothing to measure).
-const pcFit = el => { if (!el.offsetParent) return; el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; };
+function pcFit(el){ if (!el.offsetParent) return; el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; }
 function pcDraw(){
   if (!$("#pcFp").options.length) { pcOpts($("#pcFp"), pcPos); pcOpts($("#pcTp"), pcPos, "WR"); }
   pcOpts($("#pcFa"), pcArch($("#pcFp").value));
@@ -261,6 +266,6 @@ $("#pcAdd").addEventListener("click", () => {
 // Notes edit in place and save as you type; no redraw, so the box keeps focus.
 $("#pcList").addEventListener("input", e => { const c = e.target.dataset.note && PC.find(x => x.id === e.target.dataset.note); if (c) { c.note = e.target.value.trim(); pcSave(); pcFit(e.target); } });
 $("#pcNote").addEventListener("input", e => pcFit(e.target));
-addEventListener("resize", () => document.querySelectorAll("#pcList .pc-n, #pcNote").forEach(pcFit));   // narrower cards need taller notes
+addEventListener("resize", () => document.querySelectorAll("#viewAb .pc-n, #pcNote").forEach(pcFit));   // narrower cards need taller notes
 $("#pcList").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b && confirm("Delete this position change?")) { PC = PC.filter(c => c.id !== b.dataset.del); pcSave(); pcDraw(); } });
 abDraw();

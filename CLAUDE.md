@@ -93,13 +93,14 @@ House rules are the most intricate part: `HRULES` (built-in rules, each with cat
 - `dyn-v1`: saved dynasties `{list:[{id,name,team,rules,src,made,arch, goal?, goalName?, gd?}], cur, arch}` (the optional three come from Coach); the loader drops unknown teams
 - `coach-v1`: Coach transcript (last 60 messages), current plan, undo history (10), last team, preferred difficulty (`pSave`/`pLoad`). Plans store the team by name; `pDe` drops unknown rule ids.
 - `abfav-v1`: favorite player archetypes as `"POS|Name"` strings (`ABFAV`)
+- `abnote-v1`: your note per player archetype `{"POS|Name": text}` (`ABNOTE`), the textarea at the bottom of each Abilities card; saved as you type, empty notes removed
 - `poschg-v1`: planned position changes `[{id, fp, fa, tp, ta, note}]` (`PC`)
 - `sync-v1`: this device's sync state `{code, ver, last, at, err}` (`S` in sync.js). Never backed up or synced itself.
 - `rboard-v1`: the Recruiting board, `{a: {slot: archetype}, p: {slot: subbed position}}` (`RB`, `RBP`); unknown slots, positions or archetypes are dropped on load
 - `mbar-v1`: the phone tab bar's pinned tab keys, 1-4 (`MPIN`); bad or unknown values fall back to the default
 - `theme-v1`: `"light"` or `"dark"` from the header toggle (`#themeBtn`, next to Coach). Applied by a small script before the `<style>` block so there is no flash; no value means follow the system setting.
 
-Back up / Restore on My Dynasty copies `dyn-v1`, `house-v1`, `house-custom-v1`, `rec-v1`, `theme-v1`, `abfav-v1`, `poschg-v1`, `mbar-v1` and `rboard-v1` to and from a file, so old backup files must keep loading too. Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
+Back up / Restore on My Dynasty copies `dyn-v1`, `house-v1`, `house-custom-v1`, `rec-v1`, `theme-v1`, `abfav-v1`, `poschg-v1`, `mbar-v1`, `rboard-v1` and `abnote-v1` to and from a file, so old backup files must keep loading too. Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
 
 ## Verifying changes
 
