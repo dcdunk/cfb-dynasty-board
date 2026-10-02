@@ -192,7 +192,16 @@ function cDrawAb(q){
     + `<div class="ab-meta"><dl><div><dt>Unlock</dt><dd>${esc(a.u)}</dd></div>${a.perk ? `<div><dt>Perk</dt><dd>${esc(a.perk)}</dd></div>` : ""}</dl></div>`
     + `<div class="sl-grid">${a.br.flatMap(([b, ab]) => a.pos ? CPOS.map(p => card(a, b, ab, true, p)) : [card(a, b, ab, true)]).join("")}</div></section>`).join("");
 }
+// Abilities view in the URL: #abilities/cb, #abilities/favorites, #abilities/coach/recruiter, #abilities/position-changes.
+TSUB.ab = () => abM === "chg" ? "/position-changes" : abM === "coach" ? "/coach/" + abSlug(abC) : "/" + abSlug(abP === "FAV" ? "favorites" : abP);
+function abFromHash(sub){
+  const [a, b] = sub.split("/");
+  if (a === "position-changes") abM = "chg";
+  else if (a === "coach") { abM = "coach"; const g = CGROUP.find(g => abSlug(g[0]) === b); if (g) abC = g[0]; }
+  else { const p = [...ABPOS, "FAV"].find(p => abSlug(p === "FAV" ? "favorites" : p) === a); if (p) { abM = "player"; abP = p; } }
+}
 function abDraw(){
+  if (curTab === "ab") tabHash();
   const q = $("#abQ").value.trim().toLowerCase();
   $("#abMode").innerHTML = [["player","Player"],["coach","Coach"],["chg","Position changes"]].map(([k, t]) => `<button type="button" class="chip" data-m="${k}" aria-pressed="${k === abM}">${t}</button>`).join("");
   $("#abPlayer").hidden = abM !== "player"; $("#abCoach").hidden = abM !== "coach"; $("#abChg").hidden = abM !== "chg"; $("#abQ").hidden = abM === "chg";

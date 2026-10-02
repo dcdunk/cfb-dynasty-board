@@ -672,14 +672,36 @@ fails.push(...(cr.result.exceptionDetails ? ["Coach suite crashed: " + cr.result
 // Refresh keeps the open tab: the tab sits in the URL hash, and Board is the bare URL.
 const ev = async x => (await send("Runtime.evaluate", { expression: x, returnByValue: true })).result.result?.value;
 const hb = await ev(`showTab("board"); location.hash`), ha = await ev(`$("#tabAb").click(); location.hash`);
-if (hb !== "" || ha !== "#abilities") fails.push(`Refresh: tab should set the URL hash (board "${hb}", abilities "${ha}")`);
+if (hb !== "" || !/^#abilities\/[a-z/-]+$/.test(ha)) fails.push(`Refresh: tab should set the URL hash (board "${hb}", abilities "${ha}")`);
 // Restore end to end: apply a backup with one dynasty, reload like the Restore button does, and the page should load it and say so.
+// The Abilities view rides in the hash too, so a refresh on CB stays on CB.
+await ev(`abM = "player"; abP = "CB"; abDraw()`);
 await ev(`dApplyBackup({"dyn-v1": JSON.stringify({list:[{id:"dz", name:"Restored Owls", team:"Temple", rules:[], src:"", made:0, arch:false}], cur:"dz", arch:false})}); sessionStorage.setItem("dyn-restored", "1")`);
 await new Promise(r => { loaded = r; send("Page.reload"); });
 const rs = await ev(`[D.list.length, D.list[0]?.name, $("#dBakMsg").textContent, $("#dBakMsg").hidden].join("|")`);
 if (rs !== "1|Restored Owls|Restored from backup: 1 dynasty.|false") fails.push(`Restore: after reload expected the restored dynasty and a note, got ${rs}`);
 const after = await ev(`[curTab, $("#viewAb").hidden, $("#viewBoard").hidden, $("#tabAb").getAttribute("aria-selected")].join()`);
 if (after !== "ab,false,true,true") fails.push(`Refresh: reloading on #abilities should reopen Abilities, got ${after}`);
+const abAfter = await ev(`[location.hash, abM, abP, $('#abPos [aria-pressed="true"]')?.dataset.p].join()`);
+if (abAfter !== "#abilities/cb,player,CB,CB") fails.push(`Refresh: reloading on Abilities CB should stay on CB, got ${abAfter}`);
+// Player and Coach Database filters ride in the hash too.
+const plH = await ev(`showTab("play"); $('#plpos [data-p="CB"]').click(); $("#plteam").value = "Georgia"; $("#plteam").dispatchEvent(new Event("change")); location.hash`);
+await new Promise(r => { loaded = r; send("Page.reload"); });
+const plAfter = await ev(`[curTab, plPos, $("#plteam").value, $('#plpos [aria-pressed="true"]')?.dataset.p, plList().every(p => p.team === "Georgia" && p.pos === "CB")].join()`);
+if (plH !== "#players/pos=CB&team=Georgia" || plAfter !== "play,CB,Georgia,CB,true") fails.push(`Refresh: Player Database filters should survive a reload (hash ${plH}, got ${plAfter})`);
+await ev(`showTab("coach"); $('#cchips [data-r="DC"]').click()`);
+await new Promise(r => { loaded = r; send("Page.reload"); });
+const cAfter = await ev(`[location.hash, curTab, cRole, [...document.querySelectorAll("#crows tr .role")].every(t => t.textContent === "DC")].join()`);
+if (cAfter !== "#coaches/role=DC,coach,DC,true") fails.push(`Refresh: Coach Database role should survive a reload, got ${cAfter}`);
+// Every other tab with its own view: Program Database conference, Pipelines team and state, Randomizer filters, Sliders difficulty.
+for (const [set, want, got] of [
+  [`showTab("board"); $('#chips [data-c="SEC"]').click()`, "#programs/conf=SEC", `[curTab, conf, rowsFor().every(t => t.c === "SEC")].join()`, "board,SEC,true"],
+  [`showTab("pipe"); pSet("Oregon"); pPipe = $("#ppipe").options[1].value; $("#ppipe").value = pPipe; pDraw()`, null, `[curTab, pTeam, pPipe === $("#ppipe").options[1].value].join()`, "pipe,Oregon,true"],
+  [`showTab("rand"); document.querySelector('#viewRand .seg [data-mode="filt"]').click(); document.querySelector('#rFilters [data-g="p"] [data-i="0"]').click()`, "#randomizer/mode=filt&p=0", `[curTab, rMode, [...rSel.p].join()].join()`, "rand,filt,0"],
+  [`showTab("slide"); document.querySelector('#slDiff [data-d]:not([aria-pressed="true"])').click()`, null, `[curTab, slD !== "heis"].join()`, "slide,true"]].map(([a, h, g, w]) => [a, h, [g, w]])) {
+  const h = await ev(set + `; location.hash`); await new Promise(r => { loaded = r; send("Page.reload"); });
+  const v = await ev(got[0]); if ((want && h !== want) || v !== got[1]) fails.push(`Refresh: ${set.slice(0, 40)}... should survive a reload (hash ${h}, got ${v})`);
+}
 
 chrome.kill(); await new Promise(r => chrome.once("exit", r)); server.close();
 try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch {} // leftover temp files are harmless

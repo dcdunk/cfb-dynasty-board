@@ -27,7 +27,15 @@ $("#chrow").addEventListener("click", e => {
   else { cKey = k; cDir = (k === "lvl" || k === "gr") ? -1 : 1; }
   cDraw();
 });
+// Coach Database filters in the URL (#coaches/role=HC&q=smart).
+TSUB.coach = () => hashQ({role: cRole === "All" ? "" : cRole, q: $("#cq").value.trim()});
+function cFromHash(sub){
+  const q = new URLSearchParams(sub), r = q.get("role");
+  if (["HC", "OC", "DC"].includes(r)) { cRole = r; [...$("#cchips").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.r === r)); }
+  if (q.get("q")) { $("#cq").value = q.get("q"); cQuery = norm(q.get("q")); }
+}
 function cDraw(){
+  if (curTab === "coach") tabHash();
   const list = COACHES.filter(c => (cRole === "All" || c.role === cRole) && (!cQuery || norm(c.name).includes(cQuery) || norm(c.team).includes(cQuery)))
     .sort((a, b) => {
       const x = cVal(a, cKey), y = cVal(b, cKey);

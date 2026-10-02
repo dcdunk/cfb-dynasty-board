@@ -17,7 +17,15 @@ function rPool(skip){
   return DATA.filter(t => Object.keys(RG).every(g =>
     g === skip || !rSel[g].size || [...rSel[g]].some(i => RG[g][i][1](t))));
 }
+// Mode and filter picks in the URL: #randomizer/mode=filters&p=0,1&c=3.
+TSUB.rand = () => hashQ({mode: rMode === "any" ? "" : rMode, ...Object.fromEntries(Object.keys(RG).map(g => [g, [...rSel[g]].sort().join(",")]))});
+function rFromHash(sub){
+  const q = new URLSearchParams(sub), m = q.get("mode");
+  if (m && document.querySelector(`#viewRand .seg [data-mode="${m}"]`)) rMode = m;
+  for (const g of Object.keys(RG)) for (const i of (q.get(g) || "").split(",")) if (RG[g][+i] && i !== "") rSel[g].add(+i);
+}
 function rDraw(){
+  if (curTab === "rand") tabHash();
   for (const g of Object.keys(RG)) {
     const base = rPool(g);                       /* count against the other groups' picks */
     document.querySelector(`#rFilters [data-g="${g}"]`).innerHTML = RG[g].map((o, i) =>

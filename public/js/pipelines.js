@@ -37,7 +37,15 @@ function paintMap(tiers, hi){
     const l = svg.querySelector(`[data-lab="${p}"]`); if (l) l.removeAttribute("hidden");
   }
 }
+// Team and highlighted state in the URL: #pipelines/team=Oregon&state=CA.
+TSUB.pipe = () => hashQ({team: pTeam, state: pPipe});
+function pFromHash(sub){
+  const q = new URLSearchParams(sub), t = q.get("team"), st = q.get("state");
+  if (DATA.some(x => x.n === t)) { pTeam = t; $("#pq").value = t; }
+  if (st && [...$("#ppipe").options].some(o => o.value === st)) { pPipe = st; $("#ppipe").value = st; }
+}
 function pDraw(){
+  if (curTab === "pipe") tabHash();
   const t = DATA.find(x => x.n === pTeam);
   const tiers = {}; t.pl.forEach(p => tiers[p[0]] = p[1]);
   paintMap(tiers, pPipe);

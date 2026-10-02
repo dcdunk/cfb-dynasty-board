@@ -11,9 +11,12 @@ function tabSlide(b, instant){
   const left = row.scrollLeft + b.getBoundingClientRect().left - row.getBoundingClientRect().left - parseFloat(getComputedStyle(row).paddingLeft);
   row.scrollTo({left, behavior: instant || matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
 }
+// Program Database is the bare URL; with filters on it becomes #programs/conf=SEC.
+function tabHash(){ const sub = TSUB[curTab]?.() || "";
+  try { history.replaceState(null, "", TSLUG[curTab] ? "#" + TSLUG[curTab] + sub : sub ? "#programs" + sub : location.pathname + location.search); } catch (e) {} }
 function showTab(which, instant){
   curTab = which;
-  try { history.replaceState(null, "", TSLUG[which] ? "#" + TSLUG[which] : location.pathname + location.search); } catch (e) {}
+  tabHash();
   if (which === "rec") recDraw();
   if (which === "dyn") dDraw();
   if (which === "play") plShow();

@@ -30,3 +30,8 @@ function hl(s, q){
   const v = norm(q.trim()), i = norm(s).indexOf(v);
   return v && i >= 0 ? esc(s.slice(0, i)) + '<mark class="hit">' + esc(s.slice(i, i + v.length)) + "</mark>" + esc(s.slice(i + v.length)) : esc(s);
 }
+
+// A tab can keep its own view in the hash too (#abilities/cb), so refresh lands on the same page: TSUB[tab]() gives the "/..." part.
+const TSUB = {};
+// Filters as "/key=value&..." (empty ones left out), read back with new URLSearchParams.
+const hashQ = o => { const q = new URLSearchParams(Object.entries(o).filter(([, v]) => v)).toString(); return q ? "/" + q : ""; };

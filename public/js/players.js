@@ -28,7 +28,16 @@ function plList(){
       const x = v(a), y = v(b), d = typeof x === "string" ? x.localeCompare(y) : x - y;
       return d * plDir || b.ovr - a.ovr || a.name.localeCompare(b.name); });
 }
+// Player Database filters in the URL (#players/pos=QB&team=Georgia&yr=JR), so a refresh keeps them.
+TSUB.play = () => hashQ({pos: plPos === "All" ? "" : plPos, team: $("#plteam").value, conf: $("#plconf").value, yr: $("#plyr").value, dev: $("#pldev").value, q: $("#plq").value.trim()});
+function plFromHash(sub){
+  const q = new URLSearchParams(sub), pos = q.get("pos");
+  if (POSG.some(g => g[0] === pos)) { plPos = pos; [...$("#plpos").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.p === pos)); }
+  for (const [k, id] of [["team", "#plteam"], ["conf", "#plconf"], ["yr", "#plyr"], ["dev", "#pldev"]]) { const v = q.get(k); if (v != null && [...$(id).options].some(o => o.value === v)) $(id).value = v; }
+  if (q.get("q")) { $("#plq").value = q.get("q"); plQuery = norm(q.get("q")); }
+}
 function plDraw(){
+  if (curTab === "play") tabHash();
   const list = plList();
   [...$("#plhrow").children].forEach(th => { const on = th.dataset.k === plKey;
     if (on) th.setAttribute("aria-sort", plDir > 0 ? "ascending" : "descending"); else th.removeAttribute("aria-sort");

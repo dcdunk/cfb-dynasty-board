@@ -29,7 +29,11 @@ const slCell = (v, was) => was == null ? `<td class="mono">${v}</td>`
   : `<td class="mono chg" title="Was ${was}">${v}</td>`;
 const slCard = (h, sub, rows) => `<section class="sl-card"><h3>${h}<span>${sub}</span></h3><table><tbody>${
   rows.map(([n, v, w]) => `<tr><td class="l">${n}</td>${slCell(v, w)}</tr>`).join("")}</tbody></table></section>`;
+// Difficulty in the URL: #sliders/d=aa (Heisman is the default, so it's left out).
+TSUB.slide = () => hashQ({d: slD === "heis" ? "" : slD});
+function slFromHash(sub){ const d = new URLSearchParams(sub).get("d"); if (SLDIFF[d]) slD = d; }
 function slDraw(){
+  if (curTab === "slide") tabHash();
   const d = SLDIFF[slD];
   $("#slDiff").innerHTML = Object.entries(SLDIFF).map(([k, x]) =>
     `<button type="button" class="chip" data-d="${k}" aria-pressed="${k === slD}">${x.n}</button>`).join("");

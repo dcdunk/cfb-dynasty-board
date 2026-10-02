@@ -16,6 +16,13 @@ $("#reset").addEventListener("click", () => {
   draw();
 });
 
+// Filters in the URL: #programs/conf=SEC&q=state (start.js reads them back).
+TSUB.board = () => hashQ({conf: conf === "All" ? "" : conf, q: $("#q").value.trim()});
+function bFromHash(sub){
+  const q = new URLSearchParams(sub), c = q.get("conf");
+  if (confs.includes(c)) { conf = c; [...$("#chips").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.c === c)); }
+  if (q.get("q")) { $("#q").value = q.get("q"); query = norm(q.get("q")); }
+}
 $("#hrow").innerHTML = COLS.map(c =>
   `<th class="${c.cls || ""}" data-k="${c.k}" scope="col">${c.t}<span class="car"></span></th>`).join("");
 $("#hrow").addEventListener("click", e => {
@@ -46,6 +53,7 @@ function rowsFor(){
 }
 
 function draw(){
+  if (curTab === "board") tabHash();
   const list = rowsFor();
   [...$("#hrow").children].forEach(th => {
     const on = th.dataset.k === sortKey;
