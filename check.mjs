@@ -224,6 +224,11 @@ const inPage = async () => {
   $("#plcB [data-team]").click(); await wait(50); ok(!$("#plc").open && $("#dname").innerText.trim() === sm.team, "Players: Open team on the card should open the dossier"); closeTeam(); await wait(50);
   plOpen(""); plRows()[0].click(); await wait(80); ok($("#plc").open && $("#plcN").textContent.includes(PLAYERS[+plRows()[0].dataset.i].name), "Players: clicking a row should open that player's card"); $("#plc").close();
   const unrated = PLAYERS.find(p => !RATINGS.p[p.team]?.[p.name]); await plCard(unrated.i); ok(/doesn't list/.test($("#plcB").textContent), "Players: unrated players should say so"); $("#plc").close();
+  // Roster rows in the dossier open the player card (dossier stays underneath).
+  openTeam("Georgia"); await wait(50); { const tr = $("#dbody tr[data-pl]"); tr.click(); await wait(80);
+    ok($("#plc").open && $("#plcN").textContent.includes(tr.dataset.pl) && picked === "Georgia", "Dossier: clicking a roster player should open their card"); $("#plc").close(); closeTeam(); await wait(250); }
+  // Ratings already loaded (by that card) but the Players header not built yet: opening Players must still add the rating columns.
+  $$("#plhrow [data-k^='r:']").forEach(x => x.remove()); plShow(); await wait(80); ok($("#plhrow [data-k^='r:']"), "Players: rating columns should appear even if a dossier card loaded the ratings first");
   // Every rating is a sortable column after Spd; Pos and Player stay pinned while the table scrolls sideways.
   const nCols = 7 + RATINGS.k.length - 1;
   ok($$("#plhrow th").length === nCols && plRows()[0].cells.length === nCols, `Players: expected ${nCols} columns (all ratings but speed), got ${$$("#plhrow th").length}`);

@@ -115,6 +115,10 @@ async function plCard(i){
 }
 $("#plcB").addEventListener("click", e => { const b = e.target.closest("[data-team]"); if (b) { $("#plc").close(); openTeam(b.dataset.team); } });
 $("#plcX").addEventListener("click", () => $("#plc").close());
+// A roster row in the team dossier opens that player's card on top of it.
+const plFromDossier = tr => { const p = PLAYERS.find(x => x.team === picked && x.name === tr.dataset.pl); if (p) plCard(p.i); };
+$("#dbody").addEventListener("click", e => { const tr = e.target.closest("tr[data-pl]"); if (tr) plFromDossier(tr); });
+$("#dbody").addEventListener("keydown", e => { const tr = e.target.closest("tr[data-pl]"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); plFromDossier(tr); } });
 $("#plc").addEventListener("click", e => { if (e.target === $("#plc")) $("#plc").close(); });
 $("#plc").addEventListener("keydown", e => { if (e.key === "Escape") e.stopPropagation(); });
 function plHead(){
@@ -122,7 +126,8 @@ function plHead(){
     + (typeof RATINGS === "object" ? PLRCOLS.map(c => `<th class="${c.first ? "gs0" : ""}" data-k="r:${c.k}" scope="col" title="${c.g}: ${plLbl(c.k)}">${PLABR[c.k]}<span class="car"></span></th>`).join("") : "");
 }
 // The rating columns need js/data/ratings.js, so it loads when this tab is opened (never for other tabs). showTab calls this.
-function plShow(){ if (typeof RATINGS !== "object") plRatings().then(R => { if (R) { plHead(); plDraw(); } }); }
+// The ratings may already be loaded by a player card opened from a team dossier, so check the header, not RATINGS.
+function plShow(){ if (!$("#plhrow [data-k^='r:']")) plRatings().then(R => { if (R) { plHead(); plDraw(); } }); }
 // Once EA's ratings are in, the table's Ovr and Spd are EA's current week; players EA doesn't list keep the roster values (p.ovr0, p.spd0).
 function plUseEaOvr(){ for (const p of PLAYERS) { const r = plRow(p); if (p.ovr0 == null) { p.ovr0 = p.ovr; p.spd0 = p.spd; }
   p.ovr = r ? r[0] : p.ovr0; p.spd = r ? plStat(p, "speed") : p.spd0; } }
