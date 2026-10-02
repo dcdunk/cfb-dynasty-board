@@ -85,8 +85,9 @@ $("#rows").addEventListener("keydown", e => {
 /* ---- dossier ---- */
 let shownAll = false, posF = "All", rKey = 3, rDir = -1;
 const POSG = [["All",null],["QB",["QB"]],["RB",["HB","FB"]],["WR",["WR"]],["TE",["TE"]],
-  ["OL",["LT","LG","C","RG","RT"]],["DL",["LE","RE","DT"]],["LB",["LOLB","MLB","ROLB"]],
-  ["CB",["CB"]],["S",["FS","SS"]],["K/P",["K","P"]]];
+  ["OL",["LT","LG","C","RG","RT"]],["LEDG",["LEDG"]],["REDG",["REDG"]],["DT",["DT"]],
+  ["SAM",["SAM"]],["MIKE",["MIKE"]],["WILL",["WILL"]],
+  ["CB",["CB"]],["FS",["FS"]],["SS",["SS"]],["K",["K"]],["P",["P"]]];
 
 function openTeam(name){
   const t = DATA.find(x => x.n === name); if (!t) return;

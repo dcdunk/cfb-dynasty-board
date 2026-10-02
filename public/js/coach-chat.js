@@ -258,12 +258,17 @@ function pGlory(){
 }
 const PLEAGUE = "Every program (name | conference | prestige stars | overall | national title seasons):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${tYears(t).join(" ") || "none"}`).join("\n");
 // Player questions answer straight from the roster (t.r rows: [name, pos, year, ovr, dev 0-3, speed]).
-const PPOS = [["QB", /\b(qbs?|quarterbacks?)\b/], ["RB", /\b(rbs?|hbs?|running backs?|halfbacks?)\b/], ["WR", /\b(wrs?|receivers?|wideouts?)\b/],
+const PPOS = [["LEDG", /\b(ledgs?|left edges?)\b/], ["REDG", /\b(redgs?|right edges?)\b/], ["SAM", /\b(sam (line)?backers?|sam lbs?)\b/],
+  ["MIKE", /\b(mlbs?|mike (line)?backers?|mike lbs?)\b/], ["WILL", /\b(will (line)?backers?|will lbs?|wlbs?)\b/], ["FS", /\b(fs|free safet(y|ies))\b/], ["SS", /\b(ss|strong safet(y|ies))\b/],
+  ["QB", /\b(qbs?|quarterbacks?)\b/], ["RB", /\b(rbs?|hbs?|running backs?|halfbacks?)\b/], ["WR", /\b(wrs?|receivers?|wideouts?)\b/],
   ["TE", /\b(tes?|tight ends?)\b/], ["OL", /\b(ol|o-line|offensive line\w*|tackles?|guards?|centers?|linem[ae]n)\b/], ["DL", /\b(dl|d-line|defensive line\w*|edge|pass rushers?|dts?|defensive ends?)\b/],
-  ["LB", /\b(lbs?|linebackers?)\b/], ["CB", /\b(cbs?|corners?|cornerbacks?)\b/], ["S", /\b(safet(y|ies))\b/], ["K/P", /\b(kickers?|punters?|k|p)\b/]];
+  ["LB", /\b(lbs?|linebackers?)\b/], ["CB", /\b(cbs?|corners?|cornerbacks?)\b/], ["S", /\b(safet(y|ies))\b/], ["K", /\b(kickers?|k)\b/], ["P", /\b(punters?|p)\b/]];
+// DL, LB and S cover several position chips.
+const PGRPS = {DL:["LEDG", "REDG", "DT"], LB:["SAM", "MIKE", "WILL"], S:["FS", "SS"]};
+const pGrp = g => PGRPS[g] || POSG.find(x => x[0] === g)[1];
 const pRow = (p, t) => `**${p[0]}**${t ? ` (${t.n})` : ""} · ${p[1]} · ${p[2]} · ${p[3]} OVR · ${p[5]} speed${p[4] ? ` · ${DEVN[p[4]]} dev` : ""}`;
 function pPlayers(q, t){
-  const s = norm(q), pos = PPOS.find(([, re]) => re.test(s)), grp = pos && POSG.find(g => g[0] === pos[0])[1];
+  const s = norm(q), pos = PPOS.find(([, re]) => re.test(s)), grp = pos && pGrp(pos[0]);
   const fast = /fastest|quickest|speed/.test(s), n = Math.min(15, +(s.match(/\btop (\d+)/) || [])[1] || (/players|guys|stars\b|roster/.test(s) ? 5 : 1));
   const xs = (grp ? t.r.filter(p => grp.includes(p[1])) : t.r.slice()).sort((a, b) => fast ? b[5] - a[5] || b[3] - a[3] : b[3] - a[3] || b[5] - a[5]).slice(0, n);
   const what = `${n > 1 ? `Top ${n}` : fast ? "Fastest" : "Best"}${pos ? " " + pos[0] : n > 1 ? " players" : " player"}${n > 1 && fast ? " by speed" : ""}`;
@@ -416,7 +421,7 @@ function pLeague(q){
   // Best players across many teams ("best QB in the SEC", "who has the fastest receiver").
   const pos = PPOS.find(([, re]) => re.test(s));
   if (!teams.length && league && (pos || /\bplayers?\b/.test(s)) && /\b(best|top|fastest|highest|who has)\b/.test(s)) {
-    const grp = pos && POSG.find(g => g[0] === pos[0])[1], fast = /fastest|speed/.test(s);
+    const grp = pos && pGrp(pos[0]), fast = /fastest|speed/.test(s);
     const xs = pool.flatMap(t => t.r.filter(p => !grp || grp.includes(p[1])).map(p => [p, t])).sort((a, b) => fast ? b[0][5] - a[0][5] || b[0][3] - a[0][3] : b[0][3] - a[0][3] || b[0][5] - a[0][5]).slice(0, n);
     P.last = {kind:"league", q:s}; P.facts = `Top players (${where}):\n` + xs.map(([p, t]) => pRow(p, t).replace(/\*\*/g, "")).join("\n");
     return pMd([`### ${fast ? "Fastest" : "Best"} ${pos ? pos[0] : "players"} · ${where}`, ...xs.map(([p, t]) => `- ${pRow(p, t)}`)].join("\n"));
@@ -506,7 +511,7 @@ function pTakeChallenge(c){
 }
 /* ---- roster roadmap: who leaves when, where the holes are, what to recruit ---- */
 // Eligibility left from class year (redshirt * already used): FR 4, SO 3, JR 2, SR 1. Starters per group approximate a base 11 + specialists.
-const PSTART = {QB:1, RB:1, WR:3, TE:1, OL:5, DL:4, LB:3, CB:2, S:2, "K/P":2};
+const PSTART = {QB:1, RB:1, WR:3, TE:1, OL:5, LEDG:1, REDG:1, DT:2, SAM:1, MIKE:1, WILL:1, CB:2, FS:1, SS:1, K:1, P:1};
 const PROAD = /\broadmap\b|roster (plan|outlook|needs|holes)|plan (my|the|our)? ?(first )?(\d+ |two |three |four )?(seasons?|years?)\b|who (is|are|'s) (leaving|graduating)|graduat|departures|losing (the most|seniors)|\bholes\b|positions? of need|needs? at|what (positions?|should i) (to )?recruit|recruiting (needs|priorities)|seniors? leaving/;
 const yrsLeft = y => ({FR:4, SO:3, JR:2, SR:1})[String(y).replace("*", "")] || 1;
 function pRoadmap(q, t){
@@ -542,7 +547,7 @@ function pStat(q, t){
   const lbl = {df:"Defense", of:"Offense", nt:"NIL budget", p:"Prestige", ti:"National titles", o:"Overall"}[k];
   const val = k === "nt" ? fmt(t.nt) : k === "p" ? t.p + "★" : t[k];
   const grp = k === "df" ? ["DL", "LB", "CB", "S"] : k === "of" ? ["QB", "RB", "WR", "TE", "OL"] : null;
-  const ps = grp ? t.r.filter(p => grp.some(g => POSG.find(x => x[0] === g)[1].includes(p[1]))).sort((a, b) => b[3] - a[3]).slice(0, 3) : [];
+  const ps = grp ? t.r.filter(p => grp.some(g => pGrp(g).includes(p[1]))).sort((a, b) => b[3] - a[3]).slice(0, 3) : [];
   P.team = t; P.last = {kind:"stat", q};
   const out = [`### ${t.n} · ${lbl}`, `- **${lbl}:** ${val} · #${rk(DATA, f)} of ${DATA.length}${t.c !== "Independent" ? ` · #${rk(conf, f)} of ${conf.length} in the ${t.c}` : ""}`,
     ...(k === "ti" && tYears(t).length ? [`- **Seasons:** ${tYears(t).join(", ")}`] : []), ...(ps.length ? ["### Best on that side", ...ps.map(p => `- ${pRow(p)}`)] : [])];

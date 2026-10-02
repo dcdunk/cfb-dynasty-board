@@ -21,7 +21,7 @@ for (const [id, label] of JSON.parse(fs.readFileSync(join(import.meta.dirname, "
     await wait(1000); if (items) break;
   }
   if (!items) throw new Error(`EA team ${label} (${id}) not found under ${slugs(label).join(" or ")}; fix its url name in tools/ea-teams.json`);
-  all.push(...items.map(p => ({ first: p.firstName, last: p.lastName, pos: p.position?.id, ovr: p.overallRating, ht: p.height, wt: p.weight,
+  all.push(...items.map(p => ({ first: p.firstName, last: p.lastName, pos: p.position?.shortLabel, ovr: p.overallRating, ht: p.height, wt: p.weight,
     town: p.homeTown, st: p.homeState, num: p.jerseyNum, it: p.iteration?.label, team: p.team?.label, stats: Object.fromEntries(Object.entries(p.stats).map(([k, v]) => [k, v?.value ?? v])) })));
   process.stdout.write(`${label} ${items.length}  `);
 }

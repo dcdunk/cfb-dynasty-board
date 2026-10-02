@@ -57,6 +57,7 @@ export default [
   {name: "best QB follow-up", say: [["best player on ohio state", {}],
     ["best QB?", {js: "document.querySelector('#pLog .pm.bot:last-child').textContent.includes([...DATA.find(t => t.n === 'Ohio State').r].filter(p => p[1] === 'QB').sort((a, b) => b[3] - a[3] || b[5] - a[5])[0][0])"}]]},
   {name: "top 5", say: [["top 5 players at texas", {js: "(document.querySelector('#pLog .pm.bot:last-child').textContent.match(/OVR/g) || []).length === 5"}]]},
+  {name: "split positions", say: [["best free safety at texas", {has: [" · FS · "], not: [" · SS · "]}], ["best linebacker at texas", {has: [" · (SAM|MIKE|WILL) · "]}], ["best mike linebacker at georgia", {has: [" · MIKE · "]}], ["best punter at texas", {has: [" · P · "], not: [" · K · "]}]]},
   {name: "head coach", say: [["who is oregon's head coach?", {has: ["Dan Lanning"]}], ["and the OC?", {has: ["Offensive coordinator"], not: ["Dan Lanning"]}]]},
 
   // ---- league-wide

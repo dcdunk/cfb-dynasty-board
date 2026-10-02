@@ -69,7 +69,7 @@ const PLGRP = [
   ["Defense", ["tackle","hitPower","pursuit","playRecognition","manCoverage","zoneCoverage","press","blockShedding","powerMoves","finesseMoves"]],
   ["Kicking", ["kickPower","kickAccuracy"]]];
 const PLFIRST = {QB:"Passing", HB:"Ball carrier", FB:"Ball carrier", WR:"Receiving", TE:"Receiving", LT:"Blocking", LG:"Blocking", C:"Blocking", RG:"Blocking", RT:"Blocking",
-  LE:"Defense", RE:"Defense", DT:"Defense", LOLB:"Defense", MLB:"Defense", ROLB:"Defense", CB:"Defense", FS:"Defense", SS:"Defense", K:"Kicking", P:"Kicking"};
+  LEDG:"Defense", REDG:"Defense", DT:"Defense", SAM:"Defense", MIKE:"Defense", WILL:"Defense", CB:"Defense", FS:"Defense", SS:"Defense", K:"Kicking", P:"Kicking"};
 const PLLBL = {bCVision:"Ball carrier vision", changeOfDirection:"Change of direction", catchInTraffic:"Catch in traffic", throwAccuracyShort:"Short accuracy",
   throwAccuracyMid:"Medium accuracy", throwAccuracyDeep:"Deep accuracy", throwOnTheRun:"Throw on the run", throwUnderPressure:"Throw under pressure",
   shortRouteRunning:"Short routes", mediumRouteRunning:"Medium routes", deepRouteRunning:"Deep routes", jukeMove:"Juke", spinMove:"Spin", injury:"Injury resistance"};

@@ -140,6 +140,11 @@ const inPage = async () => {
     `Players: should count every player and draw the first 200, got ${$("#plN").textContent} / ${plRows().length}`);
   ok(+plRows()[0].cells[5].textContent >= +plRows()[199].cells[5].textContent, "Players: default sort should be overall, high to low");
   $("#plmore").click(); ok(plRows().length === 400, "Players: Show more should add 200 rows");
+  // EA position names: SAM/MIKE/WILL, LEDG/REDG, and separate FS and SS chips.
+  ok(new Set(PLAYERS.map(p => p.pos)).size === 21 && ["SAM","MIKE","WILL","LEDG","REDG"].every(x => PLAYERS.some(p => p.pos === x)) && !PLAYERS.some(p => ["LE","RE","LOLB","MLB","ROLB"].includes(p.pos)),
+    "Players: positions should use EA names (SAM, MIKE, WILL, LEDG, REDG)");
+  ["LEDG","REDG","DT","SAM","MIKE","WILL","FS","SS","K","P"].forEach(x => ok($(`#plpos [data-p="${x}"]`), `Players: missing ${x} chip`));
+  $('#plpos [data-p="FS"]').click(); ok(plRows().length > 0 && plRows().every(r => r.cells[0].textContent === "FS"), "Players: FS chip should show only free safeties");
   $('#plpos [data-p="QB"]').click(); $("#plconf").value = "SEC"; $("#plconf").dispatchEvent(new Event("change"));
   $("#plyr").value = "SO"; $("#plyr").dispatchEvent(new Event("change"));
   const qbs = PLAYERS.filter(p => p.pos === "QB" && p.conf === "SEC" && p.yr.startsWith("SO"));
