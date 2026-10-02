@@ -114,11 +114,22 @@ const PCOPIED = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3
 const pCopyBtn = d => { if (!d.querySelector(".pcopy") && !d.querySelector(".pthink")) d.insertAdjacentHTML("beforeend", `<button type="button" class="pcopy" aria-label="Copy message" title="Copy">${PCOPY}</button>`); };
 // Plain text of a message: headings and bullets on their own lines, without the button.
 function pText(d){
-  const c = d.cloneNode(true); c.querySelectorAll(".pcopy").forEach(b => b.remove());
+  const c = d.cloneNode(true); c.querySelectorAll(".pcopy, .pdyn").forEach(b => b.remove());
   const parts = [...c.querySelectorAll("h4,p,li")].map(e => (e.tagName === "LI" ? "- " : "") + e.textContent.trim());
   return parts.length ? parts.join("\n") : c.textContent.trim();
 }
 pLog.addEventListener("click", async e => {
+  // "Add to My Dynasty?": save that reply's plan once, then the button just opens it.
+  const a = e.target.closest(".pdyn");
+  if (a) {
+    let id = a.dataset.did;
+    if (!id || !D.list.some(d => d.id === id)) { try { id = dFromCoach(JSON.parse(a.dataset.plan)); } catch (x) { id = null; } }
+    if (!id) return;
+    a.dataset.did = id; a.textContent = "Added · open in My Dynasty"; pSave();
+    D.cur = id; D.arch = false; dSave(); dDraw(); showTab("dyn"); window.scrollTo({top:0});
+    if (innerWidth <= 900) pToggle(false);   // the sidebar covers the page on small screens
+    return;
+  }
   const b = e.target.closest(".pcopy"); if (!b) return;
   try { await navigator.clipboard.writeText(pText(b.closest(".pm"))); b.innerHTML = PCOPIED; b.setAttribute("aria-label", "Copied"); b.title = "Copied"; }
   catch (x) { b.title = "Couldn't copy"; }
@@ -279,7 +290,8 @@ function pRender(p){
     `### House rules · ${pre ? label + " · " : ""}${sl} (${s} pts)`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
     ...pWhy(p), `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => PONLY.includes(id)) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
     ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set${p.gd && p.gd !== "aa" && p.gd !== "heis" ? ` (closest to ${PGDN[p.gd]}: his sets cover All-American and Heisman)` : p.gd ? `, for the ${PGDN[p.gd]} difficulty you play on` : ""}`].join("\n"));
-  return html;
+  const save = {team:t.n, rules, label:pre ? presetOf(pre).n : HSTRICT[strict].n, goal:p.goal, goalName:p.goalName, gd:p.gd ? PGDN[p.gd] : ""};
+  return html + `<button type="button" class="pdyn" data-plan="${esc(JSON.stringify(save))}">Add to My Dynasty?</button>`;
 }
 // Fallen powerhouses: 3+ titles in the game's data but prestige 4★ or lower. Most titles first, then lowest prestige.
 function pGlory(){

@@ -450,6 +450,15 @@ const inPage = async () => {
   ok(P.plan.rules.length === 8, "Planner: Hardcore should deal 8 rules");
   ok(P.plan.rules.every(id => m.includes(unesc(HR[id].n) + ":") && m.includes(unesc(HR[id].x(P.plan.t).replace(/<[^>]+>/g, "")).slice(0, 20))), "Coach: every house rule should show its title and its rule text");
   const last = [...$$("#pLog .pm.bot")].pop();
+  // Add to My Dynasty: the reply's plan becomes a saved dynasty and My Dynasty opens on it; a second click doesn't duplicate it.
+  { const n0 = D.list.length, pd = last.querySelector(".pdyn"), want = [...P.plan.rules];
+    ok(pd && pd.textContent === "Add to My Dynasty?", "Coach: plan replies should end with an Add to My Dynasty? button");
+    pd.click(); await wait(30); const d = D.list[0];
+    ok(D.list.length === n0 + 1 && d.team === "Florida" && JSON.stringify(d.rules) === JSON.stringify(want) && d.src === "Coach · Hardcore" && curTab === "dyn" && D.cur === d.id
+      && /Coach · Hardcore/.test($("#dView").textContent) && pd.dataset.did === d.id && /Added/.test(pd.textContent), `Coach: Add to My Dynasty should save and open the plan, got ${JSON.stringify(d).slice(0, 200)} on tab ${curTab}`);
+    pd.click(); await wait(30);
+    ok(D.list.length === n0 + 1, "Coach: clicking Add to My Dynasty again should open it, not save a copy");
+    D.list = D.list.filter(x => x !== d); dSave(); dDraw(); showTab("board"); if (!$("#pChat").classList.contains("on")) pToggle(true); }
   // Copy buttons: both sides of the chat; Coach's copy keeps headings and bullets on their own lines and leaves the button out.
   { const wt = navigator.clipboard.writeText; let got = []; navigator.clipboard.writeText = async t => { got.push(t); };
     last.querySelector(".pcopy").click(); [...$$("#pLog .pm.me")].pop().querySelector(".pcopy").click(); await wait(20); navigator.clipboard.writeText = wt;
@@ -510,7 +519,7 @@ const inPage = async () => {
   $("#pIn").value = ""; $("#pIn").dispatchEvent(new Event("input"));
   m = await ask("no transfers");
   ok(/Closed portal/.test(m) && /Georgia Tech/.test(m), "Planner: follow-up didn't keep team and add Closed portal");
-  ok(!$("#pLog button:not(.pcopy), #pLog ol"), "Planner: chat should be plain messages, no cards or buttons (the copy button is the one exception)");
+  ok(!$("#pLog button:not(.pcopy):not(.pdyn), #pLog ol"), "Planner: chat should be plain messages, no cards or buttons (copy and Add to My Dynasty are the exceptions)");
   if (innerWidth > 900) { openTeam("Florida"); await wait(400);
     ok($("#dossier").getBoundingClientRect().right <= $("#pChat").getBoundingClientRect().left + 1, "Coach: dossier covers the Coach sidebar");
     closeTeam(); await wait(300); }

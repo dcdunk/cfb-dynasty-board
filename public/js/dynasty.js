@@ -12,6 +12,15 @@ function dAdd(){
   const d = {id:"d" + Date.now().toString(36), name:`${t.n} ${t.nk}${n ? ` ${n + 1}` : ""}`, team:t.n, rules:[...H.rules], src:H.src, made:Date.now(), arch:false};
   D.list.unshift(d); D.cur = d.id; D.arch = false; H.dyn = d.id; dSave(); hDraw(); dDraw();
 }
+// From Coach's "Add to My Dynasty?" button: the plan's team, rules, goal and game difficulty become a saved dynasty.
+function dFromCoach(c){
+  const t = DATA.find(x => x.n === c.team); if (!t) return null;
+  const n = D.list.filter(d => d.team === t.n).length;
+  const d = {id:"d" + Date.now().toString(36), name:`${t.n} ${t.nk}${n ? ` ${n + 1}` : ""}`, team:t.n, rules:(c.rules || []).filter(id => HR[id]), src:`Coach · ${c.label}`,
+    made:Date.now(), arch:false, ...(c.goal ? {goal:c.goal, goalName:c.goalName || ""} : {}), ...(c.gd ? {gd:c.gd} : {})};
+  D.list.unshift(d); D.cur = d.id; D.arch = false; dSave(); dDraw();
+  return d.id;
+}
 function dDraw(){
   const shown = D.list.filter(d => !!d.arch === D.arch), nA = D.list.length - D.list.filter(d => !d.arch).length;
   if (!shown.some(d => d.id === D.cur)) D.cur = shown[0] ? shown[0].id : "";
@@ -29,6 +38,8 @@ function dDraw(){
     <div class="bhead"><span class="kick">${d.arch ? "Archived dynasty" : "Dynasty"} &middot; started ${dDate(d.made)}</span>
       <input class="dname" id="dName" value="${esc(d.name)}" maxlength="40" aria-label="Dynasty name" title="Click to rename">
       <div class="bsub"><b>${t.nk}</b> &nbsp;&middot;&nbsp; ${t.c} &nbsp;&middot;&nbsp; ${t.sl} &nbsp;&middot;&nbsp; ${t.p.toFixed(1)}★ prestige &nbsp;&middot;&nbsp; ${fmt(t.nt)} NIL</div>
+      ${d.goal ? `<div class="bsub bgoal"><b>Goal${d.goalName ? ` · ${esc(d.goalName)}` : ""}:</b> ${esc(d.goal)}</div>` : ""}
+      ${d.gd ? `<div class="bsub bgoal"><b>Plays on:</b> ${esc(d.gd)}</div>` : ""}
       <div class="strain"><span class="lbl">Difficulty</span>${meter(s)}<b>${strainLbl(s)[0]}</b><span class="sub">${ids.length} ${ids.length === 1 ? "rule" : "rules"}</span></div></div>
     <div class="bfoot">${d.arch ? "" : `<button class="ghost pri" type="button" id="dEdit">Edit rules in House Rules</button>`}
       <button class="ghost" type="button" id="dArch">${d.arch ? "Restore to active" : "Archive"}</button></div></div>
