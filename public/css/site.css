@@ -688,6 +688,10 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sl-card h3{margin:0; padding:10px 12px 8px; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
   color:var(--faint); font-weight:590; border-bottom:1px solid var(--line); display:flex; justify-content:space-between}
 .sl-card h3 span{letter-spacing:.02em; text-transform:none; font-weight:400}
+.sl-card h3 span .abfav{margin-left:8px; padding:0 2px; border:0; background:none; color:var(--faint); font-size:14px; line-height:1; cursor:pointer; vertical-align:-1px}
+.sl-card h3 span .abfav:hover,.sl-card h3 span .abfav[aria-pressed="true"]{color:var(--accent)}
+.abfn{margin-left:4px; color:var(--accent); font-size:11px}
+[aria-pressed="true"] .abfn{color:inherit}
 .sl table{min-width:0}
 .sl th{position:static; cursor:default; padding:8px 12px 6px; background:transparent}
 .sl th:hover{color:var(--faint)}

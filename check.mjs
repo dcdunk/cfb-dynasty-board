@@ -346,6 +346,18 @@ const inPage = async () => {
     `Abilities: Off Platform gates wrong: ${opm.map(m => m.title)}`);
   ok(getComputedStyle(opm[3]).color === "rgb(255, 255, 255)" && /^rgba\(255, 255, 255/.test(getComputedStyle(opm[3].querySelector("small")).color) && getComputedStyle(opm[0].querySelector("small")).color.startsWith("rgba(0, 0, 0"),
     "Abilities: Platinum chip number and cost should be white, other chips dark");
+  // Favorites: star the last QB archetype, it moves to the top, the chip counts it, and it is saved.
+  const lastQB = [...$$("#abGrid [data-fav]")].pop(); lastQB.click(); await wait(20);
+  $$("#abGrid [data-fav]")[1].click(); await wait(20);
+  ok([...$$("#abGrid [data-fav]")].slice(0, 2).every(b => b.getAttribute("aria-pressed") === "true") && $$('#abGrid [data-fav][aria-pressed="true"]').length === 2 && /★2/.test($('#abPos [data-p="QB"]').textContent)
+    && JSON.parse(localStorage.getItem("abfav-v1")).length === 2, "Abilities: favoriting two QB archetypes should sort them first, count them on the chip and save them");
+  $('#abPos [data-p="FAV"]').click(); await wait(20);
+  ok($$("#abGrid .sl-card").length === 2 && /★ Favorites 2/.test($('#abPos [data-p="FAV"]').textContent), "Abilities: the Favorites chip should show only the 2 favorites");
+  $('#abPos [data-p="QB"]').click(); await wait(20);
+  for (const b of $$('#abGrid [data-fav][aria-pressed="true"]')) { $(`#abGrid [data-fav="${b.dataset.fav}"]`).click(); await wait(20); }
+  ok(!$$('#abGrid [aria-pressed="true"]').length && !/★/.test($('#abPos [data-p="QB"]').textContent), "Abilities: unfavoriting should clear the stars");
+  $('#abPos [data-p="FAV"]').click(); await wait(20);
+  ok(!$$("#abGrid .sl-card").length && /No favorites yet/.test($("#abGrid").textContent), "Abilities: Favorites with none saved should say how to add one");
   $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
   ok(/Puts more pressure on the quarterback/.test($("#abGrid").textContent), "Abilities: descriptions should show on the cards without clicking");
