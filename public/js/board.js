@@ -143,7 +143,7 @@ function body(t){
     </div>
     <h3>Coaching staff</h3>
     <table class="rost staff"><thead><tr><th class="l" scope="col">Role</th><th class="l" scope="col">Coach</th><th scope="col">Lvl</th><th scope="col">Grade</th><th class="l" scope="col">Archetype</th><th class="l" scope="col">Pipeline</th></tr></thead><tbody>${
-      t.st.map(c => `<tr><td>${c[0]}</td><td class="nm">${c[1]}${c[7] ? `<span class="dev d1">Generic</span>` : ""}</td><td class="mono">${c[2]}</td><td class="mono">${c[3]}</td><td class="l">${c[4]}</td><td class="l">${c[5]}</td></tr>`).join("")
+      t.st.map(c => `<tr tabindex="0" data-coach="${esc(c[1])}"><td>${c[0]}</td><td class="nm">${c[1]}${c[7] ? `<span class="dev d1">Generic</span>` : ""}</td><td class="mono">${c[2]}</td><td class="mono">${c[3]}</td><td class="l">${c[4]}</td><td class="l">${c[5]}</td></tr>`).join("")
     }</tbody></table>
     <h3>Stadium</h3>
     <div class="stad">
