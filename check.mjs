@@ -482,6 +482,7 @@ const inPage = async () => {
   ok($$("#abGrid .sl-card").length === 6, `Abilities: Sure Hands should be in 6 archetypes, got ${$$("#abGrid .sl-card").length}`);
   find("#abQ", "");
   ok($$("#abMent li").length === 16 && !/Hot Head/.test($("#abMent").textContent), "Abilities: expected the 16 mental abilities, without Hot Head");
+  ok(ABARCH.every(a => a[2].every(n => ABICO.has(abSlug(n)))), `Abilities: every archetype ability needs an icon, missing ${[...new Set(ABARCH.flatMap(a => a[2]).filter(n => !ABICO.has(abSlug(n))))]}`);
   ok(!/Battering Ram/.test(JSON.stringify(ABARCH)) && ABARCH.every(a => a[2].every(n => n in ABPHYS)), "Abilities: every archetype ability needs a description, and no Battering Ram");
   $('#abPos [data-p="K/P"]').click(); await wait(50);
   ok(/Field Flip/.test($("#abGrid").textContent), "Abilities: Field Flip should show under K/P");
