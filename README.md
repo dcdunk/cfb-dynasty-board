@@ -1,6 +1,6 @@
 # CFB 27 Dynasty Board
 
-A free companion site for College Football 27 dynasty mode. Live at **[cfbdynastyboard.com](https://cfbdynastyboard.com)**. No account, no ads.
+A free companion site for College Football 27 dynasty mode. Live at **[cfbdynastyboard.com](https://cfbdynastyboard.com)**. No account, no ads. Everything you save stays on your device, and **Sync your devices** (masthead button, or More on phones) keeps your phone, tablet and computer in step with a private sync code or QR scan. Your data is encrypted before it leaves the browser.
 
 ## What's on it
 
