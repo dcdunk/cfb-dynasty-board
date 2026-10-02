@@ -139,6 +139,12 @@ const inPage = async () => {
   $("#reset").click();
 
   await open("tabRand");
+  // Main actions sit above the long content so they're visible without scrolling
+  ok($("#roll").compareDocumentPosition($("#rFilters")) & Node.DOCUMENT_POSITION_FOLLOWING, "Randomizer: Pick my program should come before the filters");
+  ok($("#hdeal").compareDocumentPosition($("#hstrict")) & Node.DOCUMENT_POSITION_FOLLOWING, "House rules: Deal should come before Strictness");
+  ok($("#rFilters").hidden, "Randomizer: filters should be hidden in Completely random");
+  $('[data-mode="filt"]').click(); ok(!$("#rFilters").hidden, "Randomizer: Use my filters should show the filters");
+  $('[data-mode="any"]').click();
   $("#roll").click(); await wait(2000);
   ok($("#result").innerText.trim().length > 0, "Randomizer: roll produced no result");
 
@@ -274,6 +280,7 @@ const inPage = async () => {
   $("#hdeal").click(); await wait(50);
   ok($("#hbook").innerText.trim().length > 0, "House rules: dealing produced no rules");
   ok(localStorage.getItem("house-v1"), "House rules: state was not saved");
+  ok($("#hbook .bhead + .bfoot") && $("#hbook .bfoot ~ .rules"), "House rules: action buttons should sit between the header and the rules");
   const hm = $("#hbook .hmap");
   if (hm) ok([...hm.querySelectorAll(".on")].some(e => /--t\d/.test(e.getAttribute("style") || "")) && hm.querySelector(".hleg .sw"),
     "House rules: map should be colored by pipeline tier with a legend");

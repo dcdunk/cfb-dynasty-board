@@ -91,7 +91,9 @@
       <button type="button" data-mode="any" aria-pressed="true">Completely random</button>
       <button type="button" data-mode="filt" aria-pressed="false">Use my filters</button>
     </div>
-    <div id="rFilters" aria-disabled="true">
+    <div class="poolline" aria-live="polite"><b id="poolN">138</b> programs in the pool</div>
+    <button class="roll" id="roll" type="button">Pick my program</button>
+    <div id="rFilters" hidden>
       <div class="fgroup"><span class="lbl">National championship</span>
         <div class="chips" data-g="ti"></div></div>
       <div class="fgroup"><span class="lbl">Prestige</span>
@@ -101,8 +103,6 @@
       <div class="fgroup"><span class="lbl">Conference</span>
         <div class="chips" data-g="c"></div></div>
     </div>
-    <div class="poolline" aria-live="polite"><b id="poolN">138</b> programs in the pool</div>
-    <button class="roll" id="roll" type="button">Pick my program</button>
     <div class="hist" id="hist"></div>
   </div>
   <div class="result idle" id="result" aria-live="polite">Your program shows up here.</div>
@@ -207,11 +207,11 @@
     <button class="ghost hbuild" type="button" id="hbuild">+ Build your own preset</button>
     <div id="hPre" class="presets"></div>
     <div id="hRnd" hidden>
+      <div class="poolline">Recruiting territory and star power are always in the deal. Locked rules stay put.</div>
+      <button class="roll" id="hdeal" type="button">Deal house rules</button>
       <div class="fgroup"><span class="lbl">Strictness</span><div class="chips" id="hstrict"></div></div>
       <div class="fgroup"><span class="lbl">Program</span>
         <div class="chips"><button class="chip" type="button" id="hrprog" aria-pressed="false">Also pick a random program</button></div></div>
-      <div class="poolline">Recruiting territory and star power are always in the deal. Locked rules stay put.</div>
-      <button class="roll" id="hdeal" type="button">Deal house rules</button>
     </div>
   </div>
   <div>

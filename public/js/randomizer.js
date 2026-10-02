@@ -27,7 +27,7 @@ function rDraw(){
   $("#poolN").textContent = n;
   $("#roll").disabled = !n || rBusy;
   $("#roll").textContent = n ? ($("#result").classList.contains("idle") ? "Pick my program" : "Pick again") : "No programs match";
-  $("#rFilters").setAttribute("aria-disabled", rMode === "any");
+  $("#rFilters").hidden = rMode === "any";
   document.querySelectorAll("#viewRand .seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === rMode));
 }
 $("#rFilters").addEventListener("click", e => {

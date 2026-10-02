@@ -328,13 +328,12 @@ function hDraw(){
       <div class="bsub"><b>${t.nk}</b> &nbsp;&middot;&nbsp; ${t.c} &nbsp;&middot;&nbsp; ${t.sl} &nbsp;&middot;&nbsp; ${t.p.toFixed(1)}★ prestige &nbsp;&middot;&nbsp; ${fmt(t.nt)} NIL</div>
       <div class="strain"><span class="lbl">Difficulty</span>${meter(s)}<b>${sl}</b><span class="sub">${H.rules.length} ${H.rules.length === 1 ? "rule" : "rules"}${H.lock.size ? `, ${H.lock.size} locked` : ""}</span></div>
     </div>
-    ${H.rules.length ? `<ul class="rules">${rows}</ul>` : `<div class="bempty">No rules yet. Pick a preset, deal a random set, or add rules from the library below.</div>`}
     <div class="bfoot">
       <button class="ghost" type="button" id="hcopy"${H.rules.length ? "" : " disabled"}>Copy rules</button>
       <button class="ghost" type="button" id="hclear"${H.rules.length ? "" : " disabled"}>Clear</button>
       <button class="ghost" type="button" id="hpsave"${H.rules.length && !HPS ? "" : " disabled"}>Save as preset</button>
       ${isUserPre(H.pre) && H.edited && H.rules.length ? `<button class="ghost" type="button" id="hpupd">Update &ldquo;${esc(presetOf(H.pre).n)}&rdquo;</button>` : ""}
-      <button class="ghost" type="button" id="hdyn">Save to My Dynasty</button>
+      <button class="ghost${hDyn() ? "" : " pri"}" type="button" id="hdyn">Save to My Dynasty</button>
       ${hDyn() && hDyn().rules.join() !== H.rules.join() ? `<button class="ghost pri" type="button" id="hdupd">Update dynasty &ldquo;${esc(hDyn().name)}&rdquo;</button>` : ""}
       ${H.note ? `<span class="bnote">${H.note}</span>` : ""}
     </div>
@@ -344,7 +343,8 @@ function hDraw(){
       <p class="herr" id="hpsE">${HPS.err || ""}</p>
       <div class="hfbtn"><button class="ghost pri" type="submit">Save preset</button><button class="ghost" type="button" id="hpsX">Cancel</button>
         <span class="hsmall" style="margin:0">Saves these ${H.rules.length} rules in this browser.</span></div>
-    </form>` : ""}`;
+    </form>` : ""}
+    ${H.rules.length ? `<ul class="rules">${rows}</ul>` : `<div class="bempty">No rules yet. Pick a preset, deal a random set, or add rules from the library below.</div>`}`;
 
   $("#hlibs").textContent = `Rule library · ${HRULES.length} rules${HU.rules.length ? ` (${HU.rules.length} custom)` : ""} · create your own`;
   $("#hlibin").innerHTML = HCATS.map(([c, cn]) => `<div class="lgrp"><h3>${cn}</h3>${HRULES.filter(r => r.c === c).map(r => {

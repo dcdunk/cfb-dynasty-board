@@ -96,11 +96,13 @@ body{
   color:var(--on-cta); font-weight:590;
 }
 .spacer{flex:1 1 auto}
+/* Secondary buttons: tinted blue so they read as clickable; .ghost.pri is the solid primary. */
 .ghost{
-  font:inherit; font-size:11.5px; background:transparent; color:var(--dim);
-  border:1px solid var(--line); padding:4px 9px; cursor:pointer;
+  font:inherit; font-size:11.5px; font-weight:510; background:var(--accent-soft); color:var(--accent-ink);
+  border:1px solid color-mix(in srgb, var(--accent) 35%, transparent); padding:4px 9px; cursor:pointer;
 }
-.ghost:hover{color:var(--text); border-color:var(--dim)}
+.ghost:hover{border-color:var(--accent); color:var(--accent-ink)}
+.ghost:disabled{opacity:.45; cursor:default}
 
 /* ---------- table ---------- */
 .sheet{max-width:1500px; margin:0 auto; padding:0 22px 80px}
@@ -289,12 +291,12 @@ h3{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(-
 .fgroup .lbl{display:block; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-bottom:7px}
 .fgroup .chip{font-size:12px; padding:6px 10px}
 .fgroup .chip small{opacity:.65; font-size:10.5px; padding-left:3px}
-#rFilters[aria-disabled="true"]{opacity:.38; pointer-events:none}
-.poolline{margin:22px 0 10px; font-size:12.5px; color:var(--dim)}
+.poolline{margin:18px 0 10px; font-size:12.5px; color:var(--dim)}
 .poolline b{color:var(--text); font-family:"JetBrains Mono",monospace; font-size:15px}
 .roll{width:100%; font:inherit; font-family:Inter,sans-serif; font-weight:590; font-size:15px; letter-spacing:-.011em;
   background:var(--cta); color:var(--on-cta); border:0; padding:14px; cursor:pointer}
 .roll:hover{filter:brightness(1.06)}
+.roll{margin-bottom:6px}
 .roll:disabled{opacity:.4; cursor:default; filter:none}
 .result{border:1px solid var(--line); background:var(--panel); padding:26px 26px 24px; min-height:330px;
   display:flex; flex-direction:column}
@@ -427,6 +429,7 @@ h3{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(-
 .hmap .bd path{stroke:var(--panel); stroke-width:1; fill:none}
 .hmap figcaption{font-size:11px; color:var(--faint); margin-top:4px}
 .bfoot{padding:14px 24px; display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.bfoot:not(:last-child){border-bottom:1px solid var(--line)}
 .bfoot .ghost{font-size:12.5px; padding:7px 13px}
 .bnote{font-size:12px; color:var(--faint)}
 .bempty{padding:46px 24px; color:var(--faint); text-align:center; font-size:13px}
