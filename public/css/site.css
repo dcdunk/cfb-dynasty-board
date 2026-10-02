@@ -257,7 +257,7 @@ h3{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(-
 .ptab th.gs0, .ptab td.gs0{border-left:1px solid var(--line)}
 .ptab td.rt{color:var(--dim)}
 /* player card */
-.gs.plc{width:min(720px,calc(100% - 32px)); padding:6px 18px 18px; max-height:calc(100vh - 80px); overflow:auto}
+.gs.plc{width:min(720px,calc(100% - 32px)); padding:6px 18px 18px; margin-top:40px; max-height:calc(100vh - 80px); overflow:auto}
 .plc-sub{color:var(--dim); font-size:13px; margin:0 0 12px}
 .plc-top{display:flex; flex-wrap:wrap; gap:8px 22px; align-items:flex-end; padding:10px 0 14px; border-bottom:1px solid var(--line)}
 .plc-top div{display:flex; flex-direction:column}
@@ -517,7 +517,7 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 @media (max-width:600px){.coachbtn.gsbtn{font-size:0; gap:0} .gsbtn kbd{display:none} .syncbtn #syncLbl{font-size:12px}}
 .gs .search{border:0; border-bottom:1px solid var(--line); padding:12px 14px}
 .gs .cb{position:static; min-width:0; max-height:55vh; overflow:auto; border:0; margin:0}
-.ks{padding:6px 18px 16px}
+.ks{padding:6px 18px 16px; max-height:calc(88vh - 20px); overflow:auto}
 .ks-h{display:flex; align-items:center; justify-content:space-between; padding:10px 0 4px}
 .ks-h h2{margin:0; font-size:15px; font-weight:590}
 .ks-h .ib{background:none; border:0; padding:4px; cursor:pointer}
@@ -603,7 +603,7 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .dbak-msg{margin-top:10px; color:var(--text)}
 .dbak-msg.err,.sync-err{color:#B3261E}
 .sync-h{margin:16px 0 6px; font-size:13px; font-weight:590}
-.sy{max-height:calc(100vh - 40px); overflow:auto; margin-top:6vh}
+.sy{max-height:calc(100vh - 40px); overflow:auto; margin-top:20px}
 .sy .ks-h .ib{font-size:20px; line-height:1; color:var(--dim)}
 .sync-lede{margin:0 0 14px}
 .sync-txt{min-width:0}
@@ -962,3 +962,8 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
 .cc-arch summary::after{content:"\25BE"; margin-left:auto; color:var(--faint); font-size:12px; transition:transform .15s var(--ease)}
 .cc-arch:not([open]) summary::after{transform:rotate(-90deg)}
 .cc-arch:not([open]){padding-bottom:4px}
+
+/* ---- Pop-ups own the scroll: while a dialog or the dossier is open the page behind can't scroll, and scrolling
+   inside a pop-up never spills over to the page. ---- */
+html:has(dialog[open]), html:has(.dossier.on){overflow:hidden}
+dialog, .dossier .dbody{overscroll-behavior:contain}

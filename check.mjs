@@ -112,6 +112,12 @@ const inPage = async () => {
   $("#mMenu [data-me=reset]").click(); ok([...$$(".mpill [data-mt]")].map(b => b.dataset.mt).join() === "dyn,board,play,ab", "Phone bar: reset should restore the default four");
   $("#mMenu [data-me=done]").click(); ok($("#mMenu").hidden && $("#mMenu [data-me=edit]"), "Phone bar: Done should close and leave edit mode");
   ok(BAKKEYS.includes("mbar-v1"), "Phone bar: tab choice should be backed up and synced");
+  // Pop-ups own the scroll: the page behind is locked while one is open, and a tall card fits on screen.
+  ok(getComputedStyle(document.documentElement).overflow !== "hidden", "Scroll lock: page should scroll with nothing open");
+  await ccCard("Georgia", "Kirby Smart"); await wait(50);
+  ok(getComputedStyle(document.documentElement).overflow === "hidden" && $("#plc").getBoundingClientRect().bottom <= innerHeight, "Scroll lock: an open card should lock the page and fit on screen");
+  $("#plc").close(); openTeam("Oregon"); await wait(50); ok(getComputedStyle(document.documentElement).overflow === "hidden", "Scroll lock: the dossier should lock the page");
+  closeTeam(); await wait(250); ok(getComputedStyle(document.documentElement).overflow !== "hidden", "Scroll lock: closing should unlock the page");
   // Bottom sheets: every sheet gets one grab handle (shown only on phones, where dragging it down closes the sheet).
   ok(["#dossier", "#plc", "#sy", "#ks", "#gs"].every(id => $$(`${id} > .grab`).length === 1) && getComputedStyle($(".grab")).display === "none", "Sheets: each sheet needs one grab handle, hidden on desktop");
   // Narrow row (phone width): picking a tab slides it to the left edge so later tabs come into view.
