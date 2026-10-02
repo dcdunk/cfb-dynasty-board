@@ -359,6 +359,22 @@ const inPage = async () => {
   ok(!$$('#abGrid [aria-pressed="true"]').length && !/★/.test($('#abPos [data-p="QB"]').textContent), "Abilities: unfavoriting should clear the stars");
   $('#abPos [data-p="FAV"]').click(); await wait(20);
   ok(!$$("#abGrid .sl-card").length && /No favorites yet/.test($("#abGrid").textContent), "Abilities: Favorites with none saved should say how to add one");
+  // Position change planner: save QB Dual Threat -> WR (unknown archetype), it lists and is stored; delete removes it.
+  $('#abMode [data-m="chg"]').click(); await wait(20);
+  ok(!$("#abChg").hidden && $("#abPlayer").hidden && $("#pcList").textContent.includes("No position changes"), "Position changes: mode should open empty");
+  $("#pcFp").value = "QB"; $("#pcFp").dispatchEvent(new Event("change")); $("#pcFa").value = "Dual Threat";
+  $("#pcTp").value = "QB"; $("#pcTp").dispatchEvent(new Event("change"));
+  ok($("#pcAdd").disabled, "Position changes: same position should not be savable");
+  $("#pcTp").value = "WR"; $("#pcTp").dispatchEvent(new Event("change")); $("#pcNote").value = "test";
+  ok($("#pcTa").options[0].textContent === "Not sure yet" && [...$("#pcTa").options].length > 1, "Position changes: new archetype list should offer Not sure yet plus WR archetypes");
+  $("#pcAdd").click(); await wait(20);
+  const pcs = JSON.parse(localStorage.getItem("poschg-v1"));
+  ok(pcs.length === 1 && pcs[0].fa === "Dual Threat" && pcs[0].tp === "WR" && pcs[0].ta === "" && /Dual Threat.*Not sure yet/.test($("#pcList").textContent), "Position changes: saving should list and store the change");
+  const pn = $("#pcList [data-note]"); pn.value = "edited note"; pn.dispatchEvent(new Event("input", { bubbles: true }));
+  ok(JSON.parse(localStorage.getItem("poschg-v1"))[0].note === "edited note", "Position changes: editing a saved note should save it");
+  const cf = window.confirm; window.confirm = () => true; $("#pcList [data-del]").click(); window.confirm = cf; await wait(20);
+  ok(!JSON.parse(localStorage.getItem("poschg-v1")).length, "Position changes: delete should remove it");
+  $('#abMode [data-m="player"]').click(); await wait(20);
   $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
   ok(/Puts more pressure on the quarterback/.test($("#abGrid").textContent), "Abilities: descriptions should show on the cards without clicking");

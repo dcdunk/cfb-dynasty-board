@@ -292,6 +292,19 @@
     <ul class="ab-list ab-ment" id="abMent"></ul>
     <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files. Unlock ratings and SP costs come from CFB 27 game-file data.</p>
   </div>
+  <div id="abChg" hidden>
+    <p class="hint ab-intro">Plan offseason position changes and keep them here to check while you play. Pick a player's current position and archetype, then the position you'd move them to. The game doesn't show the new archetype ahead of time, so set it if you know it from testing or the community, or leave it as Not sure yet.</p>
+    <div class="pc-form">
+      <label>From<select id="pcFp" aria-label="Current position"></select></label>
+      <label>Archetype<select id="pcFa" aria-label="Current archetype"></select></label>
+      <span class="pc-arrow" aria-hidden="true">&rarr;</span>
+      <label>To<select id="pcTp" aria-label="New position"></select></label>
+      <label>New archetype<select id="pcTa" aria-label="New archetype"></select></label>
+      <label class="pc-note">Note<input id="pcNote" type="text" maxlength="200" placeholder="Optional, e.g. needs 85+ speed" autocomplete="off"></label>
+      <button class="ghost pri" id="pcAdd" type="button">Save change</button>
+    </div>
+    <div class="sl-grid" id="pcList" style="margin-top:18px"></div>
+  </div>
   <div id="abCoach" hidden>
     <p class="hint ab-intro">Coaches earn coach points (CP) and spend them on abilities, tier by tier. Each archetype's perk earns extra coach XP. Base archetypes are open from the start; the rest unlock by hitting a goal and spending CP. Pick an archetype.</p>
     <div class="chips" id="abArch" role="group" aria-label="Coach archetype" style="margin:16px 0"></div>
