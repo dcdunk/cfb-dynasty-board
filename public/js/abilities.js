@@ -70,6 +70,12 @@ const ABARCH = [
   ["DL","Power Rusher",["Pocket Disruptor","Duress","Grip Breaker","Workhorse","Take Down"]],
   ["DL","Pure Power",["Grip Breaker","Pocket Disruptor","Inside Disruptor","Workhorse","Hammer"]],
   ["DL","Speed Rusher",["Quick Jump","Duress","Take Down","Pocket Disruptor","Recoup"]],
+  // Edge (LEDG/REDG) has the same five archetypes and abilities as interior DL; only the unlock gates differ (DE rows in ABGATE).
+  ["EDGE","Edge Setter",["Grip Breaker","Inside Disruptor","Outside Disruptor","Option Disruptor","Workhorse"]],
+  ["EDGE","Gap Specialist",["Grip Breaker","Inside Disruptor","Outside Disruptor","Option Disruptor","Workhorse"]],
+  ["EDGE","Power Rusher",["Pocket Disruptor","Duress","Grip Breaker","Workhorse","Take Down"]],
+  ["EDGE","Pure Power",["Grip Breaker","Pocket Disruptor","Inside Disruptor","Workhorse","Hammer"]],
+  ["EDGE","Speed Rusher",["Quick Jump","Duress","Take Down","Pocket Disruptor","Recoup"]],
   ["LB","Lurker",["House Call","Knockout","Bouncer","Robber","Wrap Up"]],
   ["LB","Signal Caller",["Take Down","Workhorse","Blow Up","Wrap Up","Hammer"]],
   ["LB","Thumper",["Grip Breaker","Wrap Up","Aftershock","Blow Up","Hammer"]],
@@ -104,7 +110,10 @@ const MTL = ["Bronze", "Silver", "Gold", "Platinum"];
 const abGate = g => g ? `<div class="ab-gate">${g.map(([sp, r1, g1, r2, g2, c]) => { const a = g1.split(" "), b = g2 ? g2.split(" ") : [], k = c.split(" ");
   return `<div class="ab-gl"><span class="ab-gr">${sp ? `<em>${sp}</em> · ` : ""}${esc(r1)}${r2 ? " + " + esc(r2) : ""}</span>${MTL.map((m, i) =>
     `<span class="mt mt${i}" title="${m}: ${a[i]} ${esc(r1)}${r2 ? `, ${b[i]} ${esc(r2)}` : ""}, ${k[i]} SP">${a[i]}${r2 ? "·" + b[i] : ""}<small><i class="spi"></i>${k[i]}</small></span>`).join("")}</div>`; }).join("")}</div>` : "";
-const abRow = (n, arch) => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}</span>${abGate(arch && ABGATE[arch]?.[n])}</li>`;
+// DL and EDGE share the "DL|..." gates: each shows only its own sub-position's rows (DT or DE), unlabeled.
+const abGates = (arch, n) => { const [p, a] = arch.split("|"), sub = {DL:"DT", EDGE:"DE"}[p], g = ABGATE[(sub ? "DL" : p) + "|" + a]?.[n];
+  return sub && g ? g.filter(r => !r[0] || r[0] === sub).map(r => ["", ...r.slice(1)]) : g; };
+const abRow = (n, arch) => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}</span>${abGate(typeof arch === "string" && abGates(arch, n))}</li>`;
 
 /* ---- coach abilities ---- */
 // Names and unlocks: CollegeFootball.gg. Costs, perks and values: prestonchoate.dev, mined from the CFB 27 game files (dynasty tuning data);

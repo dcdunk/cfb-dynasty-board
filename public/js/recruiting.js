@@ -114,7 +114,7 @@ $("#rLink").addEventListener("click", () => { rLink = !rLink; if (!rLink) rTeam 
 // (drop the FB for a second TE). Saved in rboard-v1 as {a: {slot: archetype}, p: {slot: position}} (p only for subbed slots).
 // Position: short name -> [ABARCH group, full name, side]. Slot: [id, starting position]; cells come from RBXY via rbPlace.
 const RBPOS = {FS:["S","Free safety","D"], SS:["S","Strong safety","D"], CB:["CB","Cornerback","D"], WILL:["LB","Weak-side linebacker","D"],
-  MIKE:["LB","Middle linebacker","D"], SAM:["LB","Strong-side linebacker","D"], REDG:["DL","Right edge","D"], DT:["DL","Defensive tackle","D"], LEDG:["DL","Left edge","D"],
+  MIKE:["LB","Middle linebacker","D"], SAM:["LB","Strong-side linebacker","D"], REDG:["EDGE","Right edge","D"], DT:["DL","Defensive tackle","D"], LEDG:["EDGE","Left edge","D"],
   QB:["QB","Quarterback","O"], HB:["HB","Halfback","O"], FB:["FB","Fullback","O"], WR:["WR","Wide receiver","O"], TE:["TE","Tight end","O"],
   LT:["OL","Left tackle","O"], LG:["OL","Left guard","O"], C:["OL","Center","O"], RG:["OL","Right guard","O"], RT:["OL","Right tackle","O"],
   K:["K/P","Kicker","S"], P:["K/P","Punter","S"]};

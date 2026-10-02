@@ -130,7 +130,7 @@ function sOpen(){
   if (!S.code && !sApp()) sOn();
 }
 const SWHAT = [["My Dynasty", "every saved dynasty, active and archived"], ["House Rules", "the current rule set, plus your custom rules and presets"],
-  ["Recruiting & NIL", "which program it follows, and your recruiting board"], ["Abilities", "favorite archetypes and planned position changes"]];
+  ["Recruiting & NIL", "which program it follows, and your recruiting board"], ["Abilities", "favorite archetypes and planned position changes"], ["Phone tab bar", "which tabs you pinned"]];
 function sDraw(){
   sBtn();
   const el = $("#syBody"); if (!el || !$("#sy").open) return;

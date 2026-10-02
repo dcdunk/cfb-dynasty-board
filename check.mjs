@@ -444,7 +444,7 @@ const inPage = async () => {
   ok(!JSON.parse(localStorage.getItem("poschg-v1")).length, "Position changes: delete should remove it");
   // Recruiting board: every roster position has a card, each card offers that position's archetypes, OL cards carry the line advice.
   { const roster = new Set(DATA.flatMap(t => t.r.map(p => p[1]))), onBoard = new Set(RBALL.map(s => s[1]));
-    ok([...roster].every(p => onBoard.has(p)) && Object.values(RBPOS).every(s => ABARCH.some(a => a[0] === s[0])), `Recruiting board: every position needs a card with archetypes, missing ${[...roster].filter(p => !onBoard.has(p))}`);
+    ok([...roster].every(p => onBoard.has(p)) && Object.values(RBPOS).every(s => ABARCH.some(a => a[0] === s[0])), `Recruiting board: every position needs a card with archetypes (edges use EDGE), missing ${[...roster].filter(p => !onBoard.has(p))}`);
     rbPick("lg"); ok(/Raw Strength\s*Best fit/.test($("#plcB").textContent) && $("#plcB").querySelectorAll("[data-rba]").length === 4, "Recruiting board: a guard should list the 4 OL archetypes with Raw Strength as best fit");
     $('#plcB [data-rba="Agile"]').click(); ok(RB.lg === "Agile" && !$("#plc").open && JSON.parse(localStorage.getItem("rboard-v1")).a.lg === "Agile", "Recruiting board: picking should save and close");
     rbPick("lg"); $('#plcB [data-rba=""]').click(); ok(!RB.lg && !JSON.parse(localStorage.getItem("rboard-v1")).a.lg, "Recruiting board: clearing a spot should remove it");
@@ -460,10 +460,14 @@ const inPage = async () => {
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
   ok(/Puts more pressure on the quarterback/.test($("#abGrid").textContent), "Abilities: descriptions should show on the cards without clicking");
   // Unlock gates (CFB 27 game files): every archetype ability has Bronze-Platinum gates, split DE/DT only where they differ
-  ok(ABARCH.every(([p, n, ab]) => ab.every(x => ABGATE[p + "|" + n]?.[x]?.every(g => g[2].split(" ").length === 4 && g[5].split(" ").length === 4))), "Abilities: every archetype ability needs 4 unlock gates and costs");
+  ok(ABARCH.every(([p, n, ab]) => ab.every(x => abGates(p + "|" + n, x)?.every(g => g[2].split(" ").length === 4 && g[5].split(" ").length === 4))), "Abilities: every archetype ability needs 4 unlock gates and costs");
   const gr = [...$$("#abGrid .sl-card")].find(c => /^Power Rusher/.test(c.querySelector("h3").textContent));
   const gb = [...gr.querySelectorAll("li")].find(li => /Grip Breaker/.test(li.querySelector("b").textContent));
-  ok(gb.querySelectorAll(".ab-gl").length === 2 && /DE/.test(gb.textContent) && /DT/.test(gb.textContent) && gb.querySelectorAll(".mt").length === 8, "Abilities: DL Power Rusher Grip Breaker should show separate DE and DT gates");
+  ok(gb.querySelectorAll(".ab-gl").length === 1 && /Bronze: 84 Strength/.test(gb.innerHTML) && gb.querySelectorAll(".mt").length === 4, "Abilities: DL (interior) Power Rusher Grip Breaker should show only the DT gate (84 Strength)");
+  $('#abPos [data-p="EDGE"]').click(); await wait(50);
+  { const c = [...$$("#abGrid .sl-card")].find(c => /^Power Rusher/.test(c.querySelector("h3").textContent)), li = [...c.querySelectorAll("li")].find(li => /Grip Breaker/.test(li.querySelector("b").textContent));
+    ok($$("#abGrid .sl-card").length === 5 && li.querySelectorAll(".ab-gl").length === 1 && /Bronze: 94 Strength/.test(li.innerHTML), "Abilities: EDGE should show 5 archetypes with only the DE gates (94 Strength)"); }
+  $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(!$("#abMent .mt"), "Abilities: mental abilities have no unlock gates");
   find("#abQ", "sure hands");
   ok($$("#abGrid .sl-card").length === 6, `Abilities: Sure Hands should be in 6 archetypes, got ${$$("#abGrid .sl-card").length}`);
@@ -613,7 +617,7 @@ const inPage = async () => {
     localStorage.setItem("dyn-v1", JSON.stringify({list:[dyn("da", "Desk Owls")], cur:"da", arch:false})); sOff("");
     ok(/^Sync/.test($("#syncLbl").textContent) && !$("#syncOpen").classList.contains("on") && !$("#dSync"), "Sync: the masthead button starts as Sync, and My Dynasty has no sync section");
     $("#syncOpen").click(); await sBusy; await sQr(); await wait(50);
-    ok($("#sy").open && sValid(S.code) && $("#sCodeShow").textContent === sFmt(S.code) && $("#sQR svg") && $$("#sy .sync-what li").length === 4 && /Stays on each device/.test($("#sy").textContent),
+    ok($("#sy").open && sValid(S.code) && $("#sCodeShow").textContent === sFmt(S.code) && $("#sQR svg") && $$("#sy .sync-what li").length === 5 && /Stays on each device/.test($("#sy").textContent),
       "Sync: the button should open the modal with a new code, its QR code and what syncs");
     ok(/[Ss]ynced/.test($("#syncLbl").textContent) && $("#syncOpen").classList.contains("on"), "Sync: the masthead button should show synced once sync is on");
     $("#syDone").click(); ok(!$("#sy").open, "Sync: Done should close the modal");
