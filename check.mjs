@@ -150,6 +150,20 @@ const inPage = async () => {
   ok($("#crows mark.hit")?.innerText.toLowerCase() === part.toLowerCase(), "Coaches: match not highlighted");
   $("#cq").value = "temple"; $("#cq").dispatchEvent(new Event("input"));
   ok($$("#crows tr").length >= 3 && [...$$("#crows tr")].every(r => r.dataset.n === "Temple"), "Coaches: school search 'temple' should list Temple's staff");
+  // Coach card: a row opens the coach (not the dossier) with rank, archetype abilities and the school's staff; staff and links work.
+  $("#crows tr").click(); const cc0 = COACHES.find(c => c.team === "Temple" && c.name === $("#crows tr").dataset.c);
+  ok($("#plc").open && !picked && $("#plcN").textContent.includes(cc0.name) && /of \d+ (head coach|offensive coordinator|defensive coordinator)e?s by level/.test($("#plcB").textContent) && $$("#plcB .cc-st").length === 3, "Coach card: a Coach Database row should open the coach card");
+  const ccA = CARCH.find(a => a.n === cc0.arch); ok(!ccA || $$("#plcB > .cc-l li").length === ccA.br.reduce((n, b) => n + b[1].length, 0), "Coach card: should list every ability of the archetype");
+  const ccO = $$("#plcB .cc-st")[1]; ccO.click(); ok($("#plcN").textContent.includes(ccO.dataset.coach), "Coach card: tapping another staff member should open them");
+  // Elites and hybrids also own the base archetypes their unlock requires (Scheme Guru -> Tactician, Architect -> Motivator + Tactician).
+  ok(ccBase(CARCH.find(a => a.n === "Scheme Guru")).map(a => a.n).join() === "Tactician" && ccBase(CARCH.find(a => a.n === "Architect")).map(a => a.n).join() === "Motivator,Tactician" && !ccBase(CARCH.find(a => a.n === "CEO")).length, "Coach card: base archetypes from unlock text");
+  const ccG = COACHES.find(c => c.arch === "Scheme Guru"); ccCard(ccG.team, ccG.name); ok([...$$("#plcB .cc-inc summary")].map(x => x.textContent).join().startsWith("Also has Tactician"), "Coach card: a Scheme Guru coach should also show Tactician");
+  const ccTop = COACHES.filter(c => c.role === "HC").sort((a, b) => b.lvl - a.lvl)[0]; ccCard(ccTop.team, ccTop.name); ok($("#plcB").textContent.includes("#1"), "Coach card: the top head coach should rank #1");
+  ok(COACHES.every(c => CARCH.some(a => a.n === (CALIAS[c.arch] || c.arch))), "Coach card: every coach archetype should map to CARCH");
+  const ccS = COACHES.find(c => c.arch === "Schemer"); ccCard(ccS.team, ccS.name); ok($("#plcB .cc-h").textContent.includes("Tactician") && /listed as Schemer/.test($("#plcB").textContent), "Coach card: Schemer should show the Tactician archetype");
+  ccCard(ccTop.team, ccTop.name); $("#plcB [data-arch]").click(); ok(!$("#plc").open && curTab === "ab" && abM === "coach" && CGROUP.find(g => g[0] === abC)[1].includes(CALIAS[ccTop.arch] || ccTop.arch), "Coach card: Abilities link should open that archetype");
+  openTeam("Temple"); await wait(50); $("#dbody tr[data-coach]").click(); ok($("#plc").open && $("#plcN").textContent.includes($("#dbody tr[data-coach]").dataset.coach), "Coach card: dossier staff row should open the coach card");
+  $("#plcB [data-team]").click(); await wait(50); ok(!$("#plc").open && picked === "Temple", "Coach card: Open team should show the dossier"); closeTeam(); await wait(50); showTab("coach");
   // Player Database: every roster player, filters stack, sorting, paging, a row opens the team, global search finds players.
   ok(typeof RATINGS === "undefined", "Players: other tabs should never load the ratings file");
   await open("tabPlay"); await plRatings(); await wait(50);
@@ -250,7 +264,7 @@ const inPage = async () => {
   await gs("georgia"); ok($("#dname").innerText.trim() === "Georgia", "Search: 'georgia' should open the Georgia dossier"); closeTeam(); await wait(50);
   await gs("portal king"); ok(curTab === "ab" && abM === "coach" && $("#abQ").value === "Portal King", "Search: coach ability should open Abilities in coach mode");
   await gs("dot!"); ok(curTab === "ab" && abM === "player" && $("#abQ").value === "Dot!", "Search: player ability should open Abilities in player mode");
-  const gsC = COACHES[0].name; await gs(gsC); ok(curTab === "coach" && $("#cq").value === gsC && $$("#crows tr").length >= 1, `Search: coach ${gsC} should open Coach Database filtered`);
+  const gsC = COACHES[0].name; await gs(gsC); ok($("#plc").open && $("#plcN").textContent.includes(gsC), `Search: coach ${gsC} should open their coach card`); $("#plc").close();
   await gs("elusive bruiser"); ok(curTab === "ab" && abM === "player" && abP === "HB" && $("#abQ").value === "", `Search: player archetype should open Abilities on HB, got ${abM} ${abP}`);
   await gs("master motivator"); ok(curTab === "ab" && abM === "coach" && abC === "Motivator", `Search: coach archetype should open the Motivator group, got ${abM} ${abC}`);
   abP = "QB"; abC = "Recruiter";

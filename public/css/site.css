@@ -939,3 +939,20 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
   .rost.staff tr::after{content:""; order:2; flex-basis:100%; height:0}
   .rost.staff td:nth-child(4)::before{content:"Grade"; font:510 10px Inter,sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-right:5px}
 }
+
+/* ---- Coach card (coaches.js ccCard), shown in the player card sheet ---- */
+.cc-h{display:flex; align-items:center; gap:8px; margin:20px 0 6px !important; font-size:15px !important; text-transform:none !important; letter-spacing:0 !important; color:var(--text) !important; font-weight:590 !important}
+.cc-h span{font-size:12px; font-weight:400; color:var(--dim)}
+.cc-h .ab-badge{width:28px; height:28px}
+.cc-p{margin:4px 0; font-size:13px; color:var(--dim)} .cc-p b{color:var(--text); font-weight:510; margin-right:4px}
+.cc-b{margin:14px 0 4px; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:510}
+.cc-l{margin:0; padding:0; list-style:none} .cc-l li{padding:5px 0; font-size:13px; color:var(--dim); border-bottom:1px solid var(--hair)} .cc-l b{color:var(--text); font-weight:510; margin-right:4px}
+.cc-more{margin-top:12px}
+.cc-st{display:grid; grid-template-columns:30px 1fr auto 30px; gap:10px; align-items:baseline; width:100%; padding:10px 6px; border:0; border-bottom:1px solid var(--hair);
+  background:none; color:var(--text); font:inherit; font-size:13.5px; text-align:left; cursor:pointer; border-radius:6px}
+.cc-st:hover, .cc-st.on{background:var(--raise)} .cc-st span{color:var(--dim); font-size:12.5px} .cc-st .mono:last-child{text-align:right; color:var(--text)}
+.rost.staff tbody tr{cursor:pointer} .rost.staff tbody tr:hover{background:var(--raise)}
+.cc-inc{margin-top:14px; border:1px solid var(--line); border-radius:12px; padding:0 14px}
+.cc-inc summary{padding:12px 0; cursor:pointer; font-weight:510; font-size:14px}
+.cc-inc summary span{color:var(--dim); font-weight:400; font-size:12.5px; margin-left:4px}
+.cc-inc[open]{padding-bottom:14px} .cc-inc .cc-h{margin-top:4px !important}

@@ -4,7 +4,7 @@ const GS = [
   ...[...document.querySelectorAll(".tabs .tab")].map(b => ({n:b.textContent, s:"Tab", go:() => showTab(TABS.find(t => t[1] === "#" + b.id)[0])})),
   {n:"Sync your devices", s:"My Dynasty", x:"sync phone mobile desktop devices qr code", go:() => $("#syncOpen").click()},
   ...DATA.map(t => ({n:t.n, s:`${t.nk} · ${t.c}`, x:t.nk + " " + t.ab, go:() => openTeam(t.n)})),
-  ...COACHES.map(c => ({n:c.name, s:`${c.role} · ${c.team}`, go:() => { showTab("coach"); $("#cq").value = c.name; cQuery = norm(c.name); cDraw(); }})),
+  ...COACHES.map(c => ({n:c.name, s:`${c.role} · ${c.team}`, go:() => ccCard(c.team, c.name)})),
   ...[...Object.keys(ABPHYS), ...Object.keys(ABMENT)].map(n => ({n, s:"Player ability", go:() => gsAb("player", n)})),
   ...[...new Set(CARCH.flatMap(a => a.br.flatMap(([, ab]) => ab.map(([n]) => n))))].map(n => ({n, s:"Coach ability", go:() => gsAb("coach", n)})),
   ...ABARCH.map(([p, n]) => ({n, s:`${p} archetype`, go:() => { abP = p; gsArch("player", "#abGrid .sl-card h3", n); }})),
