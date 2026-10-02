@@ -603,10 +603,22 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .dbak-b .ghost{flex:1 1 140px}
 .dbak-msg{margin-top:10px; color:var(--text)}
 .dbak-msg.err,.sync-err{color:#B3261E}
-.sync-h{margin:0 0 6px; font-size:13px; font-weight:590}
+.sync-h{margin:16px 0 6px; font-size:13px; font-weight:590}
+.sy{max-height:calc(100vh - 40px); overflow:auto; margin-top:6vh}
+.sy .ks-h .ib{font-size:20px; line-height:1; color:var(--dim)}
+.sync-lede{margin:0 0 14px}
+.sync-txt{min-width:0}
+.sync-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px}
+.sync-what{margin:0; padding-left:18px; font-size:13px; line-height:1.5}
+.sync-what li{margin:0 0 4px}
+.sync-more{display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:14px}
+.sync-link{background:none; border:0; padding:0; font:12px Inter,sans-serif; color:var(--dim); text-decoration:underline; text-underline-offset:2px; cursor:pointer}
+.sync-link:hover{color:var(--text)}
+.sync-foot{display:flex; justify-content:flex-end; margin-top:16px; padding-top:12px; border-top:1px solid var(--line)}
 .sync-join{display:flex; gap:8px; margin-top:10px}
 .sync-join input{flex:1; min-width:0; font:13px "JetBrains Mono",monospace; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--text); padding:7px 9px}
-.sync-on{display:flex; flex-direction:column; gap:12px}
+.sync-on{display:flex; gap:16px; align-items:flex-start}
+@media (max-width:480px){.sync-on{flex-direction:column}}
 .sync-qr{width:148px; padding:6px; background:#fff; border-radius:6px; line-height:0}
 .sync-qr svg{width:100%; height:auto}
 .sync-code{display:block; margin:6px 0 8px; font:590 15px "JetBrains Mono",monospace; letter-spacing:.04em; color:var(--text); user-select:all; overflow-wrap:anywhere}
@@ -743,8 +755,7 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .syncbtn:hover{filter:brightness(1.06); border-color:var(--cta); color:var(--on-cta)}
 .syncbtn.on{background:var(--panel); border-color:var(--line); color:var(--text)}
 .syncbtn.on:hover{filter:none; border-color:var(--accent); color:var(--accent-ink)}
-@keyframes syncflash{from{box-shadow:0 0 0 2px var(--accent)} to{box-shadow:0 0 0 2px transparent}}
-#dSync.flash{animation:syncflash 1.6s ease-out}
+
 body{transition:margin-right .24s cubic-bezier(.4,0,.2,1)}
 body.coach-on{margin-right:400px}
 .pchat{position:fixed; top:0; right:0; bottom:0; z-index:45; width:400px; background:var(--panel); border-left:1px solid var(--line);

@@ -538,15 +538,17 @@ const inPage = async () => {
     window.__syncReload = () => reloads++;
     const dyn = (id, name) => ({id, name, team:"Temple", rules:[], src:"", made:1, arch:false});
     localStorage.setItem("dyn-v1", JSON.stringify({list:[dyn("da", "Desk Owls")], cur:"da", arch:false})); sOff("");
-    showTab("board"); $("#syncOpen").click(); await wait(20);
-    ok(curTab === "dyn" && /^Sync/.test($("#syncLbl").textContent) && !$("#syncOpen").classList.contains("on") && document.activeElement === $("#sOn"),
-      "Sync: the masthead Sync button should open My Dynasty on the sync section");
-    await sOn();
+    ok(/^Sync/.test($("#syncLbl").textContent) && !$("#syncOpen").classList.contains("on") && !$("#dSync"), "Sync: the masthead button starts as Sync, and My Dynasty has no sync section");
+    $("#syncOpen").click(); await sBusy; await sQr(); await wait(50);
+    ok($("#sy").open && sValid(S.code) && $("#sCodeShow").textContent === sFmt(S.code) && $("#sQR svg") && $$("#sy .sync-what li").length === 4 && /Stays on each device/.test($("#sy").textContent),
+      "Sync: the button should open the modal with a new code, its QR code and what syncs");
     ok(/[Ss]ynced/.test($("#syncLbl").textContent) && $("#syncOpen").classList.contains("on"), "Sync: the masthead button should show synced once sync is on");
+    $("#syDone").click(); ok(!$("#sy").open, "Sync: Done should close the modal");
+    $("#syncOpen").click(); $("#syX").click(); ok(!$("#sy").open, "Sync: the × should close the modal");
+    $("#syncOpen").click(); await wait(10);   // stays open for the rest: sDraw only paints while it's open
     const code = S.code, row = [...db.values()][0];
     ok(sValid(code) && db.size === 1 && row.ver === 1 && S.ver === 1 && !/Owls|Temple|dyn-v1/.test(row.data + atob(row.data)), "Sync: turning it on should store one encrypted copy");
-    await sQr(); sDraw(); await wait(50);
-    ok($("#sCodeShow").textContent === sFmt(code) && $("#sQR svg") && /Sync is on/.test($("#dSync").textContent), "Sync: the code and its QR code should show on My Dynasty");
+
     // Second device: its own dynasty, joins with the code typed in lowercase; both dynasties end up on both sides.
     localStorage.setItem("dyn-v1", JSON.stringify({list:[dyn("db", "Phone Owls")], cur:"db", arch:false})); sOff("");
     await sJoin(sFmt(code).toLowerCase());
@@ -562,13 +564,15 @@ const inPage = async () => {
     ok(m["rec-v1"] === null && m["abfav-v1"] === '["QB|A","QB|B"]' && m["house-v1"] === "L" && m["dyn-v1"] === "A", `Sync: merge rules wrong: ${JSON.stringify(m)}`);
     // Wrong code, a malformed code, then a copy deleted from another device.
     await sJoin("AAAAA-BBBBB-CCCCC-DDDDD");
-    ok(!S.code && /No synced data uses that code/.test($("#dSync").textContent), "Sync: an unknown code should say so and leave sync off");
+    ok(!S.code && /No synced data uses that code/.test($("#sy").textContent) && $("#sNew"), "Sync: an unknown code should say so, leave sync off and offer a new code");
     await sJoin("bad"); ok(/doesn't look like a sync code/.test(S.err), "Sync: a malformed code should be rejected before any request");
-    await sJoin(code); db.clear(); await sSync();
+    await sOn(); const orphan = S.code; ok(db.size === 2, "Sync: a fresh code should create its own copy");
+    await sJoin(code); ok(S.code === code && db.size === 1, "Sync: switching to another device's code should delete this device's unused one");
+    db.clear(); await sSync();
     ok(!S.code && /deleted from another device/.test(S.err), "Sync: a deleted copy should turn sync off here with a note");
     window.__syncStub = null; window.__syncReload = null; sessionStorage.removeItem("sync-note");
     for (const [k, v] of Object.entries(keep)) v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v);
-    S = {code:"", ver:0, last:{}, at:0, err:""}; sDraw(); showTab("board"); }
+    S = {code:"", ver:0, last:{}, at:0, err:""}; $("#sy").close(); sDraw(); showTab("board"); }
   return fails;
 };
 const r = await send("Runtime.evaluate", { expression: `(${inPage})()`, awaitPromise: true, returnByValue: true });

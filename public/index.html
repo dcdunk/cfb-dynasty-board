@@ -35,6 +35,12 @@
   <div class="ks-h"><h2 id="plcN"></h2><button class="ib" id="plcX" type="button" aria-label="Close"><kbd>Esc</kbd></button></div>
   <div id="plcB"></div>
 </dialog>
+<dialog class="gs ks sy" id="sy" aria-labelledby="syT">
+  <div class="ks-h"><h2 id="syT">Sync your devices</h2><button class="ib" id="syX" type="button" aria-label="Close">&times;</button></div>
+  <p class="hint sync-lede">Keep your saved work the same on your phone and computer. No account needed: just a sync code.</p>
+  <div id="syBody"></div>
+  <div class="sync-foot"><button class="ghost pri" id="syDone" type="button">Done</button></div>
+</dialog>
 <dialog class="gs ks" id="ks" aria-labelledby="ksT">
   <div class="ks-h"><h2 id="ksT">Keyboard shortcuts</h2><button class="ib" id="ksX" type="button" aria-label="Close"><kbd>Esc</kbd></button></div>
   <div id="ksL"></div>
@@ -248,7 +254,7 @@
 <section id="viewDyn" class="house dyn" role="tabpanel" aria-labelledby="tabDyn" hidden>
   <div>
     <h2 class="hh">My dynasties</h2>
-    <p class="hint">Save a program and its house rules as a dynasty. Each one keeps its rules, pipelines and recruiting &amp; NIL plan together. Saved in this browser, and synced across your devices if you turn on sync below.</p>
+    <p class="hint">Save a program and its house rules as a dynasty. Each one keeps its rules, pipelines and recruiting &amp; NIL plan together. Saved in this browser, and on your other devices once you turn on Sync your devices at the top.</p>
     <button class="ghost pri" id="dNew" type="button" style="margin:18px 0; width:100%">Save House Rules as a dynasty</button>
     <div class="seg" id="dSeg" role="group" aria-label="Active or archived dynasties"></div>
     <ul class="dlist" id="dList"></ul>
@@ -258,7 +264,6 @@
       <input type="file" id="dFile" accept=".json,application/json" hidden>
       <p class="hint dbak-msg" id="dBakMsg" role="status" hidden></p>
     </div>
-    <div class="dbak" id="dSync"></div>
   </div>
   <div id="dView" aria-live="polite"></div>
 </section>
