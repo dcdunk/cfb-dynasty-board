@@ -98,6 +98,7 @@ function openTeam(name){
   $("#dmotto").textContent = t.mo || "";
   $("#dmotto").hidden = !t.mo;
   $("#dtags").innerHTML = t.h.map(h => `<span class="tag">${h}</span>`).join("");
+  $("#dfacts").innerHTML = facts(t);
   $("#dbody").innerHTML = body(t);
   $("#dossier").hidden = false;
   requestAnimationFrame(() => { $("#dossier").classList.add("on"); $("#scrim").classList.add("on"); });
@@ -105,8 +106,19 @@ function openTeam(name){
   draw();
 }
 
+// Header stats strip: the numbers that used to be four body sections (ratings, prestige/titles/roster avg, stadium, NIL),
+// so the card body starts with the staff.
+function facts(t){
+  const f = (l, v, sub, cls = "") => `<div class="${cls}"><span class="lbl">${l}</span><b>${v}</b>${sub ? `<span class="sub">${sub}</span>` : ""}</div>`;
+  const yrs = tYears(t);
+  return f("Overall", t.o, "", "mono") + f("Offense", t.of, "", "mono") + f("Defense", t.df, "", "mono")
+    + f("Prestige", `${stars(t.p)} <span class="mono mut">${t.p.toFixed(1)}</span>`)
+    + f("Titles", t.ti || "–", yrs.length ? (yrs.length > 3 ? `last ${yrs[yrs.length - 1]}` : yrs.join(", ")) : "", "mono")
+    + f("Roster avg", t.ap.toFixed(1), `off ${t.ao.toFixed(1)} / def ${t.ad.toFixed(1)}`, "mono")
+    + f("NIL budget", fmt(t.nt), `${fmt(t.na)} available`, "mono")
+    + f("Stadium", esc(t.sn), `${esc(t.sl)} · ${fmt(t.sc)}`, "dstad");
+}
 function body(t){
-  const pct = Math.round(t.na / t.nt * 100);
   const grades = GRADES.map((g, i) => `
     <div class="grow"><em>${g}</em>
       <span class="gbar"><i style="width:${GVAL[t.g[i]] / 12 * 100}%"></i></span>
@@ -129,33 +141,10 @@ function body(t){
       <td class="mono">${p[3]}</td>
       <td class="mono mut">${p[5]}</td></tr>`).join("");
   return `
-    <div class="trio">
-      <div><b>${t.o}</b><span>Overall</span></div>
-      <div><b>${t.of}</b><span>Offense</span></div>
-      <div><b>${t.df}</b><span>Defense</span></div>
-    </div>
-    <div class="lede">
-      <div><span class="lbl">Prestige</span>
-        <span class="pair">${stars(t.p)}<span class="mono mut">${t.p.toFixed(1)}</span></span></div>
-      <div><span class="lbl">National titles</span><b class="mono big">${t.ti || "–"}</b>${tYears(t).length ? `<span class="sub">${tYears(t).join(", ")}</span>` : ""}</div>
-      <div><span class="lbl">Roster avg</span><b class="mono big">${t.ap.toFixed(1)}</b>
-        <span class="sub">off ${t.ao.toFixed(1)} / def ${t.ad.toFixed(1)}</span></div>
-    </div>
     <h3>Coaching staff</h3>
     <table class="rost staff"><thead><tr><th class="l" scope="col">Role</th><th class="l" scope="col">Coach</th><th scope="col">Lvl</th><th scope="col">Grade</th><th class="l" scope="col">Archetype</th><th class="l" scope="col">Pipeline</th></tr></thead><tbody>${
       t.st.map(c => `<tr tabindex="0" data-coach="${esc(c[1])}"><td>${c[0]}</td><td class="nm">${c[1]}${c[7] ? `<span class="dev d1">Generic</span>` : ""}</td><td class="mono">${c[2]}</td><td class="mono">${c[3]}</td><td class="l">${c[4]}</td><td class="l">${c[5]}</td></tr>`).join("")
     }</tbody></table>
-    <h3>Stadium</h3>
-    <div class="stad">
-      <div><span class="lbl">Name</span><b>${t.sn}</b><span class="sub">${t.sl}</span></div>
-      <div><span class="lbl">Capacity</span><b class="mono big">${fmt(t.sc)}</b></div>
-    </div>
-    <h3>NIL budget</h3>
-    <div class="grow" style="grid-template-columns:118px 1fr auto">
-      <em>${fmt(t.na)} available</em>
-      <span class="gbar"><i style="width:${pct}%"></i></span>
-      <span class="glet">${fmt(t.nt)}</span>
-    </div>
     <h3>School grades</h3>
     <div class="grades">${grades}</div>
     <h3>Roster &mdash; ${t.pc} players</h3>

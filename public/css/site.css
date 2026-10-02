@@ -180,22 +180,6 @@ td.l{text-align:left}
 .tag{font-size:10.5px; letter-spacing:.03em; color:var(--accent-ink); background:var(--accent-soft);
   padding:2px 6px}
 .dbody{overflow-y:auto; padding:0 22px 30px}
-.trio{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line);
-  border:1px solid var(--line); margin:18px 0 0}
-.trio div{background:var(--panel); padding:10px 12px}
-.trio b{display:block; font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums;
-  font-size:24px; font-weight:590; line-height:1}
-.trio span{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
-.lede{display:flex; gap:26px; margin-top:16px; flex-wrap:wrap}
-.lede div{display:flex; flex-direction:column; align-items:flex-start; gap:3px}
-.lede .lbl{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
-.lede .stars{vertical-align:baseline}
-.lede .pair{display:flex; align-items:center; gap:7px}
-.stad{display:flex; gap:26px; align-items:flex-start}
-.stad div{display:flex; flex-direction:column; gap:3px; min-width:0}
-.stad div:first-child{flex:1}
-.stad .lbl{font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
-.stad b{font-weight:590; font-size:14px; line-height:1.3}
 .pchips{margin:0 0 10px}
 .pchips .chip{font-size:11px; padding:3px 7px}
 .pchips .chip .mono{opacity:.65; font-size:10px}
@@ -824,8 +808,8 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
 .search,.chip,.ghost,.ib,.dclose,.seg,.hfi,.ab-q,.pmode select,.coachbtn,.pai,.pform textarea,.pform button,
 .roll,.rmore,.pre,.cb,.pm.me,.hbuild,.tgl .trk{border-radius:6px}
 .tgl .trk{border-radius:9px}
-.result,.pmap,.pcard,.book,.lib,.sl-card,.hfprev,.hf,.psave,.trio,.rstats,.sl-new{border-radius:12px}
-.seg,.trio,.rstats,.book,.sl-card,.lib{overflow:hidden}
+.result,.pmap,.pcard,.book,.lib,.sl-card,.hfprev,.hf,.psave,.rstats,.sl-new{border-radius:12px}
+.seg,.rstats,.book,.sl-card,.lib{overflow:hidden}
 .sl-new{border-left:0; box-shadow:inset 3px 0 0 var(--accent); border-radius:6px}
 .nilbar,.gbar,.rec .bar,.meter i{border-radius:2px}
 .nilbar i,.gbar i,.rec .bar i{border-radius:2px}
@@ -930,18 +914,19 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
   #viewPlay tbody td.rt{display:none}
   .plscroll{overflow:visible; max-height:none}
 }
-/* Team sheet coaching staff as cards on phones, matching the Coach Database cards */
+/* Team sheet coaching staff on phones: two tight lines per coach. Line 1 role, name, level; line 2 grade · archetype · pipeline. */
 @media (max-width:767px){
   .rost.staff, .rost.staff tbody{display:block; width:100%}
   .rost.staff thead{display:none}
-  .rost.staff tr{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; padding:12px 0 12px 40px; border-bottom:1px solid var(--hair)}
-  .rost.staff td{display:block; padding:0 !important; border:0 !important; text-align:left; order:3; font-size:12.5px}
-  .rost.staff td:nth-child(1){order:0; width:26px; margin-left:-40px; color:var(--faint)}
-  .rost.staff td:nth-child(2){order:1; flex:1 1 0; font-size:15px}
-  .rost.staff td:nth-child(3){order:1; font-size:20px}
+  .rost.staff tr{display:flex; flex-wrap:wrap; align-items:baseline; column-gap:8px; padding:7px 0 7px 34px; border-bottom:1px solid var(--hair)}
+  .rost.staff td{display:block; padding:0 !important; border:0 !important; text-align:left; order:3; font-size:12px; color:var(--dim)}
+  .rost.staff td:nth-child(1){order:0; width:26px; margin-left:-34px; color:var(--faint)}
+  .rost.staff td:nth-child(2){order:1; flex:1 1 0; font-size:14px; color:var(--text)}
+  .rost.staff td:nth-child(3){order:1; font-size:14px; color:var(--text)}
   .rost.staff tr::after{content:""; order:2; flex-basis:100%; height:0}
-  .rost.staff td:nth-child(4)::before{content:"Grade"; font:510 10px Inter,sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-right:5px}
+  .rost.staff td:nth-child(n+5)::before{content:"\00b7"; margin-right:8px; color:var(--faint)}
 }
+
 
 /* ---- Coach card (coaches.js ccCard), shown in the player card sheet ---- */
 .cc-h{display:flex; align-items:center; gap:8px; margin:20px 0 6px !important; font-size:15px !important; text-transform:none !important; letter-spacing:0 !important; color:var(--text) !important; font-weight:590 !important}
@@ -970,3 +955,25 @@ body{font-feature-settings:"cv01","ss03","zero"; letter-spacing:-.011em}
    inside a pop-up never spills over to the page. ---- */
 html:has(dialog[open]), html:has(.dossier.on){overflow:hidden}
 dialog, .dossier .dbody{overscroll-behavior:contain}
+
+/* ---- Dossier header stats strip (board.js facts) ---- */
+.dfacts{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; margin-top:14px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+.dfacts div{display:flex; flex-direction:column; gap:2px; min-width:0; padding:8px 12px; background:var(--panel)}
+.dfacts .lbl{font-family:Inter,sans-serif; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
+.dfacts b{font-weight:590; font-size:18px; line-height:1.25; overflow-wrap:anywhere}
+.dfacts .mono b{font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums}
+.dfacts .dstad b{font-size:13.5px; line-height:1.35; margin-top:2px}
+.dfacts .sub{font-size:11.5px; color:var(--dim); overflow-wrap:anywhere}
+.dfacts .stars{font-size:13px}
+.dbody > h3:first-child{margin-top:18px}
+@media (max-width:480px){.dfacts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Desktop: the dossier is a centered card like the player and coach cards (phones keep the bottom sheet). */
+@media (min-width:768px){
+  .dossier{top:40px; bottom:40px; left:50%; right:auto; width:min(760px,calc(100vw - 48px)); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    transform:translate(-50%,12px); opacity:0; transition:transform .2s var(--ease), opacity .2s var(--ease)}
+  .dossier.on{transform:translate(-50%,0); opacity:1}
+  .dossier .grades{display:grid; grid-template-columns:1fr 1fr; column-gap:28px}
+}
+@media (min-width:901px){
+  body.coach-on .dossier{right:auto; left:calc((100vw - 400px) / 2); width:min(760px,calc(100vw - 448px))}
+}

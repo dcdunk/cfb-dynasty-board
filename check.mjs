@@ -118,6 +118,14 @@ const inPage = async () => {
   ok(getComputedStyle(document.documentElement).overflow === "hidden" && $("#plc").getBoundingClientRect().bottom <= innerHeight, "Scroll lock: an open card should lock the page and fit on screen");
   $("#plc").close(); openTeam("Oregon"); await wait(50); ok(getComputedStyle(document.documentElement).overflow === "hidden", "Scroll lock: the dossier should lock the page");
   closeTeam(); await wait(250); ok(getComputedStyle(document.documentElement).overflow !== "hidden", "Scroll lock: closing should unlock the page");
+  // Dossier: centered card on desktop; ratings, prestige, titles, roster avg, NIL and stadium live in the header strip.
+  openTeam("Oregon"); await wait(260); { const r = $("#dossier").getBoundingClientRect(), t = DATA.find(x => x.n === "Oregon");
+    ok(Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2 && r.top >= 30 && r.bottom <= innerHeight - 30, "Dossier: should be a centered card on desktop");
+    ok($$("#dfacts > div").length === 8 && $("#dfacts").textContent.includes(t.sn) && $("#dfacts").textContent.includes(fmt(t.nt)) && !$("#dbody .trio") && $("#dbody h3").textContent === "Coaching staff", "Dossier: header strip holds the stats; body starts with the staff"); }
+  // No stat in the strip may be cut off: the longest stadium name must wrap, not clip.
+  { const t = [...DATA].sort((a, b) => (b.sn + b.sl).length - (a.sn + a.sl).length)[0]; openTeam(t.n); await wait(50);
+    ok([...$$("#dfacts b, #dfacts .sub")].every(e => e.scrollWidth <= e.clientWidth + 1 && getComputedStyle(e).textOverflow !== "ellipsis"), `Dossier: header strip text should wrap, not clip (${t.sn})`); }
+  closeTeam(); await wait(250);
   // Bottom sheets: every sheet gets one grab handle (shown only on phones, where dragging it down closes the sheet).
   ok(["#dossier", "#plc", "#sy", "#ks", "#gs"].every(id => $$(`${id} > .grab`).length === 1) && getComputedStyle($(".grab")).display === "none", "Sheets: each sheet needs one grab handle, hidden on desktop");
   // Narrow row (phone width): picking a tab slides it to the left edge so later tabs come into view.
