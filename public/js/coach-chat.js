@@ -280,7 +280,7 @@ function pGlory(){
 const PLEAGUE = "Every program (name | conference | prestige stars | overall | national title seasons):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${tYears(t).join(" ") || "none"}`).join("\n");
 // Player questions answer straight from the roster (t.r rows: [name, pos, year, ovr, dev 0-3, speed]).
 const PPOS = [["LEDG", /\b(ledgs?|left edges?)\b/], ["REDG", /\b(redgs?|right edges?)\b/], ["SAM", /\b(sam (line)?backers?|sam lbs?)\b/],
-  ["MIKE", /\b(mlbs?|mike (line)?backers?|mike lbs?)\b/], ["WILL", /\b(will (line)?backers?|will lbs?|wlbs?)\b/], ["FS", /\b(fs|free safet(y|ies))\b/], ["SS", /\b(ss|strong safet(y|ies))\b/],
+  ["MIKE", /\b(mlbs?|mike (line)?backers?|mike lbs?)\b/], ["WILL", /\b(will (line)?backers?|will lbs?|wlbs?)\b/], ["FS", /\b(fs|free safet(y|ies))\b/], ["SS", /\b(ss|strong safet(y|ies))\b/], ["DT", /\b(dts?|defensive tackles?)\b/],
   ["QB", /\b(qbs?|quarterbacks?)\b/], ["RB", /\b(rbs?|hbs?|running backs?|halfbacks?)\b/], ["WR", /\b(wrs?|receivers?|wideouts?)\b/],
   ["TE", /\b(tes?|tight ends?)\b/], ["OL", /\b(ol|o-line|offensive line\w*|tackles?|guards?|centers?|linem[ae]n)\b/], ["DL", /\b(dl|d-line|defensive line\w*|edge|pass rushers?|dts?|defensive ends?)\b/],
   ["LB", /\b(lbs?|linebackers?)\b/], ["CB", /\b(cbs?|corners?|cornerbacks?)\b/], ["S", /\b(safet(y|ies))\b/], ["K", /\b(kickers?|k)\b/], ["P", /\b(punters?|p)\b/]];
@@ -732,7 +732,7 @@ function pCanon(j, q){
   const real = t => t && (said.includes(t) || t === P.team || [t.n, t.nk].some(x => norm(x).split(/\s+/).some(w => w.length >= 4 && v.includes(" " + w + " "))));
   const ts = (Array.isArray(j.teams) ? j.teams : []).map(n => pFindTeams(String(n))[0]).filter(real), t = ts[0] || null;
   const conf = j.conference && j.conference !== "none" ? ` in the ${j.conference}` : "";
-  const pos = {QB:"qb", RB:"rb", WR:"wr", TE:"te", OL:"ol", DL:"dl", LB:"lb", CB:"cb", S:"safeties", K:"kickers", P:"punters"}[j.position] || "";
+  const pos = {QB:"qb", RB:"rb", WR:"wr", TE:"te", OL:"ol", DL:"dl", LB:"lb", CB:"cb", S:"safeties", LEDG:"left edge", REDG:"right edge", DT:"defensive tackles", SAM:"sam linebacker", MIKE:"mike linebacker", WILL:"will linebacker", FS:"free safety", SS:"strong safety", K:"kickers", P:"punters"}[j.position] || "";
   const RANK = {overall:"best teams", offense:"best offense teams", defense:"best defense teams", nil:"biggest nil budget teams", prestige:"highest prestige teams",
     titles:"most titles teams", recruiting:"best recruiting teams", rebuild:"best rebuild jobs"};
   let kind = j.kind;
