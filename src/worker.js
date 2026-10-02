@@ -27,7 +27,7 @@ game_difficulty: the in-game difficulty they play on, only if stated: freshman, 
 exclude: things they refuse to use: portal (transfers), nil (NIL money), five_stars (5-star or blue-chip recruits).
 title_goal: true when they want to win a national title or mention the program never winning one.
 rebuild, created_coach: true when asked.
-position: QB, RB, WR, TE, OL, DL, LB, CB, S, K/P or none.
+position: QB, RB, WR, TE, OL, DL, LB, CB, S, K (kicker), P (punter) or none.
 conference: SEC, Big Ten, Big 12, ACC, American, Pac-12, Mountain West, Conference USA, Sun Belt, MAC, Independent, or none.
 rank_by: overall, offense, defense, nil, prestige, titles, recruiting, rebuild or none.
 no_title_filter: true when they only want programs that have never won a national title.`;
@@ -42,7 +42,7 @@ export const SCHEMA = {
     game_difficulty: E("freshman", "varsity", "all-american", "heisman", "none"),
     exclude: {type: "array", items: E("portal", "nil", "five_stars")},
     title_goal: {type: "boolean"}, rebuild: {type: "boolean"}, created_coach: {type: "boolean"},
-    position: E("QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S", "K/P", "none"),
+    position: E("QB", "RB", "WR", "TE", "OL", "DL", "LB", "CB", "S", "K", "P", "none"),
     conference: E("SEC", "Big Ten", "Big 12", "ACC", "American", "Pac-12", "Mountain West", "Conference USA", "Sun Belt", "MAC", "Independent", "none"),
     rank_by: E("overall", "offense", "defense", "nil", "prestige", "titles", "recruiting", "rebuild", "none"),
     no_title_filter: {type: "boolean"}

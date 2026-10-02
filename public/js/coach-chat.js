@@ -732,7 +732,7 @@ function pCanon(j, q){
   const real = t => t && (said.includes(t) || t === P.team || [t.n, t.nk].some(x => norm(x).split(/\s+/).some(w => w.length >= 4 && v.includes(" " + w + " "))));
   const ts = (Array.isArray(j.teams) ? j.teams : []).map(n => pFindTeams(String(n))[0]).filter(real), t = ts[0] || null;
   const conf = j.conference && j.conference !== "none" ? ` in the ${j.conference}` : "";
-  const pos = {QB:"qb", RB:"rb", WR:"wr", TE:"te", OL:"ol", DL:"dl", LB:"lb", CB:"cb", S:"safeties", "K/P":"kickers"}[j.position] || "";
+  const pos = {QB:"qb", RB:"rb", WR:"wr", TE:"te", OL:"ol", DL:"dl", LB:"lb", CB:"cb", S:"safeties", K:"kickers", P:"punters"}[j.position] || "";
   const RANK = {overall:"best teams", offense:"best offense teams", defense:"best defense teams", nil:"biggest nil budget teams", prestige:"highest prestige teams",
     titles:"most titles teams", recruiting:"best recruiting teams", rebuild:"best rebuild jobs"};
   let kind = j.kind;
