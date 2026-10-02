@@ -353,7 +353,8 @@ const inPage = async () => {
     && JSON.parse(localStorage.getItem("abfav-v1")).length === 2, "Abilities: favoriting two QB archetypes should sort them first, count them on the chip and save them");
   $('#abPos [data-p="FAV"]').click(); await wait(20);
   ok($$("#abGrid .sl-card").length === 2 && /★ Favorites 2/.test($('#abPos [data-p="FAV"]').textContent), "Abilities: the Favorites chip should show only the 2 favorites");
-  $('#abPos [data-p="QB"]').click(); await wait(20);
+  $('#abPos [data-p="FAV"]').click(); await wait(20);
+  ok(abP === "QB" && $$("#abGrid .sl-card").length === 4 && $('#abPos [data-p="QB"]').getAttribute("aria-pressed") === "true", "Abilities: clicking the active Favorites chip should turn it off and show QB again");
   for (const b of $$('#abGrid [data-fav][aria-pressed="true"]')) { $(`#abGrid [data-fav="${b.dataset.fav}"]`).click(); await wait(20); }
   ok(!$$('#abGrid [aria-pressed="true"]').length && !/★/.test($('#abPos [data-p="QB"]').textContent), "Abilities: unfavoriting should clear the stars");
   $('#abPos [data-p="FAV"]').click(); await wait(20);

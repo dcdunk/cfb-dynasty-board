@@ -205,7 +205,11 @@ function abDraw(){
     : `<p class="hint">${q ? `No archetype has a physical ability matching "${esc(q)}".` : "No favorites yet. Tap the ☆ on an archetype to add it."}</p>`;
   $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(abRow).join("");
 }
-$("#abPos").addEventListener("click", e => { const b = e.target.closest("[data-p]"); if (b) { abP = b.dataset.p; $("#abQ").value = ""; abDraw(); } });
+// Clicking the active Favorites chip again turns the filter off, back to the last position.
+let abLast = "QB";
+$("#abPos").addEventListener("click", e => { const b = e.target.closest("[data-p]"); if (!b) return; const p = b.dataset.p;
+  if (p === "FAV" && abP === "FAV" && !$("#abQ").value.trim()) abP = abLast; else { if (abP !== "FAV") abLast = abP; abP = p; }
+  $("#abQ").value = ""; abDraw(); });
 $("#abMode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (b) { abM = b.dataset.m; $("#abQ").value = ""; abDraw(); } });
 $("#abArch").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (b) { abC = b.dataset.c; $("#abQ").value = ""; abDraw(); } });
 $("#abGrid").addEventListener("click", e => { const b = e.target.closest("[data-fav]"); if (b) abFav(b.dataset.fav); });
