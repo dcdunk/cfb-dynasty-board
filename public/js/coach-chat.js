@@ -6,8 +6,9 @@ function pAbil(q){
   const aq = /\babilit(y|ies)\b|archetype/i.test(q), s = abNorm(q);
   const arch = ABARCH.filter(a => s.includes(abNorm(a[1])));
   const ps = arch.filter(a => new RegExp(`\\b(${a[0].replace("/", "\\/")}|${ABPOSW[a[0]]})s?\\b`, "i").test(q));
-  const hit = ps.length ? ps : arch;
-  if (hit.length && (aq || /\b(get|have|has)\b/i.test(q)))
+  // An archetype name alone is often an everyday word ("recruiting power", "zone defense"): it needs its position or the word ability/archetype.
+  const hit = ps.length ? ps : aq ? arch : [];
+  if (hit.length && (aq || /\b(get|gets|have|has)\b/i.test(q)))
     return pMd(hit.map(([p, n, ab]) => [`### ${n} ${p}`, ...ab.map(x => `- **${x}:** ${abDesc(x)}`)].join("\n")).join("\n"));
   const n = abFind(q);
   if (n && (aq || /what (is|does)|unlock|who gets|which/i.test(q))) {
@@ -30,9 +31,18 @@ function pAbil(q){
 const PDIFF = [["hard", /\b(hard|harder|tough|tougher|brutal|hardcore|difficult|challeng\w*|insane|nightmare|grind)\b/], ["cas", /\b(casual|easy|easier|light|relaxed|chill)\b/]];
 const PPRE = [["money", /moneyball|no blue.?chips?|walk.?ons?|underdog/], ["old", /old.?school|no portal and no nil|classic/], ["portal", /portal era|portal program/],
   ["blue", /blue.?blood/], ["home", /hometown|home.?grown|local kids/], ["real", /realis(m|tic)|sim.?like/], ["carousel", /carousel|coordinator|headset/]];
-const PRULE = [["port-none", /no (transfer|portal)|closed portal|without the portal/], ["ter-home", /in.?state|home state only|only local|recruit local/],
-  ["nil-zero", /no nil|zero nil|without nil|no money/], ["nil-half", /half (the )?(nil|budget)|low budget/], ["star-none", /no (5|five).?stars?|no blue.?chips?/],
+// PNEG: "don't want to use", "without", "avoid", "no", "skip", "ban" a few words before the topic.
+const PNEG = "(?:\\bno|\\bnot? (?:use|using|touch|take)|don'?t (?:want to |wanna )?(?:use|touch|take|need)|do not (?:want to )?(?:use|touch|take|need)|won'?t (?:use|touch|take)|never (?:use|touch|take)|without(?: using)?|avoid(?:ing)?|skip(?:ping)?|ban(?:ning)?|stay(?:ing)? out of|stay away from)(?: (?:the|any|a|my|of))*";
+const pNeg = topic => new RegExp(`${PNEG} ${topic}`);
+const PRULE = [["port-none", new RegExp(`no (transfer|portal)|closed portal|${pNeg("(?:transfer )?(?:portal|transfers?)").source}`)], ["ter-home", /in.?state|home state only|only local|recruit local/],
+  ["nil-zero", new RegExp(`no nil|zero nil|no money|${pNeg("(?:nil|money|nil money|nil budget)").source}`)], ["nil-half", /half (the )?(nil|budget)|low budget/], ["star-none", new RegExp(`no (5|five).?stars?|no blue.?chips?|${pNeg("(?:5|five).?stars?|blue.?chips?").source}`)],
   ["game-heis", /heisman difficulty|on heisman/], ["job-coord", /start as (a )?coordinator|earn the headset/], ["sch-gaunt", /tough schedule|gauntlet|hardest schedule/]];
+// The game difficulty the user plays on ("I play on All-American"). Not the house rules' strain level.
+const PGD = [["fr", /\bfreshman\b/], ["var", /\bvarsity\b/], ["aa", /\ball.?american\b/], ["heis", /\bheisman\b(?! (or bust|trophy|winner|race|candidate))/]];
+const PGDN = {fr:"Freshman", var:"Varsity", aa:"All-American", heis:"Heisman"};
+const pGameDiff = s => (PGD.find(([, re]) => re.test(s)) || [])[0] || null;
+// Rules a plan must not use (the user plays on a lower difficulty than "Heisman or bust" asks for). Set by pPlan.
+const pBan = id => (P.ban || []).includes(id);
 const PNK = (() => { const c = {}; DATA.forEach(t => { const k = norm(t.nk); c[k] = (c[k] || 0) + 1; }); return c; })();
 // Abbreviations that are ordinary words ("most" = Missouri State) never count as a team mention.
 const PABSTOP = new Set(["most", "ball", "mass", "wake", "app", "miss", "ill", "usa", "bay", "tem", "pur", "cal", "ark"]);
@@ -91,13 +101,13 @@ function pRules(t, strict, pre, force){
   const want = {cas:1, std:2, hard:3}[strict], k = HSTRICT[strict].k, used = new Set(force.map(f => HR[f].c));
   const cats = ["ter", "star", "port", "nil", "ros", "sch", "job", "game"].filter(c => !used.has(c)).slice(0, Math.max(0, k - force.length));
   return force.concat(cats.map(c => {
-    const ok = HRULES.filter(r => r.c === c && !r.u && r.w(t));
+    const ok = HRULES.filter(r => r.c === c && !r.u && r.w(t) && !pBan(r.id));
     const best = Math.min(...ok.map(r => Math.abs(r.l - want)));
     const pool = ok.filter(r => Math.abs(r.l - want) === best);
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
   }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
 }
-const P = {last:null, choices:null, past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", ai:null, aiOn:false, busy:false, hist:[]};
+const P = {ban:[], last:null, choices:null, past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", busy:false};
 const pLog = $("#pLog");
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
 const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
@@ -110,7 +120,7 @@ const pAmt = s => /\b(a (little|bit|touch|tad)|slightly|little)\b/.test(s) ? 1 :
 const PTARGET = {cas:1, std:2, hard:3};
 // One notch easier (dir -1) or harder (+1). Never touches rules the user asked for by name (keep).
 function pStep(rules, t, dir, keep = []){
-  const fits = r => !r.u && r.w(t) && !rules.includes(r.id), nm = id => unesc(HR[id].n), free = rules.filter(id => !keep.includes(id));
+  const fits = r => !r.u && r.w(t) && !rules.includes(r.id) && !pBan(r.id), nm = id => unesc(HR[id].n), free = rules.filter(id => !keep.includes(id));
   if (dir < 0) {
     const id = [...free].sort((a, b) => HR[b].l - HR[a].l)[0]; if (!id) return null;
     const alt = HRULES.filter(r => r.c === HR[id].c && fits(r) && r.l < HR[id].l).sort((a, b) => b.l - a.l)[0];
@@ -140,6 +150,9 @@ function pPlan(q){
   if (/\b(random|surprise|any team|pick (a|one) for me)\b/.test(s)) teams.unshift(DATA[Math.floor(Math.random() * DATA.length)]);
   const t = teams[0] || P.team;
   if (!t) return null;
+  const gd = pGameDiff(s) || (P.plan && t === P.plan.t ? P.plan.gd : null);
+  // Playing below Heisman means "Heisman or bust" contradicts what they told us, unless they asked for Heisman rules.
+  P.ban = gd && gd !== "heis" && !/heisman (or bust|difficulty)/.test(s) ? ["game-heis"] : [];
   const heard = teams.length || PDIFF.some(([, re]) => re.test(s)) || PPRE.some(([, re]) => re.test(s)) || PRULE.some(([, re]) => re.test(s))
     || /creat\w* (a )?coach|custom coach|own coach|rebuild/.test(s) || PDOWN.test(s) || PUP.test(s);
   if (!heard) return null;
@@ -151,21 +164,29 @@ function pPlan(q){
   const pre = (PPRE.find(([, re]) => re.test(s)) || [null])[0];
   const force = [...new Set(PRULE.filter(([, re]) => re.test(s)).map(x => x[0]))].filter(id => HR[id].w(t));
   const created = /creat\w* (a )?coach|custom coach|my own coach|own coach|create a coach/.test(s) || (P.plan && t === P.team && P.plan.created);
-  const keep = [...new Set([...(prev ? prev.keep || [] : []), ...force])], rebuild = /rebuild/.test(s) || !!(prev && prev.rebuild);
+  const keep = [...new Set([...(prev ? prev.keep || [] : []), ...force])].filter(id => !pBan(id)), rebuild = /rebuild/.test(s) || !!(prev && prev.rebuild);
+  const fix = rs => rs.filter(id => !pBan(id));   // a newly stated game difficulty drops rules it contradicts
+  // A title goal when they bring up titles or ask for a challenge: the first one ever, or the first in a long time.
+  const goalOf = () => {
+    if (!/\b(titles?|championships?|natty|natties|never won|challenge|goal)\b/.test(s)) return null;
+    const yrs = Math.max(3, {cas:7, std:5, hard:3}[strict] || 5), last = tYears(t).slice(-1)[0];
+    return t.ti ? {goalName:"Back on top", goal:`Win ${t.n}'s first national title since ${last} within ${yrs} seasons.`}
+      : {goalName:"First title", goal:`Win the first national title in ${t.n} history within ${yrs} seasons.`};
+  };
   if (prev && dir && !pre) {
-    let rules = prev.rules.filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force); const notes = [];
+    let rules = fix(prev.rules).filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force); const notes = [];
     for (let i = 0; i < pAmt(s); i++) { const st = pStep(rules, t, dir, keep); if (!st) break; rules = st.rules; notes.push(st.note); }
     const lvl = strainLbl(strainOf(rules))[1];
-    return {...prev, created, keep, rebuild, rules:rules.sort((a, b) => catIx(a) - catIx(b)), strict:lvl <= 1 ? "cas" : lvl === 2 ? "std" : "hard",
+    return {...prev, gd, created, keep, rebuild, rules:rules.sort((a, b) => catIx(a) - catIx(b)), strict:lvl <= 1 ? "cas" : lvl === 2 ? "std" : "hard",
       change:{notes:notes.length ? notes : [dir < 0 ? "Already as light as the rules allow" : "Already as tough as the rules allow"], from:strainOf(prev.rules)}};
   }
   // A follow-up like "no transfers" edits the last plan in place instead of re-rolling every rule.
   if (prev && strict === prev.strict && !pre) {
-    const rules = prev.rules.filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force).sort((a, b) => catIx(a) - catIx(b));
-    return {...prev, created, keep, rebuild, rules, change:force.length ? {notes:force.map(f => `Added **${unesc(HR[f].n)}**`), from:strainOf(prev.rules)} : null};
+    const rules = fix(prev.rules).filter(id => !force.some(f => HR[f].c === HR[id].c)).concat(force).sort((a, b) => catIx(a) - catIx(b));
+    return {...prev, ...(goalOf() || {}), gd, created, keep, rebuild, rules, change:force.length ? {notes:force.map(f => `Added **${unesc(HR[f].n)}**`), from:strainOf(prev.rules)} : null};
   }
   const rules = pre ? pRules(t, strict, pre, force) : pFit(pRules(t, strict, pre, force), t, strict, keep);
-  return {t, strict, pre:pre || (prev && strict === prev.strict ? prev.pre : null), rules, created, keep, rebuild,
+  return {t, strict, gd, ...(goalOf() || {}), pre:pre || (prev && strict === prev.strict ? prev.pre : null), rules:fix(rules), created, keep, rebuild,
     change:prev ? {notes:[`New ${HSTRICT[strict].n.toLowerCase()} rule set`], from:strainOf(prev.rules)} : null};
 }
 // Coach replies are a tiny markdown subset: "### title", "- bullet", "**bold**". Escaped before formatting.
@@ -228,7 +249,7 @@ function pRender(p){
   const {t, strict, pre, rules, created} = p, s = strainOf(rules), [sl] = strainLbl(s);
   const [, arch, archTxt] = ARCH.find(a => t.p >= a[0]), nr = NILRANK.indexOf(t.n) + 1;
   const pl = t.pl.filter(x => x[1] > 0).sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 3);
-  const hc = (t.st || []).find(c => c[0] === "HC"), sld = SLDIFF[strict === "hard" ? "heis" : "aa"];
+  const hc = (t.st || []).find(c => c[0] === "HC"), sld = SLDIFF[p.gd === "heis" || (!p.gd && strict === "hard") ? "heis" : "aa"];
   const label = pre ? presetOf(pre).n : HSTRICT[strict].n;
   const hcS = hc ? `${hc[1]} (level ${hc[2]}, ${hc[4]})` : "the head coach";
   const coach = rules.includes("job-coord")   // Earn the headset: you're a coordinator, not the head coach
@@ -242,7 +263,7 @@ function pRender(p){
     ...(p.change ? ["### What changed", ...p.change.notes.map(x => `- ${x}`), `- **Difficulty:** ${strainLbl(p.change.from)[0]} (${p.change.from} pts) to ${sl} (${s} pts)`] : []),
     `### House rules · ${pre ? label + " · " : ""}${sl} (${s} pts)`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
     ...pWhy(p), `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => PONLY.includes(id)) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
-    ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set`].join("\n"));
+    ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set${p.gd && p.gd !== "aa" && p.gd !== "heis" ? ` (closest to ${PGDN[p.gd]}: his sets cover All-American and Heisman)` : p.gd ? `, for the ${PGDN[p.gd]} difficulty you play on` : ""}`].join("\n"));
   P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)}. NIL rank: #${nr} of ${DATA.length} (always call it "NIL rank"). National titles: ${tYears(t).join(", ") || "none"}.`,
     `Challenge: ${label}. House rules (list all ${rules.length}): ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
     `Recruiting (already adjusted to the house rules, which always win): ${recT.join(" ").replace(/\*\*/g, "")} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
@@ -440,20 +461,23 @@ function pLeague(q){
       ...xs.slice(0, Math.max(n, 8)).map(([t, tr]) => `- **${t.n}** · Tier ${tr} (${TIERN[tr]}) · ${t.o} OVR`)].join("\n"));
   }
   // Rankings over programs.
-  const M = [["rebuild", /rebuild|turn ?around|fixer.?upper|sleeping|potential|upside/], ["nil", /\bnil|budget|money|richest|poorest|cheapest/], ["titles", /titles?|championships?/],
+  const M = [["rebuild", /rebuild|turn ?around|fixer.?upper|sleeping|potential|upside/], ["rec", /recruit\w*|pipelines? (strength|power)|best pipelines\b/], ["nil", /\bnil|budget|money|richest|poorest|cheapest/], ["titles", /titles?|championships?/],
     ["prestige", /prestige|brand|blue.?blood/], ["of", /offen[cs]e/], ["df", /defen[cs]e/], ["o", /\b(best|worst|top|strongest|weakest|highest|lowest|rated|overall|good|bad)\b/]];
   const m = M.find(([, re]) => re.test(s)); if (!m || !(league || /\b(team|teams|program|programs|school|schools|which|who)\b/.test(s))) return null;
   const low = /\b(worst|lowest|weakest|poorest|cheapest|least|bottom|smallest|bad)\b/.test(s), key = m[0];
   // Rebuild pick: a budget that ranks well above the roster (money to fix it), then prestige.
   // Rebuilds leave out the top third of rosters in scope, then rank by money and brand relative to the roster.
   const cut = [...pool].sort((a, b) => b.o - a.o)[Math.floor(pool.length / 3)]?.o ?? 0, pool2 = key === "rebuild" ? pool.filter(t => t.o < cut) : pool;
-  const score = key === "rebuild" ? t => (orank(t) - (NILRANK.indexOf(t.n) + 1)) + t.p * 10 : key === "nil" ? t => t.nt : t => t[key === "titles" ? "ti" : key];
+  // Recruiting power: prestige, NIL rank and Tier 3+ pipelines, the three things the game's recruiting pitch leans on.
+  const recS = t => t.p * 10 + (DATA.length - NILRANK.indexOf(t.n)) * .25 + pipesAt(t, 3).length * 3;
+  const score = key === "rec" ? recS : key === "rebuild" ? t => (orank(t) - (NILRANK.indexOf(t.n) + 1)) + t.p * 10 : key === "nil" ? t => t.nt : t => t[key === "titles" ? "ti" : key];
   const xs = [...pool2].sort((a, b) => low ? score(a) - score(b) : score(b) - score(a)).slice(0, n);
-  const title = {rebuild:"Best rebuild jobs", nil:low ? "Smallest NIL budgets" : "Biggest NIL budgets", titles:"Most national titles", prestige:low ? "Lowest prestige" : "Highest prestige",
+  const title = {rec:low ? "Weakest recruiting power" : "Strongest recruiting power", rebuild:"Best rebuild jobs", nil:low ? "Smallest NIL budgets" : "Biggest NIL budgets", titles:"Most national titles", prestige:low ? "Lowest prestige" : "Highest prestige",
     of:low ? "Weakest offenses" : "Best offenses", df:low ? "Weakest defenses" : "Best defenses", o:low ? "Lowest rated" : "Highest rated"}[key];
   P.facts = `${title} (${where}):\n` + xs.map(t => tLine(t).replace(/\*\*/g, "")).join("\n"); P.last = {kind:"league", q:s};
   return pMd([`### ${title} · ${where}`, ...(key === "rebuild" ? [`- Skips the top third of rosters (${cut}+ overall), then ranks by how far the NIL budget outranks the roster, plus prestige: money and a brand to fix a weaker team.`] : []),
-    ...xs.map(t => `- ${tLine(t)}${key === "rebuild" ? ` · roster #${orank(t)}, NIL #${NILRANK.indexOf(t.n) + 1}` : key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`)].join("\n"));
+    ...(key === "rec" ? ["- Ranked by prestige, NIL budget and the number of Tier 3+ recruiting pipelines."] : []),
+    ...xs.map(t => `- ${tLine(t)}${key === "rec" ? ` · ${pipesAt(t, 3).length} Tier 3+ pipelines` : key === "rebuild" ? ` · roster #${orank(t)}, NIL #${NILRANK.indexOf(t.n) + 1}` : key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`)].join("\n"));
 }
 // Names that point at more than one program: ask instead of guessing.
 const PAMB = [[/\bmiami\b(?! (university|oh\b|ohio|fl\b|florida|hurricanes|redhawks))/, ["Miami", "Miami University"], /\bthe u\b|hurricanes|redhawks/],
@@ -473,30 +497,35 @@ function pHelp(t){
 /* ---- challenge suggestions: three data-driven dynasty challenges, pick one by number or name ---- */
 const PCHAL = /\b(challenges?|suggest|recommend|surprise me|ideas?|what (team|program|school) should i|give me (a|an|some) (dynasty|team|program)|good dynasty|fun dynasty|interesting dynasty|dynasty ideas?)\b/;
 const pick = xs => xs[Math.floor(Math.random() * xs.length)];
-function pChallenges(){
-  const nr = t => NILRANK.indexOf(t.n) + 1, g5 = DATA.filter(t => !isP4(t));
+function pChallenges(q = ""){
+  const s = norm(q), noTi = /\b(never won|no (national )?(titles?|championships?)|without a (title|championship)|zero titles|first (ever )?(title|championship|natty))\b/.test(s);
+  const OK = t => !noTi || t.ti === 0, D = DATA.filter(OK);
+  const nr = t => NILRANK.indexOf(t.n) + 1, g5 = D.filter(t => !isP4(t));
   const cut = [...DATA].sort((a, b) => b.o - a.o)[Math.floor(DATA.length / 3)].o;
-  const rb = DATA.filter(t => t.o < cut).sort((a, b) => ((orank(b) - nr(b)) + b.p * 10) - ((orank(a) - nr(a)) + a.p * 10)).slice(0, 5);
+  const rb = D.filter(t => t.o < cut).sort((a, b) => ((orank(b) - nr(b)) + b.p * 10) - ((orank(a) - nr(a)) + a.p * 10)).slice(0, 5);
   const all = [
-    () => { const t = pick(DATA.filter(t => t.ti >= 3 && t.p <= 4).sort((a, b) => b.ti - a.ti || a.p - b.p).slice(0, 4));
+    () => { const t = pick(D.filter(t => t.ti >= 3 && t.p <= 4).sort((a, b) => b.ti - a.ti || a.p - b.p).slice(0, 4)); if (!t) return null;
       return {name:"Back to glory", t, q:`${t.n} dynasty rebuild`, why:`${t.ti} national titles, the last in ${tYears(t).slice(-1)[0]}, but only ${t.p}★ today.`,
         goal:`Win the ${t.c === "Independent" ? "most games of your career" : t.c} within five seasons and bring home ${t.n}'s first national title since ${tYears(t).slice(-1)[0]}.`}; },
-    () => { const t = pick(g5.sort((a, b) => a.nt - b.nt).slice(0, 8));
+    () => { const t = pick(g5.sort((a, b) => a.nt - b.nt).slice(0, 8)); if (!t) return null;
       return {name:"Moneyball", t, q:`moneyball at ${t.n}`, why:`NIL budget #${nr(t)} of ${DATA.length} (${fmt(t.nt)}), ${t.o} overall.`,
         goal:`Win the ${t.c === "Independent" ? "a bowl game" : t.c} with no blue-chip recruits and half of an already tiny budget.`}; },
-    () => { const t = pick(DATA.filter(t => t.p >= 5));
+    () => { const t = pick(D.filter(t => t.p >= 5)); if (!t) return null;
       return {name:"Blue-blood burden", t, q:`blue blood ${t.n} dynasty`, why:`${t.p}★ prestige and ${t.ti} titles: anything short of a title is a failure.`,
         goal:`Win a national title within three seasons on Heisman difficulty against a brutal schedule, or you're fired.`}; },
-    () => { const t = pick(rb);
+    () => { const t = pick(rb); if (!t) return null;
       return {name:"Money-pit rebuild", t, q:`tough ${t.n} dynasty rebuild`, why:`Roster #${orank(t)} but NIL #${nr(t)}: the money is there, the players aren't.`,
         goal:`Top-25 finish by season three and a playoff berth by season five.`}; },
-    () => { const t = pick(g5.filter(t => t.p <= 2));
+    () => { const t = pick(g5.filter(t => t.p <= 2)); if (!t) return null;
       return {name:"Climb the carousel", t, q:`coaching carousel ${t.n} dynasty`, why:`${t.p}★ ${t.c} program, ${t.o} overall: nobody's first choice.`,
-        goal:`Start as a coordinator at ${t.n}, earn the head job, then get hired by a Power 4 program.`}; }];
-  const xs = all.sort(() => Math.random() - .5).slice(0, 3).map(f => f());
+        goal:`Start as a coordinator at ${t.n}, earn the head job, then get hired by a Power 4 program.`}; },
+    () => { const t = pick(DATA.filter(t => t.ti === 0).sort((a, b) => b.o - a.o).slice(0, 8)); if (!t) return null;
+      return {name:"First title", t, q:`tough ${t.n} dynasty`, why:`${t.o} overall and ${t.p}★, but no national title in program history.`,
+        goal:`Win the first national title in ${t.n} history within five seasons.`}; }];
+  const xs = all.sort(() => Math.random() - .5).map(f => f()).filter(Boolean).slice(0, 3);
   P.choices = xs;
   P.facts = "Challenge options:\n" + xs.map((c, i) => `${i + 1}. ${c.name}: ${c.t.n}. ${c.why} Goal: ${c.goal}`).join("\n");
-  return pMd(["### Three dynasty challenges", ...xs.flatMap((c, i) => [`- **${i + 1}. ${c.name}: ${c.t.n}** · ${c.why} **Goal:** ${c.goal}`]),
+  return pMd([`### ${xs.length === 3 ? "Three" : xs.length} dynasty challenges${noTi ? " · programs without a national title" : ""}`, ...xs.flatMap((c, i) => [`- **${i + 1}. ${c.name}: ${c.t.n}** · ${c.why} **Goal:** ${c.goal}`]),
     'Reply with a number or the team to build that plan, or say "more ideas".'].join("\n"));
 }
 function pTakeChallenge(c){
@@ -549,6 +578,58 @@ function pStat(q, t){
   P.facts = out.join("\n").replace(/\*\*/g, "").replace(/### /g, "");
   return pMd(out.join("\n"));
 }
+/* ---- whole-message intent: decided before any handler gets a turn, so a stray keyword can't hijack a plan request ---- */
+// A plan request names (or continues) a program and asks for a dynasty, challenge, rules or a difficulty.
+const PPLANW = /\b(dynast(y|ies)|challenge|challenging|house rules|rebuild|save|run it|play (as|with)|coach (at|for))\b|\bplan\b(?! (my|the|our) (first|next|\d))/;
+const POVER = /\b(what do you think (of|about)|thoughts on|tell me about|how (good )?is|overview|scouting report|breakdown|rundown|what('s| is) (the deal|up) with|should i (pick|take|play as|use))\b/;
+const PBEGIN = /\b(never played|first (time|dynasty)|new to (dynasty|the game|cfb|college football)|beginner|newbie|just (started|getting started)|easiest (team|program|school)|where (should|do) i start|(team|program|school) (should i|to) start)\b/;
+const PEASY = /\b(easiest|best|clearest|shortest|quickest) (path|road|route|way|shot) to (a |the )?(natty|title|national (title|championship)|championship|playoff)|best (chance|shot) (at|to win) (a |the )?(natty|title|national|championship)/;
+function pIntent(q){
+  const s = norm(q), team = pFindTeams(q)[0] || null;
+  const asksPlan = PPLANW.test(s) || [...PDIFF, ...PPRE, ...PRULE].some(([, re]) => re.test(s)) || !!pGameDiff(s) && /\b(play|playing|on)\b/.test(s);
+  // "Tell me about Oregon" is an overview unless it also asks for a dynasty; roster and staff questions keep their own answers.
+  const over = !!team && POVER.test(s) && !PPLANW.test(s) && !PPOS.some(([, re]) => re.test(s)) && !/\b(coach|coaches|staff|coordinators?|roster|players?|nil|budget|prestige|offen[cs]e|defen[cs]e|titles?|pipelines?)\b/.test(s);
+  const cmp = pFindTeams(q).length >= 2 && /\b(vs\.?|versus|compare|or|better)\b/.test(s) && !PDIFF.some(([, re]) => re.test(s));   // "Oregon or Texas?"
+  return {s, team, plan: !!team && asksPlan && !over && !cmp, over, begin: PBEGIN.test(s), easy: PEASY.test(s)};
+}
+// "What do you think about Oregon": the program at a glance, not a rule set.
+function pOverview(t){
+  const rk = f => [...DATA].sort((a, b) => f(b) - f(a)).indexOf(t) + 1, nr = NILRANK.indexOf(t.n) + 1;
+  const best = [...t.r].sort((a, b) => b[3] - a[3]).slice(0, 3), hc = (t.st || []).find(c => c[0] === "HC");
+  const pl = t.pl.filter(x => x[1] >= 3).sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 4);
+  const [, arch] = ARCH.find(a => t.p >= a[0]);
+  P.team = t; P.last = {kind:"stat", q:"overall"};
+  const out = [`### ${t.n} ${t.nk} · at a glance`, `- **${t.c}** · ${t.p}★ prestige · recruiting band: ${arch}`,
+    `- **Overall ${t.o}** (#${rk(x => x.o)} of ${DATA.length}) · offense ${t.of} (#${rk(x => x.of)}) · defense ${t.df} (#${rk(x => x.df)})`,
+    `- **NIL budget:** ${fmt(t.nt)} (#${nr} of ${DATA.length})`,
+    `- **National titles:** ${t.ti ? `${t.ti} (last in ${tYears(t).slice(-1)[0]})` : "none yet"}`,
+    `- **Strong pipelines (Tier 3+):** ${pl.length ? and(pl.map(x => `${x[0]} (Tier ${x[1]})`)) : "none"}`,
+    ...(hc ? [`- ${sRow(hc)}`] : []), "### Best players", ...best.map(p => `- ${pRow(p)}`),
+    `Want a plan? Try "tough ${t.n} dynasty" or "casual ${t.n} rebuild".`];
+  P.facts = out.join("\n").replace(/\*\*/g, "").replace(/### /g, "");
+  return pMd(out.join("\n"));
+}
+// New players: strong roster, money and pipelines, so recruiting and winning come easy while they learn.
+function pBeginner(){
+  const nr = t => NILRANK.indexOf(t.n) + 1, sc = t => t.o * 2 + t.p * 6 - nr(t) * .3 + pipesAt(t, 3).length * 2;
+  const xs = [...DATA].sort((a, b) => sc(b) - sc(a)).slice(0, 4);
+  P.last = {kind:"league", q:"best teams"};
+  P.facts = "Starter-friendly programs (roster, prestige, NIL, pipelines):\n" + xs.map(t => tLine(t).replace(/\*\*/g, "")).join("\n");
+  return pMd(["### Good first dynasties", "- Picked for a strong roster, high prestige, a big NIL budget and Tier 3+ pipelines, so you can learn recruiting without starting from scratch.",
+    ...xs.map(t => `- ${tLine(t)} · ${pipesAt(t, 3).length} strong pipelines`),
+    `Say "casual ${xs[0].n} dynasty" for a relaxed plan, or name another program.`].join("\n"));
+}
+// Easiest road to a title: a strong roster in a conference without a close rival.
+function pEasyPath(s){
+  const [pool, where] = pScope(s);
+  const top = t => DATA.filter(x => x !== t && x.c === t.c).sort((a, b) => b.o - a.o)[0];
+  const sc = t => t.o * 2 + (t.c === "Independent" || !top(t) ? 0 : t.o - top(t).o) + t.p * 2;
+  const xs = [...pool].sort((a, b) => sc(b) - sc(a)).slice(0, 5);
+  P.last = {kind:"league", q:s};
+  P.facts = `Easiest paths to a title (${where}): ` + xs.map(t => `${t.n} ${t.o} OVR, top conference rival ${top(t) ? `${top(t).n} ${top(t).o}` : "none"}`).join("; ");
+  return pMd([`### Easiest paths to a title · ${where}`, "- Ranked by roster strength, how far ahead of the next-best team in the conference it is, and prestige.",
+    ...xs.map(t => `- ${tLine(t)} · ${t.c === "Independent" || !top(t) ? "no conference title game in the way" : `best ${t.c} rival: ${top(t).n} (${top(t).o})`}`)].join("\n"));
+}
 /* ---- follow-ups: "what about Michigan?" repeats the last kind of question for the new team or conference ---- */
 function pFollow(q){
   const s = norm(q), L = P.last; if (!L || s.split(/\s+/).length > 8) return null;
@@ -570,6 +651,7 @@ function pFollow(q){
 async function pAsk(q){
   q = q.trim(); if (!q || P.busy) return;
   pSay("me", esc(q)); P.fuzzy = null;
+  const replying = !!(P.pending || P.choices);   // answers to "Which one?" or a challenge pick stay keyword-only
   if (/^(clear|reset|start over|new chat|clear chat|forget (it|everything))\b/i.test(q)) return pClear();
   // Answer to "Which Miami?": pick an option and replay the original question with an unambiguous name.
   if (P.pending) {
@@ -582,16 +664,26 @@ async function pAsk(q){
     const c = P.choices[ix] || P.choices.find(x => pFindTeams(q)[0] === x.t); P.choices = null;
     if (c) { pSay("bot", pTakeChallenge(c)); return pSave(); }
   }
-  if ((PCHAL.test(norm(q)) || /\bmore ideas|other ideas|something else\b/i.test(q)) && !pFindTeams(q).length && !/\b(rule|remove|swap)\b/i.test(q)) { pSay("bot", pChallenges()); return pSave(); }
+  if (!replying) {
+    const wait = pAIUse(q) || window.__aiStub ? pSay("bot", '<p class="pthink">Reading that…</p>') : null;
+    P.busy = true; const c = pCanon(await pAI(q), q); P.busy = false; if (wait) wait.remove();
+    if (c) q = c;
+  }
+  const it = pIntent(q);
+  if (it.begin && !it.team) { pSay("bot", pBeginner()); return pSave(); }
+  if (it.easy && !it.team) { pSay("bot", pEasyPath(it.s)); return pSave(); }
+  if ((PCHAL.test(norm(q)) || /\bmore ideas|other ideas|something else\b/i.test(q)) && !pFindTeams(q).length && !/\b(rule|remove|swap)\b/i.test(q)) { pSay("bot", pChallenges(q)); return pSave(); }
   const amb = pAmbig(norm(q)) && pAmbig(q);
   if (amb) { P.pending = {q:norm(q), re:amb.re, opts:amb.opts};
     pSay("bot", pMd(["### Which one?", ...amb.opts.map((t, i) => `- **${i + 1}. ${t.n} ${t.nk}** · ${t.c} · ${t.o} OVR`), "Reply with the number or the name."].join("\n"))); return pSave(); }
   // Order: a named player, then roster questions ("best QB at Ohio State"), then fallen powerhouses, then a dynasty plan.
-  const fp = pFindPlayer(q), rq = /\b(best|top|fastest|highest.rated|starting|starter)\b/i.test(q) && !/dynasty|rebuild|house rules|challenge|\bplan\b/i.test(q);
+  const fp = pFindPlayer(q), rq = (/\b(best|top|fastest|highest.rated|starting|starter)\b/i.test(q) && !/dynasty|rebuild|house rules|challenge|\bplan\b/i.test(q))
+    || (!it.plan && !!it.team && PPOS.some(([pos, re]) => pos !== "K/P" ? re.test(it.s) : /\b(kickers?|punters?)\b/.test(it.s)));   // "tell me about Oregon's QBs"
   const tp = pFindTeams(q)[0] || P.team;
   let html = "", plan = null;
   const fc = !fp && pFindCoach(q), sq = /\b(head coach|coaches|coaching staff|staff|coordinators?|oc|dc|hc)\b|who coaches/i.test(q) && !/dynasty|created|custom|own coach|real coach/i.test(q);
-  const fu = pFollow(q), ed = !fu && pEdit(q), lg = !fu && !ed && pLeague(q), ah = !fu && !ed && !lg && pAbil(q);
+  // A plan request goes straight to the planner: league, ability and follow-up handlers only see other messages.
+  const fu = !it.plan && pFollow(q), ed = !fu && pEdit(q), lg = !fu && !ed && !it.plan && pLeague(q), ah = !fu && !ed && !lg && !it.plan && pAbil(q);
   const notPlan = !/dynasty|rebuild|house rules|challenge|\brules?\b|\bplan\b(?! (my|the|our))|tough|casual|hard|easy/i.test(q)
     && ![...PDIFF, ...PPRE, ...PRULE].some(([, re]) => re.test(norm(q))) && !PDOWN.test(norm(q)) && !PUP.test(norm(q));
   const rm = PROAD.test(norm(q)), stq = notPlan && tp && !/\b(best|top|fastest|worst|highest|lowest|most|who)\b/i.test(q) && PSTATW.some(([, re]) => re.test(norm(q)));
@@ -599,6 +691,7 @@ async function pAsk(q){
   else if (ed) html = ed;
   else if (lg) html = lg;
   else if (ah) html = ah;
+  else if (it.over) html = pOverview(it.team);
   else if (rm && tp) html = pRoadmap(q, tp);
   else if (stq && (pFindTeams(q).length || /\b(their|its|they)\b/i.test(q))) html = pStat(q, tp);
   else if (fc) { P.team = fc[0]; P.facts = `Coach on the board: ${sRow(fc[1], fc[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
@@ -607,39 +700,58 @@ async function pAsk(q){
   else if (rq && tp) { html = pPlayers(q, tp); P.last = {kind:"players", q}; }
   else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
   else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); P.last = {kind:"plan"}; }
-  // Plans, rosters and staff come from the templated reply even with AI on: the model dropped and renamed rules when it rewrote them.
-  // The AI only answers what the template can't, using the facts from the last answer plus the league table.
-  if (!html && P.aiOn && P.ai) { await pWrite(q, pSay("bot", ""), true, true); return pSave(); }
   if (html && P.fuzzy) html = `<p class="pguess">Reading “${esc(P.fuzzy.typed)}” as ${esc(P.fuzzy.t.n)}.</p>` + html;
   pSay("bot", html || (P.team || pFindTeams(q)[0] ? pHelp(pFindTeams(q)[0] || P.team) : `<p>I didn't catch a program in that.</p>` + PHELP));
   pSave();
 }
-async function pWrite(q, el, free, open){
-  el.textContent = "…"; P.busy = true;
-  const sys = "You are Coach, the Dynasty Board assistant for College Football 27 dynasty mode. Use ONLY the facts below; never add ratings, names or numbers that are not in them. "
-    + "Do not use your own memory of real college football: no years, records, coaches or history unless they appear below. National title seasons below come from NCAA.com. "
-    + "If the facts don't answer the question, say the board doesn't have that. Format: short sections, each starting with a '### ' title line, then '- ' bullet points of one sentence each. No paragraphs longer than one sentence. Keep it under 180 words.\n\nFACTS:\n" + (P.facts || "") + (open ? "\n\n" + PLEAGUE : "");
+/* ---- Workers AI understanding step: /api/coach (src/worker.js) reads the message into a structured request,
+   pCanon turns that into a plain sentence the keyword engine above already handles, and the engine writes the answer.
+   The AI never writes answers, so it can't invent rules or numbers. Any failure (offline, daily free limit, rate limit,
+   slow reply, opened from disk) falls back to the original message. ---- */
+const PAISKIP = /^\s*(and|what about|how about|same|now|ok|okay|yes|no|nope|undo|go back|back|start over|clear|reset|make it|tone|crank|dial|remove|drop|add|swap|replace|why|explain|\d)\b/i;
+const pAIUse = q => !window.__noAI && location.protocol.startsWith("http") && q.trim().split(/\s+/).length >= 5 && !PAISKIP.test(q)
+  && !pFindRules(q).length && !/\babilit(y|ies)\b|archetype|\b(gets?|unlock)\b/i.test(q);
+async function pAI(q){
+  if (window.__aiStub) return window.__aiStub(q, P.team && P.team.n);   // check.mjs feeds recorded model replies here
+  if (!pAIUse(q)) return null;
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 7000);
   try {
-    const chunks = await P.ai.chat.completions.create({stream:true, temperature:.2, max_tokens:450,
-      messages:[{role:"system", content:sys}, ...P.hist.slice(-4), {role:"user", content:free ? q : `Reply to: "${q}". Use four sections: Program, House rules, Recruiting, Sliders. One short bullet per house rule: its name in bold, then the rule.`}]});
-    let out = "";
-    for await (const c of chunks) { out += c.choices[0]?.delta?.content || ""; el.innerHTML = pMd(out); }
-    P.hist.push({role:"user", content:q}, {role:"assistant", content:out});
-  } catch (e) { el.textContent = "Coach's AI model stopped responding. Try rephrasing as a plan, player, staff or league question."; }
-  P.busy = false;
+    const r = await fetch("/api/coach", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({q, team:P.team ? P.team.n : ""}), signal:ctl.signal});
+    return r.ok ? await r.json() : null;
+  } catch (e) { return null; } finally { clearTimeout(tm); }
 }
-const PMODEL = "Llama-3.2-3B-Instruct-q4f16_1-MLC";   // ~1.8 GB; best grounded answers of the 1B/1.5B/3B models tested
-// The AI model loads automatically the first time Coach opens (not on page load, so visitors who never open Coach don't download it).
-// Skipped without WebGPU, with the browser's data saver on, or in the test browser (window.__noAI). Coach works fully without it.
-async function pAiLoad(){
-  if (P.ai || P.aiLoading || window.__noAI || !navigator.gpu || navigator.connection?.saveData) return;
-  const st = $("#pStat"); P.aiLoading = true; st.hidden = false; st.textContent = "Loading Coach's AI model (one-time download, about 1.8 GB)…";
-  try {
-    const w = await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.85/+esm");
-    P.ai = await w.CreateMLCEngine(PMODEL, {initProgressCallback:r => st.textContent = `Loading Coach's AI model (one-time download, about 1.8 GB): ${Math.round((r.progress || 0) * 100)}%`});
-    P.aiOn = true; st.hidden = true;
-  } catch (e) { st.textContent = "Coach's AI model couldn't load on this device. Everything else still works."; setTimeout(() => st.hidden = true, 6000); }
-  P.aiLoading = false;
+// The model's request as Coach's own phrasing. Teams must come from the message (or the current program): the model can't add one.
+function pCanon(j, q){
+  if (!j || typeof j !== "object" || !j.kind || j.kind === "other") return null;
+  const said = pFindTeams(q), v = " " + norm(q).replace(/[^a-z0-9&]+/g, " ") + " ";
+  const real = t => t && (said.includes(t) || t === P.team || [t.n, t.nk].some(x => norm(x).split(/\s+/).some(w => w.length >= 4 && v.includes(" " + w + " "))));
+  const ts = (Array.isArray(j.teams) ? j.teams : []).map(n => pFindTeams(String(n))[0]).filter(real), t = ts[0] || null;
+  const conf = j.conference && j.conference !== "none" ? ` in the ${j.conference}` : "";
+  const pos = {QB:"qb", RB:"rb", WR:"wr", TE:"te", OL:"ol", DL:"dl", LB:"lb", CB:"cb", S:"safeties", "K/P":"kickers"}[j.position] || "";
+  const RANK = {overall:"best teams", offense:"best offense teams", defense:"best defense teams", nil:"biggest nil budget teams", prestige:"highest prestige teams",
+    titles:"most titles teams", recruiting:"best recruiting teams", rebuild:"best rebuild jobs"};
+  let kind = j.kind;
+  if (kind === "players" && !pos && !t && RANK[j.rank_by]) kind = "ranking";   // "best at recruiting in the SEC" is about programs
+  switch (kind) {
+    case "plan": {
+      const pt = t || P.team; if (!pt) return null;
+      const s = norm(q), keep = [...PPRE, ...PRULE].map(([, re]) => (s.match(re) || [])[0]).filter(Boolean);   // presets and rules named in the message
+      const gd = {"freshman":"freshman", "varsity":"varsity", "all-american":"all-american", "heisman":"heisman"}[j.game_difficulty];
+      return [`${{casual:"casual ", hard:"tough "}[j.difficulty] || ""}${pt.n} dynasty${j.rebuild ? " rebuild" : ""}${j.created_coach ? " with a created coach" : ""}`,
+        ...(gd ? [`i play on ${gd}`] : []), ...(j.exclude || []).map(x => ({portal:"no transfers", nil:"no nil", five_stars:"no five stars"})[x]).filter(Boolean),
+        ...(j.title_goal ? ["win a national title"] : []), ...keep].join(", ");
+    }
+    case "compare": return ts.length >= 2 ? `${ts[0].n} vs ${ts[1].n}` : null;
+    case "players": return t ? `best ${pos || "players"} at ${t.n}` : `best ${pos || "players"}${conf || " in the country"}`;
+    case "staff": return t ? `${t.n} coaching staff` : null;
+    case "overview": return t ? `what do you think about ${t.n}` : null;
+    case "ranking": return RANK[j.rank_by] ? `${RANK[j.rank_by]}${conf}${j.no_title_filter ? " with no national titles" : ""}` : null;
+    case "beginner": return "i have never played dynasty";
+    case "easiest_path": return `easiest path to a title${conf}`;
+    case "challenges": return `give me a challenge${j.no_title_filter ? " with a team that has never won a title" : ""}`;
+    case "roadmap": return t ? `${t.n} roster roadmap` : null;
+  }
+  return null;
 }
 // Chat memory (localStorage "coach-v1"): the transcript, current plan, undo history, last team and preferred difficulty.
 const pSer = p => p && {...p, t:p.t.n};
@@ -657,13 +769,13 @@ function pLoad(){
   } catch (e) { return false; }
 }
 function pClear(){
-  Object.assign(P, {plan:null, past:[], team:null, pref:null, pending:null, facts:"", hist:[]});
+  Object.assign(P, {plan:null, past:[], team:null, pref:null, pending:null, facts:""});
   try { localStorage.removeItem("coach-v1"); } catch (e) {}
   pLog.innerHTML = ""; pSay("bot", PHELP);
 }
 function pToggle(on){
   $("#pChat").classList.toggle("on", on); document.body.classList.toggle("coach-on", on); $("#pOpen").setAttribute("aria-expanded", on);
-  if (on) { pAiLoad(); if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus({preventScroll:true}); } else $("#pOpen").focus();
+  if (on) { if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus({preventScroll:true}); } else $("#pOpen").focus();
 }
 pLoad();
 $("#pClear").addEventListener("click", () => { pClear(); $("#pIn").focus(); });

@@ -415,7 +415,7 @@ const inPage = async () => {
   { const imgs = [...$$("#viewAb img.ab-ico")]; await Promise.race([Promise.all(imgs.map(i => i.decode().catch(() => {}))), wait(3000)]);
     ok(imgs.length > 20 && imgs.every(i => i.naturalWidth > 0), `Abilities: icons missing or broken: ${imgs.filter(i => !i.naturalWidth).map(i => i.src).slice(0, 3)}`); }
 
-  ok(!$("#pAi") && window.__noAI && !P.aiLoading && !P.ai, "Coach: AI toggle should be gone and the test browser must not load the model");
+  ok(!$("#pAi") && window.__noAI && typeof pAiLoad === "undefined" && !pAIUse("tough florida dynasty with a created coach"), "Coach: the old in-browser model is gone and the test browser never calls /api/coach");
   // Coach abilities: each upgrade shows its own cost; Recruiter T1 is 15 CP (K/P 10).
   { const sa = [...$$("#viewAb button")].find(b => b.textContent.trim() === "Coach" && !b.closest("#abArch")); if (sa) { showTab("ab"); sa.click(); await wait(50); }
     const lis = [...$$("#abCGrid .ab-list li")], first = lis[0]?.querySelector(".ab-cost")?.textContent;
@@ -513,6 +513,8 @@ const coachRun = async cs => {
   const out = [];
   for (const c of cs) {
     P.plan = null; P.team = null; P.past = []; P.facts = ""; P.pref = null; P.pending = null; P.choices = null; P.last = null; localStorage.removeItem("coach-v1"); document.querySelector("#pLog").innerHTML = "";
+    // c.ai: recorded Workers AI replies by message (null = the AI failed), so the understanding step is tested without the network.
+    window.__aiStub = c.ai ? q => c.ai[q] ?? null : null;
     for (const [q0, e] of c.say) {
       const q = q0.replace("__NAME__", () => unesc(HR[window.__id].n)).replace("__TEAM__", () => window.__c.t.n);
       document.querySelector("#pIn").value = q; document.querySelector("#pForm").requestSubmit(); await new Promise(r => setTimeout(r, 20));
@@ -523,6 +525,7 @@ const coachRun = async cs => {
       if (bad.length) out.push(`Coach case "${c.name}", after "${q}": ${bad.join("; ")}. Reply: ${txt.slice(0, 300)}`);
     }
   }
+  window.__aiStub = null;
   return out;
 };
 const cr = await send("Runtime.evaluate", { expression: `(${coachRun})(${JSON.stringify(cases)})`, awaitPromise: true, returnByValue: true });
@@ -542,12 +545,23 @@ if (after !== "ab,false,true,true") fails.push(`Refresh: reloading on #abilities
 
 chrome.kill(); await new Promise(r => chrome.once("exit", r)); server.close();
 try { rmSync(profile, { recursive: true, force: true, maxRetries: 5 }); } catch {} // leftover temp files are harmless
-// Deploy config: static assets only, no Worker code (www -> main domain is a Cloudflare Redirect Rule in the dashboard),
-// so every request is a free static-asset request. Both hostnames stay attached so www keeps a proxied DNS record.
+// Deploy config: static assets, plus the Worker for /api/* only (Coach's AI step), so every page, script and data request stays
+// a free static-asset request. www -> main domain is a Cloudflare Redirect Rule in the dashboard. Both hostnames stay attached.
 const wr = JSON.parse((await readFile(join(import.meta.dirname, "wrangler.jsonc"), "utf8")).replace(/^\s*\/\/.*$/gm, ""));
-if (wr.main || wr.assets?.run_worker_first || wr.assets?.directory !== "./public") fails.push("wrangler.jsonc: should serve ./public as static assets with no Worker script (no main, no run_worker_first)");
+if (wr.main !== "src/worker.js" || JSON.stringify(wr.assets?.run_worker_first) !== '["/api/*"]' || wr.assets?.directory !== "./public")
+  fails.push('wrangler.jsonc: serve ./public as static assets and run src/worker.js first for "/api/*" only');
+if (wr.ai?.binding !== "AI" || !wr.ratelimits?.some(r => r.name === "COACH_RL")) fails.push("wrangler.jsonc: needs the AI binding and the COACH_RL rate limit");
+// The Worker itself, with fake bindings: static paths pass through, rate limit and AI failures return errors the page falls back from.
+{ const W = await import("./src/worker.js"), post = (b, path = "/api/coach") => new Request("https://x" + path, {method:"POST", body:JSON.stringify(b)});
+  const env = (ai, rl = true) => ({ASSETS:{fetch:() => new Response("asset")}, COACH_RL:{limit:async () => ({success:rl})}, AI:{run:ai}});
+  const good = env(async (m, o) => ({choices:[{message:{content:JSON.stringify({kind:"plan", teams:[o.messages[1].content.includes("Oregon") ? "Oregon" : "?"]})}}]}));
+  const r1 = await W.default.fetch(new Request("https://x/js/core.js"), good), r2 = await W.default.fetch(post({q:"tough Oregon dynasty"}), good);
+  const r3 = await W.default.fetch(post({q:"x"}), env(async () => ({}), false)), r4 = await W.default.fetch(post({q:"x"}), env(async () => { throw new Error("3036: daily free allocation"); }));
+  const r5 = await W.default.fetch(post({q:""}), good), j2 = await r2.json();
+  if (await r1.text() !== "asset" || j2.kind !== "plan" || j2.teams[0] !== "Oregon" || r3.status !== 429 || r4.status !== 502 || r5.status !== 400)
+    fails.push(`Worker: expected asset passthrough, parsed AI JSON, 429, 502 and 400; got ${[await r1.clone().text?.(), JSON.stringify(j2), r3.status, r4.status, r5.status]}`); }
 if (!["cfbdynastyboard.com", "www.cfbdynastyboard.com"].every(h => wr.routes?.some(r => r.pattern === h && r.custom_domain))) fails.push("wrangler.jsonc: both custom domains must stay attached");
 
 if (fails.length) { console.log("FAIL\n- " + fails.join("\n- ")); process.exit(1); }
-console.log(`PASS: all 10 tabs, player database, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, static deploy config. No JS errors.`);
+console.log(`PASS: all 10 tabs, player database, dossier, search, roll, pipelines, house rules, program picker, recruiting & NIL, my dynasty, sliders, player abilities, planner, ${cases.length} Coach conversations, Worker, deploy config. No JS errors.`);
 process.exit(0);
