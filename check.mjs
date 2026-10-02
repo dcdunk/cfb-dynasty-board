@@ -442,6 +442,19 @@ const inPage = async () => {
     ok(pn.tagName === "TEXTAREA" && pn.offsetHeight > h1 && pn.scrollHeight <= pn.clientHeight + 2, `Position changes: a long note should wrap and show in full (height ${h1} -> ${pn.offsetHeight}, content ${pn.scrollHeight})`); }
   const cf = window.confirm; window.confirm = () => true; $("#pcList [data-del]").click(); window.confirm = cf; await wait(20);
   ok(!JSON.parse(localStorage.getItem("poschg-v1")).length, "Position changes: delete should remove it");
+  // Recruiting board: every roster position has a card, each card offers that position's archetypes, OL cards carry the line advice.
+  { const roster = new Set(DATA.flatMap(t => t.r.map(p => p[1]))), onBoard = new Set(RBALL.map(s => s[1]));
+    ok([...roster].every(p => onBoard.has(p)) && Object.values(RBPOS).every(s => ABARCH.some(a => a[0] === s[0])), `Recruiting board: every position needs a card with archetypes, missing ${[...roster].filter(p => !onBoard.has(p))}`);
+    rbPick("lg"); ok(/Raw Strength\s*Best fit/.test($("#plcB").textContent) && $("#plcB").querySelectorAll("[data-rba]").length === 4, "Recruiting board: a guard should list the 4 OL archetypes with Raw Strength as best fit");
+    $('#plcB [data-rba="Agile"]').click(); ok(RB.lg === "Agile" && !$("#plc").open && JSON.parse(localStorage.getItem("rboard-v1")).a.lg === "Agile", "Recruiting board: picking should save and close");
+    rbPick("lg"); $('#plcB [data-rba=""]').click(); ok(!RB.lg && !JSON.parse(localStorage.getItem("rboard-v1")).a.lg, "Recruiting board: clearing a spot should remove it");
+    // Subs: FB -> TE swaps the card's label and archetype list (FB archetype dropped); back to FB clears the sub; defense can't sub to QB.
+    RB.fb = "Utility"; rbPick("fb"); $('#plcB [data-rbp="TE"]').click();
+    ok(RBP.fb === "TE" && !RB.fb && $('#rb [data-rb="fb"] b').textContent === "TE" && /Vertical Threat/.test($("#plcB").textContent) && JSON.parse(localStorage.getItem("rboard-v1")).p.fb === "TE", "Recruiting board: subbing FB for TE should relabel the card and offer TE archetypes");
+    ok(!$('#plcB [data-rbp="CB"]') && !$('#plcB [data-rbp="K"]'), "Recruiting board: an offensive spot should only sub offensive positions");
+    $('#plcB [data-rbp="WR"]').click(); ok($('#rb [data-rb="fb"]').style.getPropertyValue("--g") === "2/8" && $('#rb [data-rb="wr1"]').style.getPropertyValue("--g") === "1/1", "Recruiting board: a FB subbed to WR should move out to flank the line (row 2, right slot)");
+    $('#plcB [data-rbp="FB"]').click(); ok(!RBP.fb && $('#rb [data-rb="fb"] b').textContent === "FB", "Recruiting board: subbing back should restore the FB");
+    $("#plc").close(); }
   $('#abMode [data-m="player"]').click(); await wait(20);
   $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(/Speed Rusher/.test($("#abGrid").textContent) && $$("#abGrid .sl-card").length === 5, "Abilities: DL chip should show 5 archetypes");
@@ -698,6 +711,7 @@ for (const [set, want, got] of [
   [`showTab("board"); $('#chips [data-c="SEC"]').click()`, "#programs/conf=SEC", `[curTab, conf, rowsFor().every(t => t.c === "SEC")].join()`, "board,SEC,true"],
   [`showTab("pipe"); pSet("Oregon"); pPipe = $("#ppipe").options[1].value; $("#ppipe").value = pPipe; pDraw()`, null, `[curTab, pTeam, pPipe === $("#ppipe").options[1].value].join()`, "pipe,Oregon,true"],
   [`showTab("rand"); document.querySelector('#viewRand .seg [data-mode="filt"]').click(); document.querySelector('#rFilters [data-g="p"] [data-i="0"]').click()`, "#randomizer/mode=filt&p=0", `[curTab, rMode, [...rSel.p].join()].join()`, "rand,filt,0"],
+  [`showTab("rec"); $('#recMode [data-m="board"]').click(); rbPick("lt"); $('#plcB [data-rba="Well Rounded"]').click()`, "#recruiting/board", `[curTab, rM, RB.lt, !$("#rbWrap").hidden, $("#recGrid").hidden, document.querySelectorAll("#rb .rb-c").length].join()`, "rec,board,Well Rounded,true,true,25"],
   [`showTab("slide"); document.querySelector('#slDiff [data-d]:not([aria-pressed="true"])').click()`, null, `[curTab, slD !== "heis"].join()`, "slide,true"]].map(([a, h, g, w]) => [a, h, [g, w]])) {
   const h = await ev(set + `; location.hash`); await new Promise(r => { loaded = r; send("Page.reload"); });
   const v = await ev(got[0]); if ((want && h !== want) || v !== got[1]) fails.push(`Refresh: ${set.slice(0, 40)}... should survive a reload (hash ${h}, got ${v})`);

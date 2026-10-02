@@ -66,7 +66,7 @@ $("#viewDyn").addEventListener("change", e => {
 });
 /* ---- backup and restore: everything this browser saved for the site, as one JSON file ---- */
 // Coach's chat history (coach-v1) is left out on purpose: big and not worth carrying over.
-const BAKKEYS = ["dyn-v1", "house-v1", "house-custom-v1", "rec-v1", "theme-v1", "abfav-v1", "poschg-v1", "mbar-v1"];
+const BAKKEYS = ["dyn-v1", "house-v1", "house-custom-v1", "rec-v1", "theme-v1", "abfav-v1", "poschg-v1", "mbar-v1", "rboard-v1"];
 const BAKAPP = "cfb-dynasty-board";
 function dBackupData(){
   const data = {}; for (const k of BAKKEYS) { try { const v = localStorage.getItem(k); if (v != null) data[k] = v; } catch (e) {} }

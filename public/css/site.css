@@ -978,3 +978,42 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
 @media (min-width:901px){
   body.coach-on .dossier{right:auto; left:calc((100vw - 400px) / 2); width:min(760px,calc(100vw - 448px))}
 }
+
+/* ---- Recruiting board (recruiting.js rbDraw): defense on top facing the offense, special teams below; cards placed at --g (desktop) or --m (phone) cells from RBXY ---- */
+#recMode{margin:4px 0 14px}
+.rb-bar{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 16px; margin-bottom:12px}
+.rb-bar .hint{margin:0}
+.rb{border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:6px 14px 14px}
+.rb-side h3{margin:10px 0 8px; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:510}
+.rb-f{display:grid; gap:8px; justify-content:center; grid-template-columns:repeat(9,minmax(0,108px))}
+.rb-o{border-top:2px dashed var(--line); margin-top:14px}
+.rb-s{border-top:1px solid var(--line); margin-top:14px}
+.rb-s .rb-f{grid-template-columns:repeat(2,minmax(0,108px))}
+.rb-c{grid-area:var(--g); display:flex; flex-direction:column; min-width:0; min-height:62px; padding:0; border:1px solid var(--line); border-radius:6px; overflow:hidden;
+  background:var(--ground); color:var(--faint); font:inherit; cursor:pointer; text-align:center}
+.rb-c b{background:var(--raise); color:var(--text); font:590 11px/1 "JetBrains Mono",monospace; padding:5px 2px; letter-spacing:.02em}
+.rb-c span{flex:1; display:grid; place-items:center; padding:5px 4px; font-size:12px; line-height:1.2; overflow-wrap:anywhere}
+.rb-c:hover{border-color:var(--accent)}
+.rb-c:focus-visible{outline:2px solid var(--focus); outline-offset:1px}
+.rb-c.on{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.rb-c.on b{background:var(--accent); color:var(--on-cta)}
+.rb-c.on span{color:var(--text); font-weight:510}
+.rb-c.sub b{box-shadow:inset 0 -2px 0 var(--accent)}
+.rb-subs .chip{font-family:"JetBrains Mono",monospace}
+.rb-pick{display:grid; gap:6px; margin-bottom:12px}
+.rb-pick button{display:flex; flex-direction:column; gap:3px; text-align:left; padding:10px 12px; border:1px solid var(--line); border-radius:6px;
+  background:var(--ground); color:var(--text); font:inherit; cursor:pointer}
+.rb-pick button:hover{border-color:var(--accent)}
+.rb-pick button[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 10%,var(--ground))}
+.rb-pick b{font-weight:590; font-size:14px; display:flex; align-items:center; gap:8px}
+.rb-pick i{font-style:normal; font-size:10px; letter-spacing:.06em; text-transform:uppercase; padding:2px 6px; border-radius:4px; background:var(--raise); color:var(--accent)}
+.rb-pick span{font-size:12px; color:var(--dim)}
+@media (max-width:767px){
+  .rb{padding:2px 8px 10px}
+  .rb-f{gap:5px}
+  .rb-d .rb-f{grid-template-columns:repeat(5,minmax(0,1fr));}
+  .rb-o .rb-f{grid-template-columns:repeat(6,minmax(0,1fr));}
+  .rb-s .rb-f{grid-template-columns:repeat(2,minmax(0,96px))}
+  .rb-c{grid-area:var(--m); min-height:56px}
+  .rb-c span{font-size:9.5px; padding:4px 1px; letter-spacing:-.01em}
+}

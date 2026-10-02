@@ -238,8 +238,13 @@
     </label>
     </div>
   </header>
+  <div class="chips" id="recMode" role="group" aria-label="Plan or recruiting board"></div>
   <div class="rec-grid" id="recGrid"></div>
-  <p class="rec-src">Mechanics from launch-window guides (June and July 2026); patches may have changed some numbers. Sources:
+  <div id="rbWrap" hidden>
+    <div class="rb-bar"><p class="hint">Plan the type of player you want at every spot, built around your scheme. Tap a card to pick an archetype.</p><button type="button" class="ghost" id="rbClear">Clear board</button></div>
+    <div class="rb" id="rb"></div>
+  </div>
+  <p class="rec-src" id="recSrc">Mechanics from launch-window guides (June and July 2026); patches may have changed some numbers. Sources:
     <a href="https://dynastycentral.gg/college-football-27/dynasty-guides/recruiting-guide" target="_blank" rel="noopener">Dynasty Central</a>,
     <a href="https://gamerant.com/college-football-cfb-27-dynasty-recruiting-guide/" target="_blank" rel="noopener">Game Rant</a>,
     <a href="https://cfb27.com/article/cfb-27-dynasty-recruiting-guide" target="_blank" rel="noopener">CFB27.com</a>.
