@@ -26,8 +26,7 @@ function pAbil(q){
 }
 
 /* ---- dynasty planner: keyword planner over the site's own data, with an optional in-browser AI model for wording ---- */
-// The planner never invents facts: every number comes from DATA/HRULES/ARCH/SLDIFF. The AI (WebLLM, runs on the visitor's GPU)
-// only rephrases those facts and answers follow-ups from them. Without WebGPU or with AI off, the templated reply stands alone.
+// The planner never invents facts: every number comes from DATA/HRULES/ARCH/SLDIFF.
 const PDIFF = [["hard", /\b(hard|harder|tough|tougher|brutal|hardcore|difficult|challeng\w*|insane|nightmare|grind)\b/], ["cas", /\b(casual|easy|easier|light|relaxed|chill)\b/]];
 const PPRE = [["money", /moneyball|no blue.?chips?|walk.?ons?|underdog/], ["old", /old.?school|no portal and no nil|classic/], ["portal", /portal era|portal program/],
   ["blue", /blue.?blood/], ["home", /hometown|home.?grown|local kids/], ["real", /realis(m|tic)|sim.?like/], ["carousel", /carousel|coordinator|headset/]];
@@ -107,9 +106,25 @@ function pRules(t, strict, pre, force){
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
   }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
 }
-const P = {ban:[], last:null, choices:null, past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, facts:"", busy:false};
+const P = {ban:[], last:null, choices:null, past:[], pref:null, pending:null, fuzzy:null, team:null, plan:null, busy:false};
 const pLog = $("#pLog");
-function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
+// Copy button on every message (yours and Coach's). Saved with the message HTML, so reloaded chats keep it.
+const PCOPY = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1"/></svg>';
+const PCOPIED = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>';
+const pCopyBtn = d => { if (!d.querySelector(".pcopy") && !d.querySelector(".pthink")) d.insertAdjacentHTML("beforeend", `<button type="button" class="pcopy" aria-label="Copy message" title="Copy">${PCOPY}</button>`); };
+// Plain text of a message: headings and bullets on their own lines, without the button.
+function pText(d){
+  const c = d.cloneNode(true); c.querySelectorAll(".pcopy").forEach(b => b.remove());
+  const parts = [...c.querySelectorAll("h4,p,li")].map(e => (e.tagName === "LI" ? "- " : "") + e.textContent.trim());
+  return parts.length ? parts.join("\n") : c.textContent.trim();
+}
+pLog.addEventListener("click", async e => {
+  const b = e.target.closest(".pcopy"); if (!b) return;
+  try { await navigator.clipboard.writeText(pText(b.closest(".pm"))); b.innerHTML = PCOPIED; b.setAttribute("aria-label", "Copied"); b.title = "Copied"; }
+  catch (x) { b.title = "Couldn't copy"; }
+  setTimeout(() => { b.innerHTML = PCOPY; b.setAttribute("aria-label", "Copy message"); b.title = "Copy"; }, 1500);
+});
+function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pCopyBtn(d); pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
 const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
   "Or ask about the league:", '- "Florida vs Florida State"', '- "Best QB in the SEC"', '- "Best rebuild jobs in the Big Ten"',
   "I'll suggest house rules, a recruiting approach and sliders from this site's data. Then say \"make it harder\", \"no transfers\" and so on."].join("\n"));
@@ -264,20 +279,14 @@ function pRender(p){
     `### House rules · ${pre ? label + " · " : ""}${sl} (${s} pts)`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
     ...pWhy(p), `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => PONLY.includes(id)) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
     ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set${p.gd && p.gd !== "aa" && p.gd !== "heis" ? ` (closest to ${PGDN[p.gd]}: his sets cover All-American and Heisman)` : p.gd ? `, for the ${PGDN[p.gd]} difficulty you play on` : ""}`].join("\n"));
-  P.facts = [`Program: ${t.n} ${t.nk}, ${t.c}, prestige ${t.p} stars, overall ${t.o} (offense ${t.of}, defense ${t.df}), NIL budget ${fmt(t.nt)}. NIL rank: #${nr} of ${DATA.length} (always call it "NIL rank"). National titles: ${tYears(t).join(", ") || "none"}.`,
-    `Challenge: ${label}. House rules (list all ${rules.length}): ` + rules.map(id => `${unesc(HR[id].n)}: ${unesc(HR[id].x(t).replace(/<[^>]+>/g, ""))}`).join(" | "),
-    `Recruiting (already adjusted to the house rules, which always win): ${recT.join(" ").replace(/\*\*/g, "")} Top pipelines: ${pl.map(x => `${x[0]} ${TIERN[x[1]]}`).join(", ") || "none"}.`,
-    coach.replace(/<[^>]+>/g, ""), `Coaching staff: ${staffLine(t)}`, `Sliders: Matt10's ${sld.n} set.`].join("\n");
   return html;
 }
 // Fallen powerhouses: 3+ titles in the game's data but prestige 4★ or lower. Most titles first, then lowest prestige.
 function pGlory(){
   const xs = DATA.filter(t => t.ti >= 3 && t.p <= 4).sort((a, b) => b.ti - a.ti || a.p - b.p).slice(0, 3);
-  P.facts = "Former powerhouses on the board (national titles, current prestige, overall):\n" + xs.map(t => `${t.n} ${t.nk} (${t.c}): ${t.ti} titles (${tYears(t).join(", ")}), ${t.p} stars, ${t.o} overall`).join("\n");
   return pMd(["### Fallen powerhouses", ...xs.map(t => `- **${t.n}:** ${t.ti} national titles, last in ${tYears(t).slice(-1)[0]}. Now ${t.p}★ and ${t.o} overall.`),
     `Name one, like "${xs[0].n} back to glory", and I'll build the plan.`].join("\n"));
 }
-const PLEAGUE = "Every program (name | conference | prestige stars | overall | national title seasons):\n" + DATA.map(t => `${t.n} | ${t.c} | ${t.p} | ${t.o} | ${tYears(t).join(" ") || "none"}`).join("\n");
 // Player questions answer straight from the roster (t.r rows: [name, pos, year, ovr, dev 0-3, speed]).
 const PPOS = [["LEDG", /\b(ledgs?|left edges?)\b/], ["REDG", /\b(redgs?|right edges?)\b/], ["SAM", /\b(sam (line)?backers?|sam lbs?)\b/],
   ["MIKE", /\b(mlbs?|mike (line)?backers?|mike lbs?)\b/], ["WILL", /\b(will (line)?backers?|will lbs?|wlbs?)\b/], ["FS", /\b(fs|free safet(y|ies))\b/], ["SS", /\b(ss|strong safet(y|ies))\b/], ["DT", /\b(dts?|defensive tackles?)\b/],
@@ -294,18 +303,15 @@ function pPlayers(q, t){
   const xs = (grp ? t.r.filter(p => grp.includes(p[1])) : t.r.slice()).sort((a, b) => fast ? b[5] - a[5] || b[3] - a[3] : b[3] - a[3] || b[5] - a[5]).slice(0, n);
   const what = `${n > 1 ? `Top ${n}` : fast ? "Fastest" : "Best"}${pos ? " " + pos[0] : n > 1 ? " players" : " player"}${n > 1 && fast ? " by speed" : ""}`;
   P.team = t;
-  P.facts = `${t.n} ${t.nk} roster, ${what.toLowerCase()} (name, position, class year, overall rating, speed, development trait):\n` + xs.map(p => pRow(p).replace(/\*\*/g, "")).join("\n")
-    + `\nTop 10 overall on the roster: ` + [...t.r].sort((a, b) => b[3] - a[3]).slice(0, 10).map(p => `${p[0]} ${p[1]} ${p[3]}`).join(", ");
   return pMd([`### ${t.n} · ${what}`, ...xs.map(p => `- ${pRow(p)}`), ...(xs.length ? [] : ["- No players at that position on the roster."])].join("\n"));
 }
 // Coaching staff (t.st rows: [role, name, level, grade, archetype, pipeline, ...]).
 const PROLE = {HC:"Head coach", OC:"Offensive coordinator", DC:"Defensive coordinator"};
 const sRow = (c, t) => `**${PROLE[c[0]]}:** ${c[1]}${t ? ` (${t.n})` : ""} · level ${c[2]} · ${c[3]} grade · ${c[4]}${c[5] ? ` · pipeline ${c[5]}` : ""}`;
-const staffLine = t => (t.st || []).map(c => sRow(c).replace(/\*\*/g, "")).join("; ");
 function pStaff(q, t){
   const s = norm(q), role = /\b(oc|offensive coordinator)\b/.test(s) ? "OC" : /\b(dc|defensive coordinator)\b/.test(s) ? "DC" : /\bhead coach\b|\bhc\b/.test(s) ? "HC" : null;
   const xs = (t.st || []).filter(c => !role || c[0] === role);
-  P.team = t; P.facts = `${t.n} ${t.nk} coaching staff: ${staffLine(t)}`;
+  P.team = t;
   return pMd([`### ${t.n} · ${role ? PROLE[role] : "Coaching staff"}`, ...xs.map(c => `- ${sRow(c)}`), ...(xs.length ? [] : ["- No staff listed for this program."])].join("\n"));
 }
 const pFindCoach = q => { const v = " " + norm(q).replace(/[^a-z0-9' .-]+/g, " ") + " ";
@@ -344,7 +350,6 @@ function pEdit(q){
   const explain = /\b(why|what (is|does|do)|explain|meaning|mean|tell me about|how does)\b/.test(s);
   if (named.length && explain) {
     const id = named[0], r = HR[id], inPlan = p && p.rules.includes(id);
-    P.facts = `House rule ${nmR(id)} (${HCATN[r.c]}, weight ${r.l} of 3): ${plain(r.x(t))}`;
     return pMd([`### ${nmR(id)}`, `- **Rule:** ${plain(r.x(t))}`, `- **Category:** ${HCATN[r.c]} · weight ${r.l} of 3 (${HSTR[r.l]})`,
       ...(r.w(t) ? [] : [`- Doesn't apply to ${t.n}.`]),
       ...(inPlan ? [`- **Why it's in your plan:** ${pRuleWhy(id, t).join(" ")}`] : p ? [`- Not in your current plan. Say "add ${nmR(id)}" to use it.`] : [])].join("\n"));
@@ -421,7 +426,6 @@ function pFiltered(s, xs, where, labels, n){
   const low = /\b(worst|lowest|weakest|poorest|cheapest|least|smallest)\b/.test(s);
   xs = [...xs].sort((a, b) => low ? a[key] - b[key] : b[key] - a[key]);
   const shown = xs.slice(0, Math.max(n, 12)); P.last = {kind:"league", q:s};
-  P.facts = `Programs matching ${where}, ${labels.join(", ")} (${xs.length}):\n` + shown.map(t => tLine(t).replace(/\*\*/g, "")).join("\n");
   return pMd([`### ${where} · ${labels.join(" · ")}`, `- ${xs.length} program${xs.length === 1 ? "" : "s"} match${xs.length === 1 ? "es" : ""}${xs.length > shown.length ? `, top ${shown.length} shown` : ""}.`,
     ...shown.map(t => `- ${tLine(t)}${key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`), ...(xs.length ? [] : ["- Try loosening one of the filters."])].join("\n"));
 }
@@ -431,7 +435,7 @@ function pLeague(q){
   if (teams.length >= 2 && /\b(vs\.?|versus|compare|compared|or|against|better)\b/.test(s)) {
     const [a, b] = teams, best = t => [...t.r].sort((x, y) => y[3] - x[3])[0], hc = t => (t.st || []).find(c => c[0] === "HC");
     const row = (lbl, f, hi = true) => { const x = f(a), y = f(b); const w = x === y ? "" : (hi ? x > y : x < y) ? ` · edge ${a.n}` : ` · edge ${b.n}`; return `- **${lbl}:** ${x} vs ${y}${w}`; };
-    P.team = a; P.last = {kind:"compare", a}; P.facts = [a, b].map(t => `${t.n}: ${tLine(t).replace(/\*\*/g, "")}; best player ${pRow(best(t)).replace(/\*\*/g, "")}; head coach ${hc(t) ? hc(t)[1] : "unknown"}`).join("\n");
+    P.team = a; P.last = {kind:"compare", a};
     return pMd([`### ${a.n} vs ${b.n}`, row("Overall", t => t.o), row("Offense", t => t.of), row("Defense", t => t.df), row("Prestige", t => t.p),
       row("NIL rank", t => NILRANK.indexOf(t.n) + 1, false), row("National titles", t => t.ti), row("Tier 3+ pipelines", t => pipesAt(t, 3).length),
       `### Best players`, `- ${pRow(best(a), a)}`, `- ${pRow(best(b), b)}`,
@@ -444,7 +448,7 @@ function pLeague(q){
   if (!teams.length && league && (pos || /\bplayers?\b/.test(s)) && /\b(best|top|fastest|highest|who has)\b/.test(s)) {
     const grp = pos && pGrp(pos[0]), fast = /fastest|speed/.test(s);
     const xs = pool.flatMap(t => t.r.filter(p => !grp || grp.includes(p[1])).map(p => [p, t])).sort((a, b) => fast ? b[0][5] - a[0][5] || b[0][3] - a[0][3] : b[0][3] - a[0][3] || b[0][5] - a[0][5]).slice(0, n);
-    P.last = {kind:"league", q:s}; P.facts = `Top players (${where}):\n` + xs.map(([p, t]) => pRow(p, t).replace(/\*\*/g, "")).join("\n");
+    P.last = {kind:"league", q:s};
     return pMd([`### ${fast ? "Fastest" : "Best"} ${pos ? pos[0] : "players"} · ${where}`, ...xs.map(([p, t]) => `- ${pRow(p, t)}`)].join("\n"));
   }
   // In a pipeline question, "Texas" or "Alabama" means the place, not the team.
@@ -461,7 +465,6 @@ function pLeague(q){
     if (!where2.length) return null;
     const xs = pool.map(t => [t, Math.max(0, ...t.pl.filter(p => where2.includes(p[0])).map(p => p[1]))]).filter(x => x[1] >= min).sort((a, b) => b[1] - a[1] || b[0].o - a[0].o);
     const lbl = plbl; P.last = {kind:"league", q:s};
-    P.facts = `Programs with a pipeline in ${lbl}: ` + xs.slice(0, 25).map(([t, tr]) => `${t.n} tier ${tr}`).join(", ");
     return pMd([`### ${lbl} pipelines${min > 1 ? ` · Tier ${min}+` : ""}${where !== "FBS" ? ` · ${where}` : ""}`, `- ${xs.length} program${xs.length === 1 ? "" : "s"}. Strongest first:`,
       ...xs.slice(0, Math.max(n, 8)).map(([t, tr]) => `- **${t.n}** · Tier ${tr} (${TIERN[tr]}) · ${t.o} OVR`)].join("\n"));
   }
@@ -479,7 +482,7 @@ function pLeague(q){
   const xs = [...pool2].sort((a, b) => low ? score(a) - score(b) : score(b) - score(a)).slice(0, n);
   const title = {rec:low ? "Weakest recruiting power" : "Strongest recruiting power", rebuild:"Best rebuild jobs", nil:low ? "Smallest NIL budgets" : "Biggest NIL budgets", titles:"Most national titles", prestige:low ? "Lowest prestige" : "Highest prestige",
     of:low ? "Weakest offenses" : "Best offenses", df:low ? "Weakest defenses" : "Best defenses", o:low ? "Lowest rated" : "Highest rated"}[key];
-  P.facts = `${title} (${where}):\n` + xs.map(t => tLine(t).replace(/\*\*/g, "")).join("\n"); P.last = {kind:"league", q:s};
+  P.last = {kind:"league", q:s};
   return pMd([`### ${title} · ${where}`, ...(key === "rebuild" ? [`- Skips the top third of rosters (${cut}+ overall), then ranks by how far the NIL budget outranks the roster, plus prestige: money and a brand to fix a weaker team.`] : []),
     ...(key === "rec" ? ["- Ranked by prestige, NIL budget and the number of Tier 3+ recruiting pipelines."] : []),
     ...xs.map(t => `- ${tLine(t)}${key === "rec" ? ` · ${pipesAt(t, 3).length} Tier 3+ pipelines` : key === "rebuild" ? ` · roster #${orank(t)}, NIL #${NILRANK.indexOf(t.n) + 1}` : key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`)].join("\n"));
@@ -529,7 +532,6 @@ function pChallenges(q = ""){
         goal:`Win the first national title in ${t.n} history within five seasons.`}; }];
   const xs = all.sort(() => Math.random() - .5).map(f => f()).filter(Boolean).slice(0, 3);
   P.choices = xs;
-  P.facts = "Challenge options:\n" + xs.map((c, i) => `${i + 1}. ${c.name}: ${c.t.n}. ${c.why} Goal: ${c.goal}`).join("\n");
   return pMd([`### ${xs.length === 3 ? "Three" : xs.length} dynasty challenges${noTi ? " · programs without a national title" : ""}`, ...xs.flatMap((c, i) => [`- **${i + 1}. ${c.name}: ${c.t.n}** · ${c.why} **Goal:** ${c.goal}`]),
     'Reply with a number or the team to build that plan, or say "more ideas".'].join("\n"));
 }
@@ -565,7 +567,6 @@ function pRoadmap(q, t){
   const order = Object.entries(pri).sort((a, b) => b[1] - a[1]).map(x => x[0]);
   out.push("### Recruiting priorities", `- ${order.length ? order.slice(0, 5).map((g, i) => `${i + 1}. ${g}`).join("  ") : "Nothing urgent: the starting lineup is young."}`);
   P.team = t; P.last = {kind:"roadmap", q};
-  P.facts = out.join("\n").replace(/\*\*/g, "").replace(/### /g, "");
   return pMd(out.join("\n"));
 }
 // Single-team numbers: "how good is Michigan's defense", "and their NIL?".
@@ -580,7 +581,6 @@ function pStat(q, t){
   P.team = t; P.last = {kind:"stat", q};
   const out = [`### ${t.n} · ${lbl}`, `- **${lbl}:** ${val} · #${rk(DATA, f)} of ${DATA.length}${t.c !== "Independent" ? ` · #${rk(conf, f)} of ${conf.length} in the ${t.c}` : ""}`,
     ...(k === "ti" && tYears(t).length ? [`- **Seasons:** ${tYears(t).join(", ")}`] : []), ...(ps.length ? ["### Best on that side", ...ps.map(p => `- ${pRow(p)}`)] : [])];
-  P.facts = out.join("\n").replace(/\*\*/g, "").replace(/### /g, "");
   return pMd(out.join("\n"));
 }
 /* ---- whole-message intent: decided before any handler gets a turn, so a stray keyword can't hijack a plan request ---- */
@@ -611,7 +611,6 @@ function pOverview(t){
     `- **Strong pipelines (Tier 3+):** ${pl.length ? and(pl.map(x => `${x[0]} (Tier ${x[1]})`)) : "none"}`,
     ...(hc ? [`- ${sRow(hc)}`] : []), "### Best players", ...best.map(p => `- ${pRow(p)}`),
     `Want a plan? Try "tough ${t.n} dynasty" or "casual ${t.n} rebuild".`];
-  P.facts = out.join("\n").replace(/\*\*/g, "").replace(/### /g, "");
   return pMd(out.join("\n"));
 }
 // New players: strong roster, money and pipelines, so recruiting and winning come easy while they learn.
@@ -619,7 +618,6 @@ function pBeginner(){
   const nr = t => NILRANK.indexOf(t.n) + 1, sc = t => t.o * 2 + t.p * 6 - nr(t) * .3 + pipesAt(t, 3).length * 2;
   const xs = [...DATA].sort((a, b) => sc(b) - sc(a)).slice(0, 4);
   P.last = {kind:"league", q:"best teams"};
-  P.facts = "Starter-friendly programs (roster, prestige, NIL, pipelines):\n" + xs.map(t => tLine(t).replace(/\*\*/g, "")).join("\n");
   return pMd(["### Good first dynasties", "- Picked for a strong roster, high prestige, a big NIL budget and Tier 3+ pipelines, so you can learn recruiting without starting from scratch.",
     ...xs.map(t => `- ${tLine(t)} · ${pipesAt(t, 3).length} strong pipelines`),
     `Say "casual ${xs[0].n} dynasty" for a relaxed plan, or name another program.`].join("\n"));
@@ -631,7 +629,6 @@ function pEasyPath(s){
   const sc = t => t.o * 2 + (t.c === "Independent" || !top(t) ? 0 : t.o - top(t).o) + t.p * 2;
   const xs = [...pool].sort((a, b) => sc(b) - sc(a)).slice(0, 5);
   P.last = {kind:"league", q:s};
-  P.facts = `Easiest paths to a title (${where}): ` + xs.map(t => `${t.n} ${t.o} OVR, top conference rival ${top(t) ? `${top(t).n} ${top(t).o}` : "none"}`).join("; ");
   return pMd([`### Easiest paths to a title · ${where}`, "- Ranked by roster strength, how far ahead of the next-best team in the conference it is, and prestige.",
     ...xs.map(t => `- ${tLine(t)} · ${t.c === "Independent" || !top(t) ? "no conference title game in the way" : `best ${t.c} rival: ${top(t).n} (${top(t).o})`}`)].join("\n"));
 }
@@ -699,9 +696,9 @@ async function pAsk(q){
   else if (it.over) html = pOverview(it.team);
   else if (rm && tp) html = pRoadmap(q, tp);
   else if (stq && (pFindTeams(q).length || /\b(their|its|they)\b/i.test(q))) html = pStat(q, tp);
-  else if (fc) { P.team = fc[0]; P.facts = `Coach on the board: ${sRow(fc[1], fc[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
+  else if (fc) { P.team = fc[0]; html = pMd([`### ${fc[1][1]}`, `- ${sRow(fc[1], fc[0])}`].join("\n")); }
   else if (sq && tp) { html = pStaff(q, tp); P.last = {kind:"staff", q}; }
-  else if (fp) { P.team = fp[0]; P.facts = `Player on the board: ${pRow(fp[1], fp[0]).replace(/\*\*/g, "")}`; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
+  else if (fp) { P.team = fp[0]; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
   else if (rq && tp) { html = pPlayers(q, tp); P.last = {kind:"players", q}; }
   else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
   else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); P.last = {kind:"plan"}; }
@@ -768,13 +765,13 @@ function pSave(){
 function pLoad(){
   try {
     const s = JSON.parse(localStorage.getItem("coach-v1") || "null"); if (!s) return false;
-    pLog.innerHTML = ""; (s.msgs || []).forEach(([w, x]) => { const d = document.createElement("div"); d.className = "pm " + (w === "me" ? "me" : "bot"); d.innerHTML = x; pLog.append(d); });
+    pLog.innerHTML = ""; (s.msgs || []).forEach(([w, x]) => { const d = document.createElement("div"); d.className = "pm " + (w === "me" ? "me" : "bot"); d.innerHTML = x; pCopyBtn(d); pLog.append(d); });
     P.plan = pDe(s.plan); P.past = (s.past || []).map(pDe).filter(Boolean); P.team = DATA.find(t => t.n === s.team) || (P.plan && P.plan.t) || null;
     P.pref = ["cas", "std", "hard"].includes(s.pref) ? s.pref : null; pLog.scrollTop = pLog.scrollHeight; return true;
   } catch (e) { return false; }
 }
 function pClear(){
-  Object.assign(P, {plan:null, past:[], team:null, pref:null, pending:null, facts:""});
+  Object.assign(P, {plan:null, past:[], team:null, pref:null, pending:null});
   try { localStorage.removeItem("coach-v1"); } catch (e) {}
   pLog.innerHTML = ""; pSay("bot", PHELP);
 }

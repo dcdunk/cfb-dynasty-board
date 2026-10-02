@@ -222,22 +222,27 @@ const pcSave = () => { try { localStorage.setItem("poschg-v1", JSON.stringify(PC
 const pcPos = ABPOS.filter(p => p !== "K/P");
 const pcArch = p => ABARCH.filter(a => a[0] === p).map(a => a[1]);
 const pcOpts = (sel, list, keep, none) => { const v = keep ?? sel.value; sel.innerHTML = (none ? `<option value="">${none}</option>` : "") + list.map(x => `<option>${esc(x)}</option>`).join(""); if (list.includes(v)) sel.value = v; };
+// Note boxes grow to fit their text, so long notes stay fully visible (skipped while hidden, when there's nothing to measure).
+const pcFit = el => { if (!el.offsetParent) return; el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; };
 function pcDraw(){
   if (!$("#pcFp").options.length) { pcOpts($("#pcFp"), pcPos); pcOpts($("#pcTp"), pcPos, "WR"); }
   pcOpts($("#pcFa"), pcArch($("#pcFp").value));
   pcOpts($("#pcTa"), pcArch($("#pcTp").value), null, "Not sure yet");
   $("#pcAdd").disabled = $("#pcFp").value === $("#pcTp").value;
   $("#pcList").innerHTML = PC.length ? PC.map(c => `<section class="sl-card pc-card"><h3>${esc(c.fp)} &rarr; ${esc(c.tp)}<button type="button" class="pc-del" data-del="${c.id}" aria-label="Delete this change" title="Delete">&times;</button></h3>
-    <p class="pc-move"><b>${esc(c.fa)}</b> <span>${esc(c.fp)}</span> <i>&rarr;</i> ${c.ta ? `<b>${esc(c.ta)}</b>` : `<b class="pc-unk">Not sure yet</b>`} <span>${esc(c.tp)}</span></p><input class="pc-n" data-note="${c.id}" type="text" maxlength="200" value="${esc(c.note || "")}" placeholder="Add a note" aria-label="Note for ${esc(c.fa)} ${esc(c.fp)} to ${esc(c.tp)}" autocomplete="off"></section>`).join("")
+    <p class="pc-move"><b>${esc(c.fa)}</b> <span>${esc(c.fp)}</span> <i>&rarr;</i> ${c.ta ? `<b>${esc(c.ta)}</b>` : `<b class="pc-unk">Not sure yet</b>`} <span>${esc(c.tp)}</span></p><textarea class="pc-n" data-note="${c.id}" rows="1" maxlength="200" placeholder="Add a note" aria-label="Note for ${esc(c.fa)} ${esc(c.fp)} to ${esc(c.tp)}">${esc(c.note || "")}</textarea></section>`).join("")
     : `<p class="hint">No position changes saved yet.</p>`;
+  document.querySelectorAll("#pcList .pc-n").forEach(pcFit);
 }
 for (const id of ["#pcFp", "#pcTp"]) $(id).addEventListener("change", pcDraw);
 $("#pcAdd").addEventListener("click", () => {
   const c = {id: Date.now().toString(36), fp: $("#pcFp").value, fa: $("#pcFa").value, tp: $("#pcTp").value, ta: $("#pcTa").value, note: $("#pcNote").value.trim()};
   if (c.fp === c.tp) return;
-  PC.push(c); pcSave(); $("#pcNote").value = ""; pcDraw();
+  PC.push(c); pcSave(); $("#pcNote").value = ""; $("#pcNote").style.height = ""; pcDraw();
 });
 // Notes edit in place and save as you type; no redraw, so the box keeps focus.
-$("#pcList").addEventListener("input", e => { const c = e.target.dataset.note && PC.find(x => x.id === e.target.dataset.note); if (c) { c.note = e.target.value.trim(); pcSave(); } });
+$("#pcList").addEventListener("input", e => { const c = e.target.dataset.note && PC.find(x => x.id === e.target.dataset.note); if (c) { c.note = e.target.value.trim(); pcSave(); pcFit(e.target); } });
+$("#pcNote").addEventListener("input", e => pcFit(e.target));
+addEventListener("resize", () => document.querySelectorAll("#pcList .pc-n, #pcNote").forEach(pcFit));   // narrower cards need taller notes
 $("#pcList").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b && confirm("Delete this position change?")) { PC = PC.filter(c => c.id !== b.dataset.del); pcSave(); pcDraw(); } });
 abDraw();
