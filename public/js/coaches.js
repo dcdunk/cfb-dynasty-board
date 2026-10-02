@@ -100,7 +100,9 @@ async function ccCard(team, name){
   const T = await ccTree(); if (ccCard.at !== team + "|" + name) return;   // another coach was opened meanwhile
   const own = T?.c[team + "|" + name];
   if (own) {
-    const archs = Object.keys(own[1]).sort((x, y) => (y === c.arch) - (x === c.arch) || CARCH.findIndex(a => a.n === x) - CARCH.findIndex(a => a.n === y));
+    // Main archetype first (open), then the rest in the Abilities tab's order, which keeps each base next to its elite
+    // (Recruiter, Elite Recruiter, Motivator, Master Motivator, Tactician, Scheme Guru, then hybrids and leadership).
+    const ORD = CGROUP.flatMap(g => g[1]), archs = Object.keys(own[1]).sort((x, y) => (y === c.arch) - (x === c.arch) || ORD.indexOf(x) - ORD.indexOf(y));
     $("#plcB").innerHTML = top(T, own[0]) + `<h3 class="cc-h cc-sum">Abilities <span>${Object.values(own[1]).flat().length} bought, across ${archs.length} archetype${archs.length > 1 ? "s" : ""} · ${esc(T.v)} roster</span></h3>`
       + archs.map((x, i) => ccOwned(x, own[1][x], T, !i)).join("") + `<button class="ghost cc-more" type="button" data-arch="${esc(c.arch)}">Costs and tiers in Abilities</button>` + staff;
     return;
