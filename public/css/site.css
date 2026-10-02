@@ -742,12 +742,12 @@ body.coach-on{margin-right:400px}
 .pm.me{align-self:flex-end; background:var(--accent-soft); color:var(--text); padding:8px 11px}
 .pm.bot{align-self:flex-start}
 .pm.bot p{margin:0 0 8px}
-.pm.bot .pguess{color:var(--dim); font-size:12px}
+.pm.bot .pguess,.pm.bot .pthink{color:var(--dim); font-size:12px}
 .pm.bot h4{margin:12px 0 4px; font:590 11px "JetBrains Mono",monospace; text-transform:uppercase; letter-spacing:.06em; color:var(--accent-ink)}
 .pm.bot h4:first-child{margin-top:0}
 .pm.bot ul{margin:0 0 6px; padding-left:18px}
 .pm.bot li{margin:0 0 4px}
-.pstat{padding:0 14px 6px; font:12px "JetBrains Mono",monospace; color:var(--dim)}
+.pstat{margin:0; padding:6px 14px 0; font-size:11px; color:var(--faint)}
 .pform{display:flex; gap:8px; padding:10px 14px 14px; border-top:1px solid var(--line)}
 .pform{align-items:flex-end}
 .pform textarea{flex:1; min-width:0; resize:none; overflow-y:auto; max-height:140px; line-height:1.4; font:14px Inter,sans-serif; padding:9px 10px; border:1px solid var(--line); background:var(--ground); color:var(--text)}
