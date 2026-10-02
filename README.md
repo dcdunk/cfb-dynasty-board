@@ -19,22 +19,3 @@ A free companion site for College Football 27 dynasty mode. Live at **[cfbdynast
 Search everything with **Ctrl/Cmd+K** or **/**. Press **?** for keyboard shortcuts.
 
 **On phones** it works like an app: a bottom tab bar (pick your own four tabs under More, then Edit tab bar), lists as cards, and pop-ups as sheets you swipe down to close. Add it to your Home Screen for the full-screen version.
-
-## Where the data comes from
-
-- Player ratings: EA SPORTS' public College Football 27 ratings pages, refreshed weekly.
-- Coach ability trees: [TeamCrafters](https://www.teamcrafters.net)' CFB 27 roster pages.
-- Coach and player ability costs and unlock values: [prestonchoate.dev](https://prestonchoate.dev/cfb-data-mining)'s game-file research.
-- Sliders: Matt10's published slider sets.
-
-Not affiliated with EA SPORTS.
-
-## Working on it
-
-Plain HTML, CSS and JavaScript in `public/`, no build step and no npm. Open `public/index.html` in a browser, or see `CLAUDE.md` for how the files fit together.
-
-```bash
-node check.mjs
-```
-
-runs the full test suite in headless Chrome (needs Node 22+ and Chrome). Pushing to `main` runs it on GitHub and, if it passes, deploys to Cloudflare. To refresh data: `node tools/ea-ratings.mjs` (player ratings) and `node tools/coach-trees.mjs` (coach abilities), then `node check.mjs`.
