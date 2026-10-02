@@ -683,7 +683,7 @@ async function pAsk(q){
     pSay("bot", pMd(["### Which one?", ...amb.opts.map((t, i) => `- **${i + 1}. ${t.n} ${t.nk}** · ${t.c} · ${t.o} OVR`), "Reply with the number or the name."].join("\n"))); return pSave(); }
   // Order: a named player, then roster questions ("best QB at Ohio State"), then fallen powerhouses, then a dynasty plan.
   const fp = pFindPlayer(q), rq = (/\b(best|top|fastest|highest.rated|starting|starter)\b/i.test(q) && !/dynasty|rebuild|house rules|challenge|\bplan\b/i.test(q))
-    || (!it.plan && !!it.team && PPOS.some(([pos, re]) => pos !== "K/P" ? re.test(it.s) : /\b(kickers?|punters?)\b/.test(it.s)));   // "tell me about Oregon's QBs"
+    || (!it.plan && !!it.team && PPOS.some(([pos, re]) => pos === "K" ? /\bkickers?\b/.test(it.s) : pos === "P" ? /\bpunters?\b/.test(it.s) : re.test(it.s)));   // "tell me about Oregon's QBs"
   const tp = pFindTeams(q)[0] || P.team;
   let html = "", plan = null;
   const fc = !fp && pFindCoach(q), sq = /\b(head coach|coaches|coaching staff|staff|coordinators?|oc|dc|hc)\b|who coaches/i.test(q) && !/dynasty|created|custom|own coach|real coach/i.test(q);
