@@ -98,7 +98,7 @@ function sSync(join){
 const sChanged = () => S.code && SKEYS.some(k => sGet(k) !== (S.last[k] ?? null));
 async function sOn(){ S = {code:sNewCode(), ver:0, last:{}, at:0, err:""}; sSave(); sDraw(); await sSync(); }
 async function sJoin(raw){
-  const c = sNorm(raw);
+  const m = String(raw).match(/#sync=([^&\s]+)/), c = sNorm(m ? decodeURIComponent(m[1]) : raw);   // a pasted QR link works too
   if (!sValid(c)) { S.err = "That doesn't look like a sync code: it's 20 letters and numbers."; sDraw(); return; }
   if (c === S.code) return;
   // Opening the modal made this device a code; if no other device ever used it (ver 1), remove it before switching.
@@ -120,9 +120,14 @@ function sBtn(){ const b = $("#syncOpen"); if (!b) return; b.classList.toggle("o
   $("#syncLbl").textContent = S.code ? (innerWidth <= 600 ? "Synced" : "Devices synced") : (innerWidth <= 600 ? "Sync" : "Sync your devices"); }
 addEventListener("resize", sBtn);
 // Opening the modal turns sync on straight away (a code and QR to scan); "Have a code?" switches this device to another one.
+// iPhone/iPad: a site added to the Home Screen keeps its own storage, apart from Safari, and a scanned QR code always
+// opens Safari. So the Home Screen copy (sApp) has to join by code: its modal leads with the code box instead of
+// making a new code, and Safari on iOS tells people to paste the code into their Home Screen copy too.
+const sApp = () => window.__standalone ?? (navigator.standalone === true || matchMedia("(display-mode: standalone)").matches);
+const sIOS = () => window.__ios ?? (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
 function sOpen(){
   $("#sy").showModal(); sDraw(); $("#syX").focus();
-  if (!S.code) sOn();
+  if (!S.code && !sApp()) sOn();
 }
 const SWHAT = [["My Dynasty", "every saved dynasty, active and archived"], ["House Rules", "the current rule set, plus your custom rules and presets"],
   ["Recruiting & NIL", "which program it follows"], ["Abilities", "favorite archetypes and planned position changes"]];
@@ -131,16 +136,23 @@ function sDraw(){
   const el = $("#syBody"); if (!el || !$("#sy").open) return;
   const err = S.err ? `<p class="hint sync-err" role="alert">${esc(S.err)}</p>` : "";
   const st = !S.code ? "" : !S.ver ? "Setting up…" : S.at ? `Synced ${sAgo(S.at)}` : "Not synced yet";
-  el.innerHTML = `${S.code ? `<div class="sync-on"><div class="sync-qr" id="sQR" role="img" aria-label="QR code that opens this site and joins sync"></div>
+  const join = `<form class="sync-join" id="sJoinF"><input id="sCode" autocomplete="off" spellcheck="false" placeholder="Code from another device" aria-label="Sync code from another device">
+      <button class="ghost${S.code ? "" : " pri"}" type="submit">Join</button></form>`, appFirst = !S.code && sApp();
+  // Top of the modal: the Home Screen copy asks for a code; otherwise this device's code and QR, or a button to make one.
+  const top = appFirst ? `<p class="hint">Enter (or paste) the sync code shown on your other device under Sync your devices.</p>${join}
+      <div class="sync-row sync-alt"><button class="ghost" type="button" id="sNew">Or make a new sync code</button></div>`
+    : S.code ? `<div class="sync-on"><div class="sync-qr" id="sQR" role="img" aria-label="QR code that opens this site and joins sync"></div>
       <div class="sync-txt"><p class="hint">Scan this with your phone's camera, or enter the code on your other device:</p>
         <code class="sync-code" id="sCodeShow">${sFmt(S.code)}</code>
         <div class="sync-row"><button class="ghost" type="button" id="sCopy">Copy code</button><span class="hint sync-st" role="status">${st}</span></div>
-        <p class="hint">Anyone with this code can see and change your synced data. Treat it like a password.</p></div></div>` : `<div class="sync-row"><button class="ghost pri" type="button" id="sNew">Make a sync code</button></div>`}${err}
+        <p class="hint">Anyone with this code can see and change your synced data. Treat it like a password.</p></div></div>
+      ${sIOS() && !sApp() ? `<p class="sync-tip" id="sTip"><b>Saved this site to your Home Screen?</b> On iPhone and iPad it keeps its own data, separate from Safari. Open it from your Home Screen, tap Sync your devices, and paste this code there too.</p>` : ""}`
+    : `<div class="sync-row"><button class="ghost pri" type="button" id="sNew">Make a sync code</button></div>`;
+  el.innerHTML = `${top}${err}
     <h3 class="sync-h">What syncs</h3>
     <ul class="sync-what">${SWHAT.map(([a, b]) => `<li><b>${a}:</b> ${b}</li>`).join("")}</ul>
     <p class="hint">Stays on each device: light or dark theme, and your Coach chat.</p>
-    <form class="sync-join" id="sJoinF"><input id="sCode" autocomplete="off" spellcheck="false" placeholder="Code from another device" aria-label="Sync code from another device">
-      <button class="ghost" type="submit">Join</button></form>
+    ${appFirst ? "" : join}
     ${S.code ? `<div class="sync-more"><button class="sync-link" type="button" id="sStop">Stop syncing on this device</button><button class="sync-link" type="button" id="sDel">Delete synced data</button></div>` : ""}`;
   if (S.code) sQr().then(() => { const q = qrcode(0, "M"); q.addData(sLink(S.code)); q.make(); const box = $("#sQR"); if (box) box.innerHTML = q.createSvgTag({cellSize:4, margin:2, scalable:true}); }).catch(() => {});
 }

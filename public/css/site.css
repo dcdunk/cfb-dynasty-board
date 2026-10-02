@@ -614,6 +614,9 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .sync-more{display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:14px}
 .sync-link{background:none; border:0; padding:0; font:12px Inter,sans-serif; color:var(--dim); text-decoration:underline; text-underline-offset:2px; cursor:pointer}
 .sync-link:hover{color:var(--text)}
+.sync-tip{margin:12px 0 0; padding:10px 12px; border:1px solid var(--line); border-radius:6px; font-size:12.5px; line-height:1.5; color:var(--dim)}
+.sync-tip b{color:var(--text); font-weight:590}
+.sync-alt{margin-top:12px}
 .sync-foot{display:flex; justify-content:flex-end; margin-top:16px; padding-top:12px; border-top:1px solid var(--line)}
 .sync-join{display:flex; gap:8px; margin-top:10px}
 .sync-join input{flex:1; min-width:0; font:13px "JetBrains Mono",monospace; border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--text); padding:7px 9px}

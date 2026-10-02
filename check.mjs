@@ -545,13 +545,21 @@ const inPage = async () => {
     ok(/[Ss]ynced/.test($("#syncLbl").textContent) && $("#syncOpen").classList.contains("on"), "Sync: the masthead button should show synced once sync is on");
     $("#syDone").click(); ok(!$("#sy").open, "Sync: Done should close the modal");
     $("#syncOpen").click(); $("#syX").click(); ok(!$("#sy").open, "Sync: the × should close the modal");
+    // iPhone Safari shows the Home Screen tip; the Home Screen copy (standalone) asks for a code instead of making one.
+    window.__ios = true; window.__standalone = false; $("#syncOpen").click(); await wait(10);
+    ok($("#sTip") && /Home Screen/.test($("#sTip").textContent), "Sync: iPhone Safari should explain that the Home Screen copy needs the code too"); $("#sy").close();
+    window.__ios = false; $("#syncOpen").click(); await wait(10); ok(!$("#sTip"), "Sync: the Home Screen tip is only for iPhone and iPad"); $("#sy").close();
+    { const was = {...S}; S = {code:"", ver:0, last:{}, at:0, err:""}; window.__standalone = true; const n = db.size; $("#syncOpen").click(); await wait(20);
+      ok(!S.code && db.size === n && $("#sJoinF") && $("#sy .sync-join").compareDocumentPosition($("#sy .sync-what")) & 4 && $("#sNew"),
+        "Sync: opened from the Home Screen, the modal should ask for a code first and not make a new one");
+      $("#sy").close(); window.__standalone = false; window.__ios = undefined; window.__standalone = undefined; S = was; sSave(); }
     $("#syncOpen").click(); await wait(10);   // stays open for the rest: sDraw only paints while it's open
     const code = S.code, row = [...db.values()][0];
     ok(sValid(code) && db.size === 1 && row.ver === 1 && S.ver === 1 && !/Owls|Temple|dyn-v1/.test(row.data + atob(row.data)), "Sync: turning it on should store one encrypted copy");
 
     // Second device: its own dynasty, joins with the code typed in lowercase; both dynasties end up on both sides.
     localStorage.setItem("dyn-v1", JSON.stringify({list:[dyn("db", "Phone Owls")], cur:"db", arch:false})); sOff("");
-    await sJoin(sFmt(code).toLowerCase());
+    await sJoin(`Join me: ${sLink(code)}`);   // the whole QR link pasted, not just the code
     const names = JSON.parse(localStorage.getItem("dyn-v1")).list.map(d => d.name).sort().join();
     ok(names === "Desk Owls,Phone Owls" && reloads === 1 && [...db.values()][0].ver === 2 && S.ver === 2, `Sync: joining should merge both devices' dynasties, got ${names}, ${reloads} reloads`);
     ok(sessionStorage.getItem("sync-note") === "1", "Sync: a merge from another device should leave the 'updated' note for after the reload");
