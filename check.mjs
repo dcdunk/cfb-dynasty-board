@@ -96,6 +96,24 @@ const inPage = async () => {
   $("#tabDyn").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
   ok(curTab === "board", `Nav: ArrowRight from My Dynasty should go to Program Database, got ${curTab}`);
   ok(tabs().split(",").length === 10, "Nav: tabs should stay visible after switching");
+  // Phone tab bar: four pinned tabs + More menu with every tab, hidden on desktop; picking a menu-only tab lights up More.
+  ok(getComputedStyle($(".mbar")).display === "none", "Phone bar: should be hidden at desktop width");
+  ok([...$$(".mpill [data-mt]")].map(b => b.dataset.mt).join() === "dyn,board,play,ab" && $$("#mMenu [data-mt]").length === 10, "Phone bar: expected 4 pinned tabs and all 10 in the menu");
+  $("#mMore").click(); ok(!$("#mMenu").hidden, "Phone bar: More should open the menu");
+  $("#mMenu [data-mt=rand]").click(); ok(curTab === "rand" && $("#mMenu").hidden && $("#mMore").classList.contains("on"), "Phone bar: menu tab should open, close menu, light More");
+  $(".mpill [data-mt=board]").click(); ok(curTab === "board" && $(".mpill [data-mt=board]").classList.contains("on") && !$("#mMore").classList.contains("on"), "Phone bar: pinned tab should open and highlight");
+  // Editable bar: pick tabs in edit mode (max 4, min 1, order picked), saved in mbar-v1, reset restores the default.
+  $("#mMore").click(); $("#mMenu [data-me=edit]").click();
+  ok(!$("#mMenu").hidden && $$("#mMenu [data-mp]").length === 10, "Phone bar: Edit tab bar should list all 10 tabs with checks");
+  $("#mMenu [data-mp=ab]").click(); $("#mMenu [data-mp=slide]").click(); $("#mMenu [data-mp=house]").click();
+  ok(!$("#mMenu").hidden && [...$$(".mpill [data-mt]")].map(b => b.dataset.mt).join() === "dyn,board,play,slide" && JSON.parse(localStorage.getItem("mbar-v1")).join() === "dyn,board,play,slide", "Phone bar: swap Abilities for Sliders (and ignore a 5th pick), saved");
+  for (const k of ["dyn", "board", "play", "slide"]) $(`#mMenu [data-mp=${k}]`).click();
+  ok($$(".mpill [data-mt]").length === 1, "Phone bar: at least one tab should stay in the bar");
+  $("#mMenu [data-me=reset]").click(); ok([...$$(".mpill [data-mt]")].map(b => b.dataset.mt).join() === "dyn,board,play,ab", "Phone bar: reset should restore the default four");
+  $("#mMenu [data-me=done]").click(); ok($("#mMenu").hidden && $("#mMenu [data-me=edit]"), "Phone bar: Done should close and leave edit mode");
+  ok(BAKKEYS.includes("mbar-v1"), "Phone bar: tab choice should be backed up and synced");
+  // Bottom sheets: every sheet gets one grab handle (shown only on phones, where dragging it down closes the sheet).
+  ok(["#dossier", "#plc", "#sy", "#ks", "#gs"].every(id => $$(`${id} > .grab`).length === 1) && getComputedStyle($(".grab")).display === "none", "Sheets: each sheet needs one grab handle, hidden on desktop");
   // Narrow row (phone width): picking a tab slides it to the left edge so later tabs come into view.
   const tRow = $(".tabs"); tRow.style.width = "340px"; $("#tabCoach").click(); await wait(700);
   const gap = $("#tabCoach").getBoundingClientRect().left - tRow.getBoundingClientRect().left - parseFloat(getComputedStyle(tRow).paddingLeft);

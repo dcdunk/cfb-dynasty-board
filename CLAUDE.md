@@ -58,7 +58,7 @@ Everything else is derived from `DATA` at load (`confs`, `COACHES`, `PIPES`, `PO
 
 ## Tabs and their code
 
-Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is one row of ten tabs (`.tabs`, a tablist of `.tab` buttons: My Dynasty, Program Database, Program Pipelines, Coach Database, Player Database, Randomizer, House Rules, Recruiting & NIL, Sliders, Abilities); Program Database opens by default, arrow keys follow the row order, and on phones the row scrolls sideways; picking a tab slides it to the row's left edge (`tabSlide`, no-op when all tabs fit). The owner removed the grouped two-row navigation (Sept 2026); don't bring it back. A new tab needs a `TABS` entry, a `TSLUG` entry and a `.tab` button. The open tab is kept in the URL hash (`#abilities`, Program Database = bare URL) via `showTab`, so refresh and shared links reopen it.
+Each tab has a state block and a `*Draw()` render function. `showTab()` / `TABS` switches views. Navigation is one row of ten tabs (`.tabs`, a tablist of `.tab` buttons: My Dynasty, Program Database, Program Pipelines, Coach Database, Player Database, Randomizer, House Rules, Recruiting & NIL, Sliders, Abilities); Program Database opens by default, arrow keys follow the row order, and on phones the row scrolls sideways; picking a tab slides it to the row's left edge (`tabSlide`, no-op when all tabs fit). The owner removed the grouped two-row navigation (Sept 2026); don't bring it back. **Phones (under 768px):** the tab row and masthead buttons are hidden and a Linear-style bottom bar replaces them (tabs.js, Oct 2026, owner's pick): a floating pill with up to four pinned tabs (default My Dynasty, Programs, Players, Abilities; `MPIN0`; users change them with Edit tab bar in the menu, pick order = bar order, saved in `mbar-v1`; tab list in `MNAV`) plus More, which opens a panel (`#mMenu`) with all ten tabs, Search, Sync and the theme toggle; a round Coach button sits beside it and the bar hides while Coach is open. `mMark` (called by `showTab`) highlights the open tab, or More for tabs only in the menu. **Bottom sheets** (same width): the dossier, player card, search, sync and shortcut panels dock to the bottom with a grab handle; `sheet(el, close, scroller)` in tabs.js closes them on a drag down past a third of the height or a quick flick, starting from the handle/header or anywhere once the content is scrolled to the top. Esc hints become × there. A new tab needs a `TABS` entry, a `TSLUG` entry and a `.tab` button. The open tab is kept in the URL hash (`#abilities`, Program Database = bare URL) via `showTab`, so refresh and shared links reopen it.
 
 | Tab | Purpose | Main functions |
 |---|---|---|
@@ -90,9 +90,10 @@ House rules are the most intricate part: `HRULES` (built-in rules, each with cat
 - `abfav-v1`: favorite player archetypes as `"POS|Name"` strings (`ABFAV`)
 - `poschg-v1`: planned position changes `[{id, fp, fa, tp, ta, note}]` (`PC`)
 - `sync-v1`: this device's sync state `{code, ver, last, at, err}` (`S` in sync.js). Never backed up or synced itself.
+- `mbar-v1`: the phone tab bar's pinned tab keys, 1-4 (`MPIN`); bad or unknown values fall back to the default
 - `theme-v1`: `"light"` or `"dark"` from the header toggle (`#themeBtn`, next to Coach). Applied by a small script before the `<style>` block so there is no flash; no value means follow the system setting.
 
-Back up / Restore on My Dynasty copies `dyn-v1`, `house-v1`, `house-custom-v1`, `rec-v1`, `theme-v1`, `abfav-v1` and `poschg-v1` to and from a file, so old backup files must keep loading too. Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
+Back up / Restore on My Dynasty copies `dyn-v1`, `house-v1`, `house-custom-v1`, `rec-v1`, `theme-v1`, `abfav-v1`, `poschg-v1` and `mbar-v1` to and from a file, so old backup files must keep loading too. Changing the shape of either object breaks saved data for existing users. Bump the key or keep the loaders tolerant (they already filter unknown rule ids).
 
 ## Verifying changes
 
