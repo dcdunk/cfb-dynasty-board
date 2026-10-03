@@ -111,6 +111,7 @@ const abSlug = n => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g
 const ABICO = new Set(["360", "50-50", "adrenaline", "aftershock", "arm-bar", "balanced", "ball-security", "ballhawk", "best-friend", "blanket-coverage", "blow-up", "bouncer", "chip-shot", "clearheaded", "clutch-kicker", "coffin-corner", "cutter", "deep-range", "defensive-rally", "dot", "double-dip", "downhill", "duress", "extender", "fan-favorite", "field-flip", "field-general", "grip-breaker", "ground-n-pound", "hammer", "headfirst", "headstrong", "house-call", "inside-disruptor", "inside-shield", "instinct", "jammer", "knockout", "lay-out", "legion", "magician", "mega-leg", "mobile-deadeye", "mobile-resistance", "off-platform", "offensive-rally", "on-time", "option-disruptor", "option-king", "option-shield", "outside-disruptor", "outside-shield", "pa-shield", "pocket-disruptor", "pocket-shield", "press-pro", "pull-down", "quick-drop", "quick-jump", "quick-step", "recoup", "resistance", "road-dog", "robber", "rollercoaster", "safety-valve", "screen-enforcer", "second-level", "shifty", "side-step", "sidekick", "sleight-of-hand", "step-up", "strong-grip", "sure-hands", "take-down", "takeoff", "team-player", "the-natural", "wear-down", "winning-time", "workhorse", "wrap-up"]), CICO = new Set(["battery-pack", "bundle-discount", "camouflaged-coverage", "cardio-kings", "caught-napping", "chew-up-yards", "clean-sheet-defense", "clean-sheet-offense", "delay-sunday", "demoralizing", "dream-school", "family-atmosphere", "fresh-legs", "friends-family-discount", "full-refund", "gas-tank", "gasoline", "gift-of-gab", "giving-back", "hands-off", "hater-blockers", "he-shed", "home-field-advantage", "hometown-discount", "household-name", "invest", "keep-blocks-longer", "keep-em-coming", "let-s-run-it-back", "lower-the-bar", "making-inroads", "master-of-disguise", "no-free-yards", "no-mid-here", "not-intimidated", "not-so-fast", "nothing-deep", "on-their-heels", "polished", "portal-preview", "puncher-s-chance", "road-warriors", "roster-retainer", "second-chance-keeper", "senior-superlatives", "share-the-wealth", "signing-bonus", "smart-goals", "stretch-the-field", "take-what-s-there", "teflon", "tipped-your-hand", "to-the-whistle", "too-loud", "unfriendly-confines", "we-see-you", "wear-em-down"]);
 const abImg = (dir, n) => (dir === "p" ? ABICO : dir === "c" ? CICO : {has: () => true}).has(abSlug(n)) ? `<img class="ab-ico${dir === "a" ? " ab-badge" : ""}" src="ab/${dir}/${abSlug(n)}.png" alt="">` : "";
 let abP = "QB", abM = "player", abC = "Recruiter";
+const ABOPEN = new Set();   // archetype cards opened on phones ("POS|Name")
 // Favorite archetypes, saved as "POS|Name" keys; any number per position.
 let ABNOTE = {}; try { ABNOTE = JSON.parse(localStorage.getItem("abnote-v1")) || {}; } catch (e) {}
 let ABFAV = []; try { ABFAV = JSON.parse(localStorage.getItem("abfav-v1")) || []; } catch (e) {}
@@ -238,7 +239,7 @@ function abDraw(){
   $("#abPos").innerHTML = ABPOS.map(p => { const f = ABFAV.filter(k => k.startsWith(p + "|")).length; return `<button type="button" class="chip" data-p="${p}" aria-pressed="${!q && p === abP}">${p}${f ? ` <span class="abfn" title="${f} favorite${f > 1 ? "s" : ""}">★${f}</span>` : ""}</button>`; }).join("") + `<button type="button" class="chip" data-p="FAV" aria-pressed="${!q && abP === "FAV"}">★ Favorites${ABFAV.length ? ` <span class="abfn">${ABFAV.length}</span>` : ""}</button>`;
   const orph = ["K/P", "Archetype not confirmed", Object.keys(ABPHYS).filter(n => !abWho(n).length)];
   const arch = (q ? [...ABARCH, orph].filter(a => a[2].some(n => n.toLowerCase().includes(q))) : [...ABARCH, orph].filter(a => abP === "FAV" ? ABFAV.includes(a[0] + "|" + a[1]) : a[0] === abP)).filter(a => a[2].length).sort((a, b) => ABFAV.includes(b[0] + "|" + b[1]) - ABFAV.includes(a[0] + "|" + a[1]));
-  $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card"><h3>${esc(n)}<span>${p}${p === "K/P" ? "" : (f => `<button type="button" class="abfav" data-fav="${esc(p + "|" + n)}" aria-pressed="${f}" aria-label="${f ? "Remove" : "Add"} ${esc(n)} ${f ? "from" : "to"} favorites" title="${f ? "Unfavorite" : "Favorite"}">${f ? "★" : "☆"}</button>`)(ABFAV.includes(p + "|" + n))}</span></h3><ul class="ab-list">${ab.map(x => abRow(x, p + "|" + n)).join("")}</ul><textarea class="pc-n ab-n" data-abn="${esc(p + "|" + n)}" rows="1" maxlength="500" placeholder="Add a note" aria-label="Note for ${esc(n)} ${p}">${esc(ABNOTE[p + "|" + n] || "")}</textarea></section>`).join("")
+  $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card ab-card${q || ABOPEN.has(p + "|" + n) ? " open" : ""}" data-card="${esc(p + "|" + n)}"><h3>${esc(n)}<span>${p}${p === "K/P" ? "" : (f => `<button type="button" class="abfav" data-fav="${esc(p + "|" + n)}" aria-pressed="${f}" aria-label="${f ? "Remove" : "Add"} ${esc(n)} ${f ? "from" : "to"} favorites" title="${f ? "Unfavorite" : "Favorite"}">${f ? "★" : "☆"}</button>`)(ABFAV.includes(p + "|" + n))}</span></h3><p class="ab-sum">${ab.map(x => `<span>${abImg("p", x)}${esc(x)}</span>`).join("")}</p><ul class="ab-list">${ab.map(x => abRow(x, p + "|" + n)).join("")}</ul><textarea class="pc-n ab-n" data-abn="${esc(p + "|" + n)}" rows="1" maxlength="500" placeholder="Add a note" aria-label="Note for ${esc(n)} ${p}">${esc(ABNOTE[p + "|" + n] || "")}</textarea></section>`).join("")
     : `<p class="hint">${q ? `No archetype has a physical ability matching "${esc(q)}".` : "No favorites yet. Tap the ☆ on an archetype to add it."}</p>`;
   document.querySelectorAll("#abGrid [data-abn]").forEach(pcFit);
 }
@@ -252,7 +253,11 @@ $("#abArch").addEventListener("click", e => { const b = e.target.closest("[data-
 // Your own note per archetype ("POS|Name": text), saved as you type in abnote-v1; empty notes are removed.
 $("#abGrid").addEventListener("input", e => { const t = e.target.closest("[data-abn]"); if (!t) return; pcFit(t);
   if (t.value.trim()) ABNOTE[t.dataset.abn] = t.value; else delete ABNOTE[t.dataset.abn]; try { localStorage.setItem("abnote-v1", JSON.stringify(ABNOTE)); } catch (e) {} });
-$("#abGrid").addEventListener("click", e => { const b = e.target.closest("[data-fav]"); if (b) abFav(b.dataset.fav); });
+$("#abGrid").addEventListener("click", e => { const b = e.target.closest("[data-fav]"); if (b) return abFav(b.dataset.fav);
+  // Phones: archetype cards start collapsed (name + ability names); tapping the header or summary opens one. Open cards stay open across redraws.
+  const c = e.target.closest(".ab-card"); if (!c || !e.target.closest("h3,.ab-sum")) return;
+  c.classList.toggle("open"); ABOPEN[c.classList.contains("open") ? "add" : "delete"](c.dataset.card);
+  if (c.classList.contains("open")) c.querySelectorAll("[data-abn]").forEach(pcFit); });
 $("#abQ").addEventListener("input", abDraw);
 
 // Position change planner (abM "chg"): saved {id, fp, fa, tp, ta, note} in poschg-v1; ta "" = new archetype not known.
@@ -292,7 +297,7 @@ const ABGRP = {QB:"QB", HB:"HB", FB:"FB", WR:"WR", TE:"TE", LT:"OT", RT:"OT", LG
 function abOpenArch(pos, a){
   // A player whose position changed since the roster update can carry another position's archetype: use the group that has it.
   const g = ABARCH.some(x => x[0] === ABGRP[pos] && x[1] === a) ? ABGRP[pos] : (ABARCH.find(x => x[1] === a) || [ABGRP[pos]])[0];
-  abM = "player"; abP = g; $("#abQ").value = ""; showTab("ab"); abDraw();
+  abM = "player"; abP = g; $("#abQ").value = ""; ABOPEN.add(g + "|" + a); showTab("ab"); abDraw();
   const c = [...document.querySelectorAll("#abGrid .sl-card")].find(c => c.querySelector("h3")?.textContent.startsWith(a));
   if (c) c.scrollIntoView({block: "start"});
 }

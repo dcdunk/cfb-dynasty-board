@@ -8,7 +8,7 @@ const GS = [
   ...Object.keys(ABPHYS).map(n => ({n, s:"Physical ability", go:() => gsAb("player", n)})),
   ...Object.keys(ABMENT).map(n => ({n, s:"Mental ability", go:() => gsAb("ment", n)})),
   ...[...new Set(CARCH.flatMap(a => a.br.flatMap(([, ab]) => ab.map(([n]) => n))))].map(n => ({n, s:"Coach ability", go:() => gsAb("coach", n)})),
-  ...ABARCH.map(([p, n]) => ({n, s:`${p} archetype`, go:() => { abP = p; gsArch("player", "#abGrid .sl-card h3", n); }})),
+  ...ABARCH.map(([p, n]) => ({n, s:`${p} archetype`, go:() => { abP = p; ABOPEN.add(p + "|" + n); gsArch("player", "#abGrid .sl-card h3", n); }})),
   ...CARCH.map(a => ({n:a.n, s:"Coach archetype", go:() => { abC = CGROUP.find(g => g[1].includes(a.n))[0]; gsArch("coach", "#abCGrid .ab-ah", a.n); }})),
   ...HRULES.map(r => ({n:r.n, s:"House rule", go:() => showTab("house")})),
   ...PLAYERS.map(p => ({n:p.name, s:`${p.pos} · ${p.team}`, go:() => plOpen(p.name)})),

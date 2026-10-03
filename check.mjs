@@ -509,6 +509,11 @@ const inPage = async () => {
   find("#abQ", "sure hands");
   ok($$("#abGrid .sl-card").length === 6, `Abilities: Sure Hands should be in 6 archetypes, got ${$$("#abGrid .sl-card").length}`);
   find("#abQ", "");
+  // Phone collapse: every card has an ability summary; tapping the header opens it and keeps it open across redraws.
+  { const c = $("#abGrid .ab-card"), k = c.dataset.card; ok(c.querySelector(".ab-sum") && !c.classList.contains("open"), "Abilities: cards should start closed with a summary");
+    c.querySelector("h3").click(); ok(c.classList.contains("open") && ABOPEN.has(k), "Abilities: tapping a card header should open it");
+    abDraw(); ok($(`#abGrid [data-card="${k}"]`).classList.contains("open"), "Abilities: an open card should stay open after a redraw");
+    $(`#abGrid [data-card="${k}"] h3`).click(); ok(!ABOPEN.has(k), "Abilities: tapping again should close it"); }
   // Mode chips: Physical (was Player), Mental (own page), Coach, Position changes.
   ok([...$$("#abMode .chip")].map(b => b.textContent).join() === "Physical,Mental,Coach,Position changes", "Abilities: mode chips should be Physical, Mental, Coach, Position changes");
   ok(!$("#abPlayer").contains($("#abMent")), "Abilities: mental abilities should not be on the Physical page");
