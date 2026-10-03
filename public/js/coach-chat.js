@@ -796,6 +796,7 @@ $("#pClear").addEventListener("click", () => { pClear(); $("#pIn").focus(); });
 $("#pOpen").addEventListener("click", () => pToggle(!$("#pChat").classList.contains("on")));
 
 $("#pClose").addEventListener("click", () => pToggle(false));
+sheet($("#pChat"), () => { $("#pChat").style.transform = ""; pToggle(false); }, () => $("#pLog"));   // phones: drag the card down to close
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
 const pGrow = () => { const i = $("#pIn"); i.style.height = "auto"; i.style.height = i.scrollHeight + 2 + "px"; };
 $("#pIn").addEventListener("input", pGrow);

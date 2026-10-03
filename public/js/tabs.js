@@ -126,7 +126,7 @@ function sheet(el, close, scroller){
   el.addEventListener("touchstart", e => {
     if (!SHEETMQ.matches || e.touches.length > 1) return;
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dy = 0; t0 = Date.now(); drag = false;
-    top = !!e.target.closest(".grab,.ks-h,.dhead") || scroller().scrollTop <= 0;
+    top = !!e.target.closest(".grab,.ks-h,.dhead,.phead") || scroller().scrollTop <= 0;
   }, {passive: true});
   el.addEventListener("touchmove", e => {
     if (y0 == null || !top) return;

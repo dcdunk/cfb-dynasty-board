@@ -1060,3 +1060,19 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
   #abQ:focus, #abQ:not(:placeholder-shown){grid-column:1/-1; width:100%; padding:8px 10px 8px 34px; color:var(--text); cursor:text; background-position:10px center}
   #abQ:focus::placeholder{color:var(--faint)}
 }
+/* Phones: My Dynasty's Back up / Restore block moves to the bottom of the page, under the open dynasty */
+@media (max-width:767px){
+  #viewDyn{display:flex; flex-direction:column; gap:0}
+  #viewDyn > div:first-child{display:contents}
+  #viewDyn #dView{margin-top:26px}
+  #viewDyn .seg, #viewDyn .dlist{width:100%; box-sizing:border-box}
+  #viewDyn .dbak{order:1; margin-top:30px}
+}
+/* Phones: Coach is a bottom-sheet card like the team card (rounded top, grab handle, page dimmed behind), not a full screen */
+@media (max-width:767px){
+  .pchat{top:auto; height:92vh; height:92dvh; padding-top:0; border-top:1px solid var(--line); border-radius:12px 12px 0 0;
+    transform:translateY(100%); box-shadow:0 0 0 100vmax rgba(0,0,0,0)}
+  .pchat.on{transform:none; box-shadow:0 0 0 100vmax rgba(0,0,0,.5); transition:transform .24s cubic-bezier(.4,0,.2,1), box-shadow .24s}
+  .pchat .grab{position:static; flex:none; border-radius:12px 12px 0 0}
+  .pchat .phead{padding-top:4px}
+}
