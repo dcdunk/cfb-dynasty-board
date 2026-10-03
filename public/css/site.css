@@ -679,8 +679,8 @@ mark.hit{background:none; color:var(--accent-ink); text-decoration:underline; te
 .ab-gl{display:flex; flex-wrap:wrap; align-items:center; gap:3px}
 .ab-list .ab-gr{font-size:11px; color:var(--faint); margin-right:2px; width:100%}
 .ab-gr em{font-style:normal; font-weight:590; color:var(--dim)}
-.ab-legend .mt{margin-right:4px}
-.ab-legend{margin:10px 0 0}
+.ab-legend .mt{margin-right:8px}
+.sl .ab-legend{margin:18px 0 0}
 
 .sl-head{display:flex; flex-wrap:wrap; gap:14px 24px; align-items:flex-end; justify-content:space-between}
 .sl-new{font-size:12.5px; color:var(--dim); margin:16px 0 20px; padding:10px 12px;
@@ -1047,4 +1047,16 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
   /* ability unlock chips */
   .mt{font-size:11.5px; padding:1px 5px}
   .mt small{font-size:10.5px}
+}
+/* Phones: Abilities search collapses to a magnifying-glass button right of the mode chips; it opens full width on tap */
+@media (max-width:767px){
+  #viewAb .sl-head{display:grid; grid-template-columns:auto 1fr; gap:10px 8px; align-items:center}
+  #viewAb .sl-head > div{display:contents}
+  #viewAb .sl-head .hh{grid-column:1/-1}
+  #abMode{margin-top:0 !important}
+  #abQ{justify-self:start; min-width:0; width:36px; height:32px; padding:0; border-radius:6px; cursor:pointer; color:transparent;
+    background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") center/16px no-repeat}
+  #abQ::placeholder{color:transparent}
+  #abQ:focus, #abQ:not(:placeholder-shown){grid-column:1/-1; width:100%; padding:8px 10px 8px 34px; color:var(--text); cursor:text; background-position:10px center}
+  #abQ:focus::placeholder{color:var(--faint)}
 }

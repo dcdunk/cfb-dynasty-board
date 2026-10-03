@@ -37,9 +37,6 @@ function slDraw(){
   const d = SLDIFF[slD];
   $("#slDiff").innerHTML = Object.entries(SLDIFF).map(([k, x]) =>
     `<button type="button" class="chip" data-d="${k}" aria-pressed="${k === slD}">${x.n}</button>`).join("");
-  $("#slNew").textContent = slD === "heis"
-    ? "CPU QB accuracy drops to 32 so CPU quarterbacks take more shots downfield, and WR catching goes up to 52 for both sides. Tackling rises to 48 for both sides so missed tackles are less common. Block in the back goes up to give QBs a cleaner pocket, and roughing the passer comes down so they have to decide faster."
-    : "The All-American set was already playing well, so only penalties changed. Block in the back goes up and roughing the passer comes down, adding aggression on both sides of the line.";
   $("#slGrid").innerHTML = `<section class="sl-card"><h3>${d.n} sliders<span>You vs CPU</span></h3><table>
     <thead><tr><th class="l">Slider</th><th>You</th><th>CPU</th></tr></thead><tbody>${
     d.skill.map(([n, u, c, pu, pc]) => `<tr><td class="l">${n}</td>${slCell(u, pu)}${slCell(c, pc)}</tr>`).join("")}</tbody></table></section>`
