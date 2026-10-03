@@ -234,6 +234,15 @@ const inPage = async () => {
     ok(curTab === "ab" && abM === "player" && abP === "OT" && !$("#plc").open, `Players: archetype link should open Abilities on OT, got ${curTab} ${abP}`);
     showTab("play"); }
   ok($("#plist .parch") || $$(".parch").length, "Players: archetype should show under player names");
+  // Archetype filter: options follow the position chip, filters the list, and resets when the position changes.
+  $('#plpos [data-p="LEDG"]').click(); await wait(30);
+  const eo = [...$("#plarch").options].map(o => o.value).filter(Boolean);
+  $("#plarch").value = "Speed Rusher"; $("#plarch").dispatchEvent(new Event("change")); await wait(30);
+  const sr = plList();
+  ok(eo.includes("Speed Rusher") && !eo.includes("Pocket Passer") && sr.length > 0 && sr.every(p => p.pos === "LEDG" && p.arch === "Speed Rusher") && /arch=Speed/.test(location.hash), `Players: archetype filter should list only LEDG Speed Rushers, got ${sr.length}`);
+  $('#plpos [data-p="QB"]').click(); await wait(30);
+  ok($("#plarch").value === "" && [...$("#plarch").options].some(o => o.value === "Pocket Passer"), "Players: changing position should reset an archetype that doesn't fit");
+  $('#plpos [data-p="All"]').click(); await wait(30);
   const unrated = PLAYERS.find(p => !RATINGS.p[p.team]?.[p.name]); await plCard(unrated.i); ok(/doesn't list/.test($("#plcB").textContent), "Players: unrated players should say so"); $("#plc").close();
   // Roster rows in the dossier open the player card (dossier stays underneath).
   openTeam("Georgia"); await wait(50); { const tr = $("#dbody tr[data-pl]"); tr.click(); await wait(80);

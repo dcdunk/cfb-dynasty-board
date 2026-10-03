@@ -12,28 +12,37 @@ let plKey = "ovr", plDir = -1, plPos = "All", plQuery = "", plShown = PLPAGE;
 $("#plpos").innerHTML = POSG.map(g => `<button class="chip" type="button" data-p="${g[0]}" aria-pressed="${g[0] === "All"}">${g[0] === "All" ? "All positions" : g[0]}</button>`).join("");
 $("#plteam").innerHTML = `<option value="">All programs</option>` + DATA.map(t => t.n).sort((a, b) => a.localeCompare(b)).map(n => `<option>${esc(n)}</option>`).join("");
 $("#plconf").innerHTML = `<option value="">All conferences</option>` + [...new Set(DATA.map(t => t.c))].sort().map(c => `<option>${esc(c)}</option>`).join("");
+// Archetype select lists only the archetypes found in the current position filter; a choice that no longer fits resets.
+function plArchOpts(){
+  const grp = POSG.find(g => g[0] === plPos)[1], cur = $("#plarch").value;
+  const as = [...new Set(PLAYERS.filter(p => p.arch && (!grp || grp.includes(p.pos))).map(p => p.arch))].sort((a, b) => a.localeCompare(b));
+  $("#plarch").innerHTML = `<option value="">All archetypes</option>` + as.map(a => `<option>${esc(a)}</option>`).join("");
+  $("#plarch").value = as.includes(cur) ? cur : "";
+}
+plArchOpts();
 const plRedraw = () => { plShown = PLPAGE; plDraw(); };
 $("#plpos").addEventListener("click", e => { const b = e.target.closest(".chip"); if (!b) return;
-  plPos = b.dataset.p; [...$("#plpos").children].forEach(x => x.setAttribute("aria-pressed", x === b)); plRedraw(); });
+  plPos = b.dataset.p; [...$("#plpos").children].forEach(x => x.setAttribute("aria-pressed", x === b)); plArchOpts(); plRedraw(); });
 $("#plq").addEventListener("input", e => { plQuery = norm(e.target.value.trim()); plRedraw(); });
-for (const id of ["#plteam", "#plconf", "#plyr", "#pldev"]) $(id).addEventListener("change", plRedraw);
+for (const id of ["#plteam", "#plconf", "#plyr", "#pldev", "#plarch"]) $(id).addEventListener("change", plRedraw);
 $("#plhrow").addEventListener("click", e => { const th = e.target.closest("th"); if (!th) return;
   const k = th.dataset.k; if (k === plKey) plDir *= -1; else { plKey = k; plDir = k === "ovr" || k === "spd" || k.startsWith("r:") ? -1 : 1; } plRedraw(); });
 $("#plmore").addEventListener("click", () => { plShown += PLPAGE; plDraw(); });
 function plList(){
-  const grp = POSG.find(g => g[0] === plPos)[1], team = $("#plteam").value, conf = $("#plconf").value, yr = $("#plyr").value, dev = $("#pldev").value;
-  return PLAYERS.filter(p => (!grp || grp.includes(p.pos)) && (!team || p.team === team) && (!conf || p.conf === conf) && (!yr || p.yr.startsWith(yr)) && (dev === "" || p.dev === +dev)
+  const grp = POSG.find(g => g[0] === plPos)[1], team = $("#plteam").value, conf = $("#plconf").value, yr = $("#plyr").value, dev = $("#pldev").value, arch = $("#plarch").value;
+  return PLAYERS.filter(p => (!grp || grp.includes(p.pos)) && (!team || p.team === team) && (!conf || p.conf === conf) && (!yr || p.yr.startsWith(yr)) && (dev === "" || p.dev === +dev) && (!arch || p.arch === arch)
       && (!plQuery || norm(p.name).includes(plQuery) || norm(p.team).includes(plQuery)))
     .sort((a, b) => { const v = p => plKey === "yr" ? PLYR.indexOf(p.yr.slice(0, 2)) : plKey.startsWith("r:") ? plStat(p, plKey.slice(2)) ?? -1 : p[plKey];
       const x = v(a), y = v(b), d = typeof x === "string" ? x.localeCompare(y) : x - y;
       return d * plDir || b.ovr - a.ovr || a.name.localeCompare(b.name); });
 }
 // Player Database filters in the URL (#players/pos=QB&team=Georgia&yr=JR), so a refresh keeps them.
-TSUB.play = () => hashQ({pos: plPos === "All" ? "" : plPos, team: $("#plteam").value, conf: $("#plconf").value, yr: $("#plyr").value, dev: $("#pldev").value, q: $("#plq").value.trim()});
+TSUB.play = () => hashQ({pos: plPos === "All" ? "" : plPos, team: $("#plteam").value, conf: $("#plconf").value, yr: $("#plyr").value, dev: $("#pldev").value, arch: $("#plarch").value, q: $("#plq").value.trim()});
 function plFromHash(sub){
   const q = new URLSearchParams(sub), pos = q.get("pos");
   if (POSG.some(g => g[0] === pos)) { plPos = pos; [...$("#plpos").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.p === pos)); }
-  for (const [k, id] of [["team", "#plteam"], ["conf", "#plconf"], ["yr", "#plyr"], ["dev", "#pldev"]]) { const v = q.get(k); if (v != null && [...$(id).options].some(o => o.value === v)) $(id).value = v; }
+  plArchOpts();
+  for (const [k, id] of [["team", "#plteam"], ["conf", "#plconf"], ["yr", "#plyr"], ["dev", "#pldev"], ["arch", "#plarch"]]) { const v = q.get(k); if (v != null && [...$(id).options].some(o => o.value === v)) $(id).value = v; }
   if (q.get("q")) { $("#plq").value = q.get("q"); plQuery = norm(q.get("q")); }
 }
 function plDraw(){
@@ -60,7 +69,7 @@ function plDraw(){
 // Global search and other tabs land here with a name in the search box and every other filter cleared.
 function plOpen(q){
   plPos = "All"; [...$("#plpos").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.p === "All"));
-  for (const id of ["#plteam", "#plconf", "#plyr", "#pldev"]) $(id).value = "";
+  plArchOpts(); for (const id of ["#plteam", "#plconf", "#plyr", "#pldev", "#plarch"]) $(id).value = "";
   $("#plq").value = q; plQuery = norm(q); plShown = PLPAGE; showTab("play"); plDraw();
 }
 $("#plrows").addEventListener("click", e => { const tr = e.target.closest("tr"); if (tr) plCard(+tr.dataset.i); });
