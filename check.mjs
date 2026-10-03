@@ -468,6 +468,13 @@ const inPage = async () => {
     ok([...roster].every(p => onBoard.has(p)) && Object.values(RBPOS).every(s => ABARCH.some(a => a[0] === s[0])), `Recruiting board: every position needs a card with archetypes (edges use EDGE), missing ${[...roster].filter(p => !onBoard.has(p))}`);
     rbPick("lg"); ok(/Raw Strength\s*Best fit/.test($("#plcB").textContent) && $("#plcB").querySelectorAll("[data-rba]").length === 4, "Recruiting board: a guard should list the 4 OL archetypes with Raw Strength as best fit");
     $('#plcB [data-rba="Agile"]').click(); ok(RB.lg === "Agile" && !$("#plc").open && JSON.parse(localStorage.getItem("rboard-v1")).a.lg === "Agile", "Recruiting board: picking should save and close");
+    // Second choice: pick via the 2nd choice chip, shown under the first on the card, saved in b; same archetype swaps; clearing the 1st promotes the 2nd.
+    rbPick("lg"); ok($('#plcB [data-rbw="2"]') && !$('#plcB [data-rbw="2"]').disabled, "Recruiting board: 2nd choice should be available once a 1st is picked");
+    $('#plcB [data-rbw="2"]').click(); $('#plcB [data-rba="Raw Strength"]').click();
+    ok(RB.lg === "Agile" && RB2.lg === "Raw Strength" && /or Raw Strength/.test($('#rb [data-rb="lg"]').textContent) && JSON.parse(localStorage.getItem("rboard-v1")).b.lg === "Raw Strength", "Recruiting board: a 2nd choice should save and show under the 1st");
+    rbPick("lg"); $('#plcB [data-rba="Raw Strength"]').click(); ok(RB.lg === "Raw Strength" && RB2.lg === "Agile", "Recruiting board: picking the 2nd choice as 1st should swap them");
+    rbPick("lg"); $('#plcB [data-rba=""]').click(); ok(RB.lg === "Agile" && !RB2.lg, "Recruiting board: clearing the 1st should move the 2nd up");
+    delete RB.rg; rbPick("rg"); ok($('#plcB [data-rbw="2"]').disabled, "Recruiting board: 2nd choice waits for a 1st");
     rbPick("lg"); $('#plcB [data-rba=""]').click(); ok(!RB.lg && !JSON.parse(localStorage.getItem("rboard-v1")).a.lg, "Recruiting board: clearing a spot should remove it");
     // Subs: FB -> TE swaps the card's label and archetype list (FB archetype dropped); back to FB clears the sub; defense can't sub to QB.
     RB.fb = "Utility"; rbPick("fb"); $('#plcB [data-rbp="TE"]').click();

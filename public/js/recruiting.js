@@ -111,7 +111,8 @@ $("#rLink").addEventListener("click", () => { rLink = !rLink; if (!rLink) rTeam 
 
 /* ---- recruiting board (rM "board", #recruiting/board) ---- */
 // Blank formation; each card takes one archetype from ABARCH, and any card can be subbed to another position on its side
-// (drop the FB for a second TE). Saved in rboard-v1 as {a: {slot: archetype}, p: {slot: position}} (p only for subbed slots).
+// (drop the FB for a second TE), plus an optional second-choice archetype. Saved in rboard-v1 as
+// {a: {slot: archetype}, b: {slot: second choice}, p: {slot: position}} (p only for subbed slots; b only with a first choice).
 // Position: short name -> [ABARCH group, full name, side]. Slot: [id, starting position]; cells come from RBXY via rbPlace.
 const RBPOS = {FS:["S","Free safety","D"], SS:["S","Strong safety","D"], CB:["CB","Cornerback","D"], WILL:["LB","Weak-side linebacker","D"],
   MIKE:["LB","Middle linebacker","D"], SAM:["LB","Strong-side linebacker","D"], REDG:["EDGE","Right edge","D"], DT:["DL","Defensive tackle","D"], LEDG:["EDGE","Left edge","D"],
@@ -144,26 +145,29 @@ function rbPlace(ss, m, cols){
 // Owner's line-building advice: tackles Well Rounded; guards and center Raw Strength (or two Raw Strength and one Agile).
 const RBTIP = {LT:["Well Rounded"], RT:["Well Rounded"], LG:["Raw Strength","Agile"], C:["Raw Strength","Agile"], RG:["Raw Strength","Agile"]};
 const RBNOTE = "Build the line with Well Rounded tackles, and Raw Strength guards and center (or two Raw Strength and one Agile).";
-let rM = "plan", RB = {}, RBP = {};
+let rM = "plan", RB = {}, RB2 = {}, RBP = {}, rbW = 1;   // rbW: which choice the sheet is picking (1st or 2nd)
 const rbPos = id => RBP[id] || RBALL.find(s => s[0] === id)[1];
 try { const v = JSON.parse(localStorage.getItem("rboard-v1") || "{}");
   for (const [k, p] of Object.entries(v.p || {})) { const s = RBALL.find(s => s[0] === k); if (s && RBPOS[p]?.[2] === RBPOS[s[1]][2] && p !== s[1]) RBP[k] = p; }
-  for (const [k, a] of Object.entries(v.a || {})) if (RBALL.some(s => s[0] === k) && ABARCH.some(x => x[0] === RBPOS[rbPos(k)][0] && x[1] === a)) RB[k] = a; } catch (e) {}
-const rbSave = () => { try { localStorage.setItem("rboard-v1", JSON.stringify({a:RB, p:RBP})); } catch (e) {} };
+  for (const [k, a] of Object.entries(v.a || {})) if (RBALL.some(s => s[0] === k) && ABARCH.some(x => x[0] === RBPOS[rbPos(k)][0] && x[1] === a)) RB[k] = a;
+  for (const [k, a] of Object.entries(v.b || {})) if (RB[k] && RB[k] !== a && ABARCH.some(x => x[0] === RBPOS[rbPos(k)][0] && x[1] === a)) RB2[k] = a; } catch (e) {}
+const rbSave = () => { try { localStorage.setItem("rboard-v1", JSON.stringify({a:RB, b:RB2, p:RBP})); } catch (e) {} };
 TSUB.rec = () => rM === "board" ? "/board" : "";
 const recFromHash = h => { if (h === "board") rM = "board"; };
 function rbDraw(){
   $("#rb").innerHTML = Object.entries(RBS).map(([side, ss]) => { const D = rbPlace(ss, 0, side[0] === "S" ? 2 : 9), M = rbPlace(ss, 1, side[0] === "S" ? 2 : side[0] === "O" ? 6 : 5);
     return `<section class="rb-side rb-${side[0].toLowerCase()}"><h3>${side}</h3><div class="rb-f">${ss.map(([id]) => { const p = rbPos(id);
-    return `<button type="button" class="rb-c${RB[id] ? " on" : ""}${RBP[id] ? " sub" : ""}" style="--g:${D[id]};--m:${M[id]}" data-rb="${id}" aria-label="${RBPOS[p][1]}: ${RB[id] || "no archetype yet"}"><b>${p}</b><span>${RB[id] ? esc(RB[id]) : "+"}</span></button>`; }).join("")}</div></section>`; }).join("");
+    return `<button type="button" class="rb-c${RB[id] ? " on" : ""}${RBP[id] ? " sub" : ""}" style="--g:${D[id]};--m:${M[id]}" data-rb="${id}" aria-label="${RBPOS[p][1]}: ${RB[id] ? RB[id] + (RB2[id] ? ", or " + RB2[id] : "") : "no archetype yet"}"><b>${p}</b><span>${RB[id] ? esc(RB[id]) + (RB2[id] ? `<small>or ${esc(RB2[id])}</small>` : "") : "+"}</span></button>`; }).join("")}</div></section>`; }).join("");
   $("#rbClear").disabled = !Object.keys(RB).length && !Object.keys(RBP).length;
 }
-function rbPick(id){
-  const p = rbPos(id), [g, full, side] = RBPOS[p], tip = RBTIP[p] || [], home = RBALL.find(s => s[0] === id)[1];
+function rbPick(id, w = 1){
+  rbW = RB[id] ? w : 1;
+  const p = rbPos(id), [g, full, side] = RBPOS[p], tip = RBTIP[p] || [], home = RBALL.find(s => s[0] === id)[1], cur = rbW === 2 ? RB2 : RB, other = rbW === 2 ? RB : RB2;
   $("#plcN").textContent = `${p} · ${full}`;
   $("#plcB").innerHTML = (tip.length ? `<p class="plc-sub">${RBNOTE}</p>` : `<p class="plc-sub">Pick the archetype you want to recruit here.</p>`)
-    + `<div class="rb-pick">${ABARCH.filter(a => a[0] === g).map(([, n, abs]) => `<button type="button" data-rba="${esc(n)}" aria-pressed="${RB[id] === n}"><b>${n}${tip.includes(n) ? `<i>${tip[0] === n ? "Best fit" : "Option"}</i>` : ""}</b><span>${abs.join(" · ")}</span></button>`).join("")}</div>`
-    + (RB[id] ? `<button type="button" class="ghost" data-rba="">Clear this spot</button>` : "")
+    + `<div class="chips rb-w" role="group" aria-label="Which choice">${[[1, "1st choice"], [2, "2nd choice"]].map(([k, t]) => `<button type="button" class="chip" data-rbw="${k}" aria-pressed="${rbW === k}"${k === 2 && !RB[id] ? ' disabled title="Pick a 1st choice first"' : ""}>${t}${(k === 1 ? RB : RB2)[id] ? `: ${esc((k === 1 ? RB : RB2)[id])}` : ""}</button>`).join("")}</div>`
+    + `<div class="rb-pick">${ABARCH.filter(a => a[0] === g).map(([, n, abs]) => `<button type="button" data-rba="${esc(n)}" aria-pressed="${cur[id] === n}"><b>${n}${other[id] === n ? `<i class="rb-oth">${rbW === 2 ? "1st choice" : "2nd choice"}</i>` : ""}${tip.includes(n) ? `<i>${tip[0] === n ? "Best fit" : "Option"}</i>` : ""}</b><span>${abs.join(" · ")}</span></button>`).join("")}</div>`
+    + (cur[id] ? `<button type="button" class="ghost" data-rba="">${rbW === 2 ? "Clear 2nd choice" : "Clear this spot"}</button>` : "")
     + (side === "S" ? "" : `<h3>Sub in a different position${RBP[id] ? ` (started as ${home})` : ""}</h3><div class="chips rb-subs">${Object.keys(RBPOS).filter(q => RBPOS[q][2] === side)
       .map(q => `<button type="button" class="chip" data-rbp="${q}" aria-pressed="${q === p}">${q}</button>`).join("")}</div>`);
   $("#plcB").dataset.rb = id;
@@ -172,10 +176,17 @@ function rbPick(id){
 $("#plcB").addEventListener("click", e => {
   const id = $("#plcB").dataset.rb, sp = e.target.closest("[data-rbp]");
   // Subbing keeps the archetype only if the new position shares its group (LG -> RG); then the sheet stays open to pick one.
-  if (sp) { const q = sp.dataset.rbp; if (q === rbPos(id)) return; if (RBPOS[q][0] !== RBPOS[rbPos(id)][0]) delete RB[id];
+  const w = e.target.closest("[data-rbw]"); if (w) return rbPick(id, +w.dataset.rbw);
+  if (sp) { const q = sp.dataset.rbp; if (q === rbPos(id)) return; if (RBPOS[q][0] !== RBPOS[rbPos(id)][0]) { delete RB[id]; delete RB2[id]; }
     if (q === RBALL.find(s => s[0] === id)[1]) delete RBP[id]; else RBP[id] = q; rbSave(); rbDraw(); return rbPick(id); }
   const b = e.target.closest("[data-rba]"); if (!b) return;
-  if (b.dataset.rba) RB[id] = b.dataset.rba; else delete RB[id]; rbSave(); rbDraw(); $("#plc").close(); });
+  const a = b.dataset.rba;
+  // 1st and 2nd choice are never the same archetype: picking one choice's archetype for the other swaps them.
+  // Clearing the 1st choice moves the 2nd up.
+  if (rbW === 2) { if (!a) delete RB2[id]; else if (a === RB[id]) { RB[id] = a; delete RB2[id]; } else RB2[id] = a; }
+  else if (!a) { if (RB2[id]) { RB[id] = RB2[id]; delete RB2[id]; } else delete RB[id]; }
+  else { if (a === RB2[id]) { RB2[id] = RB[id]; if (!RB2[id]) delete RB2[id]; } RB[id] = a; }
+  rbSave(); rbDraw(); $("#plc").close(); });
 $("#rb").addEventListener("click", e => { const b = e.target.closest("[data-rb]"); if (b) rbPick(b.dataset.rb); });
-$("#rbClear").addEventListener("click", () => { if (confirm("Clear every position on the recruiting board, including subs?")) { RB = {}; RBP = {}; rbSave(); rbDraw(); } });
+$("#rbClear").addEventListener("click", () => { if (confirm("Clear every position on the recruiting board, including subs?")) { RB = {}; RB2 = {}; RBP = {}; rbSave(); rbDraw(); } });
 $("#recMode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (b) { rM = b.dataset.m; recDraw(); } });
