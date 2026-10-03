@@ -112,10 +112,10 @@ async function plCard(i){
   $("#plcN").innerHTML = `${esc(p.name)}${p.dev ? ` <span class="dev d${p.dev}">${DEVN[p.dev]}</span>` : ""}`;
   $("#plcB").innerHTML = `<p class="plc-none">Loading ratings…</p>`; if (!$("#plc").open) $("#plc").showModal(); $("#plcX").focus();
   const R = await plRatings(), r = R && plRow(p), ht = r && r[1] ? `${Math.floor(r[1] / 12)}′${r[1] % 12}″` : "";
-  const top = `<p class="plc-sub">${p.pos} · ${esc(p.team)} · ${esc(p.conf)} · ${p.yr}${p.arch ? ` · <button type="button" class="plc-arch" data-parch="${esc(p.arch)}" data-ppos="${p.pos}" title="See this archetype's abilities">${esc(p.arch)}</button>` : ""}</p><div class="plc-top">
+  const top = `<p class="plc-sub">${p.pos} · ${esc(p.team)} · ${esc(p.conf)} · ${p.yr}${p.arch ? ` · <button type="button" class="plc-arch" data-parch="${esc(p.arch)}" data-ppos="${p.pos}" title="See this archetype's abilities">${esc(p.arch)}</button>` : ""}${r && r[4] ? ` · From ${esc(r[4])}` : ""}</p><div class="plc-top">
     <div><b>${r ? r[0] : p.ovr}</b><span>Overall${r ? ` (${esc(R.it)})` : ""}</span></div><div><b>${p.spd}</b><span>Speed</span></div>
     ${r ? `<div><b>${ht}</b><span>Height</span></div><div><b>${r[2]}</b><span>Weight</span></div><div><b>#${r[3]}</b><span>Jersey</span></div>` : ""}
-    <button class="ghost plc-go" type="button" data-team="${esc(p.team)}">Open ${esc(p.team)}</button></div>${r && r[4] ? `<p class="plc-sub" style="margin-top:10px">From ${esc(r[4])}</p>` : ""}`;
+    <button class="ghost plc-go" type="button" data-team="${esc(p.team)}">Open ${esc(p.team)}</button></div>`;
   if (!R) { $("#plcB").innerHTML = top + `<p class="plc-none">Couldn't load the extended ratings. Check your connection and try again.</p>`; return; }
   if (!r) { $("#plcB").innerHTML = top + `<p class="plc-none">EA doesn't list extended ratings for this player.</p>`; return; }
   const groups = [...PLGRP].sort((a, b) => (b[0] === PLFIRST[p.pos]) - (a[0] === PLFIRST[p.pos]));
