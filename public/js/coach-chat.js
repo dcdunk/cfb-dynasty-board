@@ -136,9 +136,7 @@ pLog.addEventListener("click", async e => {
   setTimeout(() => { b.innerHTML = PCOPY; b.setAttribute("aria-label", "Copy message"); b.title = "Copy"; }, 1500);
 });
 function pSay(who, html){ const d = document.createElement("div"); d.className = "pm " + who; d.innerHTML = html; pCopyBtn(d); pLog.append(d); pLog.scrollTop = who === "bot" ? d.offsetTop - pLog.offsetTop - 8 : pLog.scrollHeight; return d; }
-const PHELP = pMd(["I'm Coach. Tell me a program and how you want to play it, for example:", '- "Tough Florida dynasty with a created coach"', '- "Casual Oregon rebuild"', '- "Former powerhouse back to glory"',
-  "Or ask about the league:", '- "Florida vs Florida State"', '- "Best QB in the SEC"', '- "Best rebuild jobs in the Big Ten"',
-  "I'll suggest house rules, a recruiting approach and sliders from this site's data. Then say \"make it harder\", \"no transfers\" and so on."].join("\n"));
+const PHELP = pMd('I\'m Coach. Name a program and how you want to play it, like "tough Florida rebuild", or ask "best QB in the SEC".');
 // Relative requests ("a little less difficult", "much harder") nudge the last plan rule by rule instead of re-rolling it.
 const PDOWN = /\b(easier|lighter|softer|less (difficult|hard|tough|brutal|strict|challenging|punishing|intense)|not (as|so) (hard|tough|difficult|brutal)|tone (it )?down|dial (it )?back|ease (it )?(up|off)|too (hard|tough|difficult|much|brutal))\b/;
 const PUP = /\b(harder|tougher|more (difficult|challenging|brutal|punishing|intense)|crank (it )?up|turn (it )?up|too easy|not (hard|tough) enough)\b/;
@@ -787,8 +785,23 @@ function pClear(){
   try { localStorage.removeItem("coach-v1"); } catch (e) {}
   pLog.innerHTML = ""; pSay("bot", PHELP);
 }
+// Phones: Coach is a bottom card. Pin the page behind it (iOS otherwise scrolls it under the card) and fit the card
+// above the on-screen keyboard so the message box stays in view.
+let pY = null;
+function pLock(on){
+  if (on && SHEETMQ.matches && pY == null) { pY = scrollY; document.body.style.top = -pY + "px"; document.body.classList.add("coach-lock"); }
+  else if (!on && pY != null) { document.body.classList.remove("coach-lock"); document.body.style.top = ""; scrollTo(0, pY); pY = null; }
+}
+function pVV(){
+  const c = $("#pChat"), v = window.visualViewport;
+  if (!v || !SHEETMQ.matches || !c.classList.contains("on")) { c.style.bottom = c.style.height = ""; return; }
+  c.style.bottom = Math.max(0, innerHeight - v.height - v.offsetTop) + "px";
+  c.style.height = Math.min(v.height - 12, innerHeight * .92) + "px";
+}
+if (window.visualViewport) { visualViewport.addEventListener("resize", pVV); visualViewport.addEventListener("scroll", pVV); }
 function pToggle(on){
-  $("#pChat").classList.toggle("on", on); document.body.classList.toggle("coach-on", on); $("#pOpen").setAttribute("aria-expanded", on);
+  pLock(on);
+  $("#pChat").classList.toggle("on", on); pVV(); document.body.classList.toggle("coach-on", on); $("#pOpen").setAttribute("aria-expanded", on);
   if (on) { if (!pLog.children.length) pSay("bot", PHELP); $("#pIn").focus({preventScroll:true}); } else $("#pOpen").focus();
 }
 pLoad();
@@ -796,6 +809,8 @@ $("#pClear").addEventListener("click", () => { pClear(); $("#pIn").focus(); });
 $("#pOpen").addEventListener("click", () => pToggle(!$("#pChat").classList.contains("on")));
 
 $("#pClose").addEventListener("click", () => pToggle(false));
+// Phones: a tap outside the card closes it.
+document.addEventListener("click", e => { if (SHEETMQ.matches && $("#pChat").classList.contains("on") && !e.composedPath().some(n => n.id === "pChat" || n.id === "pOpen" || n.classList?.contains("mcoach"))) pToggle(false); });
 sheet($("#pChat"), () => { $("#pChat").style.transform = ""; pToggle(false); }, () => $("#pLog"));   // phones: drag the card down to close
 $("#pChat").addEventListener("keydown", e => { if (e.key === "Escape") pToggle(false); });
 const pGrow = () => { const i = $("#pIn"); i.style.height = "auto"; i.style.height = i.scrollHeight + 2 + "px"; };

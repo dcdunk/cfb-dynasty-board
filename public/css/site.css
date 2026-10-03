@@ -1076,3 +1076,7 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
   .pchat .grab{position:static; flex:none; border-radius:12px 12px 0 0}
   .pchat .phead{padding-top:4px}
 }
+@media (max-width:767px){
+  body.coach-lock{position:fixed; left:0; right:0; overflow:hidden}
+  .plog{overscroll-behavior:contain}
+}
