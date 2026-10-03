@@ -107,7 +107,7 @@ export default [
 
   // ---- roster roadmap
   {name: "roadmap", say: [["plan my first 3 seasons at florida", {has: ["3-season roster roadmap", "After season 1", "After season 3", "Recruiting priorities"], not: ["House rules"]}]]},
-  {name: "roadmap priorities include big losses", say: [["florida roster needs", {has: ["Recruiting priorities.*OL"]}]]},
+  {name: "roadmap priorities include big losses", say: [["florida roster needs", {has: ["Recruiting priorities.*(LT|LG|C|RG|RT)\\b"]}]]},
   {name: "roadmap 2 seasons", say: [["plan my first two seasons at texas", {has: ["2-season"], not: ["After season 3"]}]]},
   {name: "roadmap follow-up", say: [["florida roster roadmap", {}], ["what about georgia?", {has: ["Georgia · 3-season roster roadmap"]}]]},
 

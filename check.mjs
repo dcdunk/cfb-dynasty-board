@@ -476,6 +476,13 @@ const inPage = async () => {
   $('#abPos [data-p="EDGE"]').click(); await wait(50);
   { const c = [...$$("#abGrid .sl-card")].find(c => /^Power Rusher/.test(c.querySelector("h3").textContent)), li = [...c.querySelectorAll("li")].find(li => /Grip Breaker/.test(li.querySelector("b").textContent));
     ok($$("#abGrid .sl-card").length === 5 && li.querySelectorAll(".ab-gl").length === 1 && /Bronze: 94 Strength/.test(li.innerHTML), "Abilities: EDGE should show 5 archetypes with only the DE gates (94 Strength)"); }
+  // OL split into OT/OG/C: four archetypes each, and Pocket Shield shows only that sub-position's gate (C costs 2 SP at Bronze, OG/OT 3)
+  ok(!$('#abPos [data-p="OL"]') && ["OT", "OG", "C"].every(p => $(`#abPos [data-p="${p}"]`)), "Abilities: OL should be split into OT, OG and C chips");
+  for (const [p, sp] of [["C", 2], ["OG", 3], ["OT", 3]]) { $(`#abPos [data-p="${p}"]`).click(); await wait(50);
+    const c = [...$$("#abGrid .sl-card")].find(c => /^Pass Protector/.test(c.querySelector("h3").textContent)), li = c && [...c.querySelectorAll("li")].find(li => /Pocket Shield/.test(li.querySelector("b").textContent));
+    ok($$("#abGrid .sl-card").length === 4 && li && li.querySelectorAll(".ab-gl").length === 1 && new RegExp(`Bronze: 84 Pass Block Power, ${sp} SP`).test(li.innerHTML), `Abilities: ${p} should show 4 archetypes and only its own Pocket Shield gate (${sp} SP)`); }
+  ok(abOL("OL|Agile").join() === "OT|Agile,OG|Agile,C|Agile" && abOL("QB|Field General").join() === "QB|Field General", "Abilities: old OL favorites and notes should carry over to OT, OG and C");
+  ok(["LT", "LG", "C", "RG", "RT"].every(p => $(`#plpos [data-p="${p}"]`)) && !$('#plpos [data-p="OL"]'), "Players: OL should be split into LT, LG, C, RG, RT chips");
   $('#abPos [data-p="DL"]').click(); await wait(50);
   ok(!$("#abMent .mt"), "Abilities: mental abilities have no unlock gates");
   find("#abQ", "sure hands");

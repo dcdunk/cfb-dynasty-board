@@ -1,13 +1,15 @@
 // Coach: the chat sidebar (planner, rule edits, league questions, challenges, roadmap, follow-ups, optional on-device AI).
 // Coach: templated answers for ability questions ("what abilities does a Speed Rusher get?", "what does Dot! do?").
-const ABPOSW = {QB:"quarterback", HB:"running back|halfback|rb", FB:"fullback", WR:"receiver|wideout", TE:"tight end", OL:"lineman|offensive line|ol",
+const ABPOSW = {QB:"quarterback", HB:"running back|halfback|rb", FB:"fullback", WR:"receiver|wideout", TE:"tight end", OT:"tackle|lineman|offensive line|ol", OG:"guard|lineman|offensive line|ol", C:"center|lineman|offensive line|ol", EDGE:"edge|de",
   DL:"defensive line|edge|dt|de", LB:"linebacker", CB:"corner", S:"safety", "K/P":"kicker|punter|k|p"};
 function pAbil(q){
   const aq = /\babilit(y|ies)\b|archetype/i.test(q), s = abNorm(q);
   const arch = ABARCH.filter(a => s.includes(abNorm(a[1])));
   const ps = arch.filter(a => new RegExp(`\\b(${a[0].replace("/", "\\/")}|${ABPOSW[a[0]]})s?\\b`, "i").test(q));
   // An archetype name alone is often an everyday word ("recruiting power", "zone defense"): it needs its position or the word ability/archetype.
-  const hit = ps.length ? ps : aq ? arch : [];
+  // OT/OG/C (and DL/EDGE) share archetypes: answer each archetype once, the line as OL.
+  const seen = new Set(), hit = (ps.length ? ps : aq ? arch : []).filter(a => !seen.has(a[1] + a[2]) && seen.add(a[1] + a[2]))
+    .map(([p, n, ab]) => [["OT", "OG", "C"].includes(p) ? "OL" : p, n, ab]);
   if (hit.length && (aq || /\b(get|gets|have|has)\b/i.test(q)))
     return pMd(hit.map(([p, n, ab]) => [`### ${n} ${p}`, ...ab.map(x => `- **${x}:** ${abDesc(x)}`)].join("\n")).join("\n"));
   const n = abFind(q);
@@ -304,7 +306,7 @@ const PPOS = [["LEDG", /\b(ledgs?|left edges?)\b/], ["REDG", /\b(redgs?|right ed
   ["TE", /\b(tes?|tight ends?)\b/], ["OL", /\b(ol|o-line|offensive line\w*|tackles?|guards?|centers?|linem[ae]n)\b/], ["DL", /\b(dl|d-line|defensive line\w*|edge|pass rushers?|dts?|defensive ends?)\b/],
   ["LB", /\b(lbs?|linebackers?)\b/], ["CB", /\b(cbs?|corners?|cornerbacks?)\b/], ["S", /\b(safet(y|ies))\b/], ["K", /\b(kickers?|k)\b/], ["P", /\b(punters?|p)\b/]];
 // DL, LB and S cover several position chips.
-const PGRPS = {DL:["LEDG", "REDG", "DT"], LB:["SAM", "MIKE", "WILL"], S:["FS", "SS"]};
+const PGRPS = {OL:["LT", "LG", "C", "RG", "RT"], DL:["LEDG", "REDG", "DT"], LB:["SAM", "MIKE", "WILL"], S:["FS", "SS"]};
 const pGrp = g => PGRPS[g] || POSG.find(x => x[0] === g)[1];
 const pRow = (p, t) => `**${p[0]}**${t ? ` (${t.n})` : ""} · ${p[1]} · ${p[2]} · ${p[3]} OVR · ${p[5]} speed${p[4] ? ` · ${DEVN[p[4]]} dev` : ""}`;
 function pPlayers(q, t){
@@ -552,7 +554,7 @@ function pTakeChallenge(c){
 }
 /* ---- roster roadmap: who leaves when, where the holes are, what to recruit ---- */
 // Eligibility left from class year (redshirt * already used): FR 4, SO 3, JR 2, SR 1. Starters per group approximate a base 11 + specialists.
-const PSTART = {QB:1, RB:1, WR:3, TE:1, OL:5, LEDG:1, REDG:1, DT:2, SAM:1, MIKE:1, WILL:1, CB:2, FS:1, SS:1, K:1, P:1};
+const PSTART = {QB:1, RB:1, WR:3, TE:1, LT:1, LG:1, C:1, RG:1, RT:1, LEDG:1, REDG:1, DT:2, SAM:1, MIKE:1, WILL:1, CB:2, FS:1, SS:1, K:1, P:1};
 const PROAD = /\broadmap\b|roster (plan|outlook|needs|holes)|plan (my|the|our)? ?(first )?(\d+ |two |three |four )?(seasons?|years?)\b|who (is|are|'s) (leaving|graduating)|graduat|departures|losing (the most|seniors)|\bholes\b|positions? of need|needs? at|what (positions?|should i) (to )?recruit|recruiting (needs|priorities)|seniors? leaving/;
 const yrsLeft = y => ({FR:4, SO:3, JR:2, SR:1})[String(y).replace("*", "")] || 1;
 function pRoadmap(q, t){

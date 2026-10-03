@@ -90,7 +90,7 @@ $("#rows").addEventListener("keydown", e => {
 /* ---- dossier ---- */
 let shownAll = false, posF = "All", rKey = 3, rDir = -1;
 const POSG = [["All",null],["QB",["QB"]],["RB",["HB","FB"]],["WR",["WR"]],["TE",["TE"]],
-  ["OL",["LT","LG","C","RG","RT"]],["LEDG",["LEDG"]],["REDG",["REDG"]],["DT",["DT"]],
+  ["LT",["LT"]],["LG",["LG"]],["C",["C"]],["RG",["RG"]],["RT",["RT"]],["LEDG",["LEDG"]],["REDG",["REDG"]],["DT",["DT"]],
   ["SAM",["SAM"]],["MIKE",["MIKE"]],["WILL",["WILL"]],
   ["CB",["CB"]],["FS",["FS"]],["SS",["SS"]],["K",["K"]],["P",["P"]]];
 

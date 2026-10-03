@@ -116,7 +116,7 @@ $("#rLink").addEventListener("click", () => { rLink = !rLink; if (!rLink) rTeam 
 const RBPOS = {FS:["S","Free safety","D"], SS:["S","Strong safety","D"], CB:["CB","Cornerback","D"], WILL:["LB","Weak-side linebacker","D"],
   MIKE:["LB","Middle linebacker","D"], SAM:["LB","Strong-side linebacker","D"], REDG:["EDGE","Right edge","D"], DT:["DL","Defensive tackle","D"], LEDG:["EDGE","Left edge","D"],
   QB:["QB","Quarterback","O"], HB:["HB","Halfback","O"], FB:["FB","Fullback","O"], WR:["WR","Wide receiver","O"], TE:["TE","Tight end","O"],
-  LT:["OL","Left tackle","O"], LG:["OL","Left guard","O"], C:["OL","Center","O"], RG:["OL","Right guard","O"], RT:["OL","Right tackle","O"],
+  LT:["OT","Left tackle","O"], LG:["OG","Left guard","O"], C:["C","Center","O"], RG:["OG","Right guard","O"], RT:["OT","Right tackle","O"],
   K:["K/P","Kicker","S"], P:["K/P","Punter","S"]};
 const RBS = {Defense: [["fs","FS"],["ss","SS"],["cb1","CB"],["will","WILL"],["mike","MIKE"],["sam","SAM"],["cb2","CB"],["redg","REDG"],["dt1","DT"],["dt2","DT"],["ledg","LEDG"]],
   Offense: [["wr1","WR"],["lt","LT"],["lg","LG"],["c","C"],["rg","RG"],["rt","RT"],["te","TE"],["wr2","WR"],["wr3","WR"],["qb","QB"],["fb","FB"],["hb","HB"]],

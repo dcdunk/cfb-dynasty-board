@@ -61,10 +61,19 @@ const ABARCH = [
   ["TE","Pure Possession",["Sure Hands","Wear Down","Strong Grip","Outside Shield","Balanced"]],
   ["TE","Pure Blocker",["Strong Grip","Quick Drop","Outside Shield","Pocket Shield","Second Level"]],
   ["TE","Vertical Threat",["Workhorse","Balanced","Takeoff","Recoup","50/50"]],
-  ["OL","Agile",["Screen Enforcer","Quick Step","Option Shield","Outside Shield","Quick Drop"]],
-  ["OL","Pass Protector",["Pocket Shield","Quick Drop","PA Shield","Strong Grip","Wear Down"]],
-  ["OL","Raw Strength",["Strong Grip","Workhorse","Second Level","Inside Shield","Ground N Pound"]],
-  ["OL","Well Rounded",["Pocket Shield","Outside Shield","Strong Grip","Option Shield","Inside Shield"]],
+  // OL is split into OT, OG and C (owner, Oct 2026): same four archetypes and abilities, only the unlock gates differ (the OT/OG/C rows of "OL|..." in ABGATE).
+  ["OT","Agile",["Screen Enforcer","Quick Step","Option Shield","Outside Shield","Quick Drop"]],
+  ["OT","Pass Protector",["Pocket Shield","Quick Drop","PA Shield","Strong Grip","Wear Down"]],
+  ["OT","Raw Strength",["Strong Grip","Workhorse","Second Level","Inside Shield","Ground N Pound"]],
+  ["OT","Well Rounded",["Pocket Shield","Outside Shield","Strong Grip","Option Shield","Inside Shield"]],
+  ["OG","Agile",["Screen Enforcer","Quick Step","Option Shield","Outside Shield","Quick Drop"]],
+  ["OG","Pass Protector",["Pocket Shield","Quick Drop","PA Shield","Strong Grip","Wear Down"]],
+  ["OG","Raw Strength",["Strong Grip","Workhorse","Second Level","Inside Shield","Ground N Pound"]],
+  ["OG","Well Rounded",["Pocket Shield","Outside Shield","Strong Grip","Option Shield","Inside Shield"]],
+  ["C","Agile",["Screen Enforcer","Quick Step","Option Shield","Outside Shield","Quick Drop"]],
+  ["C","Pass Protector",["Pocket Shield","Quick Drop","PA Shield","Strong Grip","Wear Down"]],
+  ["C","Raw Strength",["Strong Grip","Workhorse","Second Level","Inside Shield","Ground N Pound"]],
+  ["C","Well Rounded",["Pocket Shield","Outside Shield","Strong Grip","Option Shield","Inside Shield"]],
   ["DL","Edge Setter",["Grip Breaker","Inside Disruptor","Outside Disruptor","Option Disruptor","Workhorse"]],
   ["DL","Gap Specialist",["Grip Breaker","Inside Disruptor","Outside Disruptor","Option Disruptor","Workhorse"]],
   ["DL","Power Rusher",["Pocket Disruptor","Duress","Grip Breaker","Workhorse","Take Down"]],
@@ -105,14 +114,19 @@ let abP = "QB", abM = "player", abC = "Recruiter";
 // Favorite archetypes, saved as "POS|Name" keys; any number per position.
 let ABNOTE = {}; try { ABNOTE = JSON.parse(localStorage.getItem("abnote-v1")) || {}; } catch (e) {}
 let ABFAV = []; try { ABFAV = JSON.parse(localStorage.getItem("abfav-v1")) || []; } catch (e) {}
+// Saved before OL was split: an "OL|Name" favorite or note now belongs to OT, OG and C.
+const abOL = k => k.startsWith("OL|") ? ["OT", "OG", "C"].map(p => p + k.slice(2)) : [k];
+ABFAV = [...new Set(ABFAV.flatMap(abOL))];
+for (const k of Object.keys(ABNOTE)) if (k.startsWith("OL|")) { for (const n of abOL(k)) ABNOTE[n] ??= ABNOTE[k]; delete ABNOTE[k]; }
 function abFav(k){ ABFAV = ABFAV.includes(k) ? ABFAV.filter(x => x !== k) : [...ABFAV, k]; try { localStorage.setItem("abfav-v1", JSON.stringify(ABFAV)); } catch (e) {} abDraw(); }
 const MTL = ["Bronze", "Silver", "Gold", "Platinum"];
 // One line per sub-position: four metal chips with the minimum rating(s) and the SP cost to unlock that tier.
 const abGate = g => g ? `<div class="ab-gate">${g.map(([sp, r1, g1, r2, g2, c]) => { const a = g1.split(" "), b = g2 ? g2.split(" ") : [], k = c.split(" ");
   return `<div class="ab-gl"><span class="ab-gr">${sp ? `<em>${sp}</em> · ` : ""}${esc(r1)}${r2 ? " + " + esc(r2) : ""}</span>${MTL.map((m, i) =>
     `<span class="mt mt${i}" title="${m}: ${a[i]} ${esc(r1)}${r2 ? `, ${b[i]} ${esc(r2)}` : ""}, ${k[i]} SP">${a[i]}${r2 ? "·" + b[i] : ""}<small><i class="spi"></i>${k[i]}</small></span>`).join("")}</div>`; }).join("")}</div>` : "";
-// DL and EDGE share the "DL|..." gates: each shows only its own sub-position's rows (DT or DE), unlabeled.
-const abGates = (arch, n) => { const [p, a] = arch.split("|"), sub = {DL:"DT", EDGE:"DE"}[p], g = ABGATE[(sub ? "DL" : p) + "|" + a]?.[n];
+// DL and EDGE share the "DL|..." gates, OT/OG/C the "OL|..." ones: each shows only its own sub-position's rows, unlabeled.
+const ABSUB = {DL:["DL", "DT"], EDGE:["DL", "DE"], OT:["OL", "OT"], OG:["OL", "OG"], C:["OL", "C"]};
+const abGates = (arch, n) => { const [p, a] = arch.split("|"), [base, sub] = ABSUB[p] || [p], g = ABGATE[base + "|" + a]?.[n];
   return sub && g ? g.filter(r => !r[0] || r[0] === sub).map(r => ["", ...r.slice(1)]) : g; };
 const abRow = (n, arch) => `<li><b>${abImg("p", n)}${esc(n)}</b><span>${esc(abDesc(n))}</span>${abGate(typeof arch === "string" && abGates(arch, n))}</li>`;
 
@@ -208,7 +222,7 @@ function abFromHash(sub){
   const [a, b] = sub.split("/");
   if (a === "position-changes") abM = "chg";
   else if (a === "coach") { abM = "coach"; const g = CGROUP.find(g => abSlug(g[0]) === b); if (g) abC = g[0]; }
-  else { const p = [...ABPOS, "FAV"].find(p => abSlug(p === "FAV" ? "favorites" : p) === a); if (p) { abM = "player"; abP = p; } }
+  else { const p = a === "ol" ? "OT" : [...ABPOS, "FAV"].find(p => abSlug(p === "FAV" ? "favorites" : p) === a); if (p) { abM = "player"; abP = p; } }
 }
 function abDraw(){
   if (curTab === "ab") tabHash();
@@ -240,7 +254,7 @@ $("#abGrid").addEventListener("click", e => { const b = e.target.closest("[data-
 $("#abQ").addEventListener("input", abDraw);
 
 // Position change planner (abM "chg"): saved {id, fp, fa, tp, ta, note} in poschg-v1; ta "" = new archetype not known.
-let PC = []; try { PC = (JSON.parse(localStorage.getItem("poschg-v1")) || []).filter(c => c && c.fp && c.tp); } catch (e) {}
+let PC = []; try { PC = (JSON.parse(localStorage.getItem("poschg-v1")) || []).filter(c => c && c.fp && c.tp).map(c => ({...c, fp: c.fp === "OL" ? "OT" : c.fp, tp: c.tp === "OL" ? "OT" : c.tp})); } catch (e) {}
 const pcSave = () => { try { localStorage.setItem("poschg-v1", JSON.stringify(PC)); } catch (e) {} };
 const pcPos = ABPOS.filter(p => p !== "K/P");
 const pcArch = p => ABARCH.filter(a => a[0] === p).map(a => a[1]);
