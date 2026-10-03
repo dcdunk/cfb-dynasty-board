@@ -83,7 +83,7 @@ function mDraw(){
       + MNAV.map(([k, l, , i]) => { const on = MPIN.includes(k), full = !on && MPIN.length >= 4;
         return `<button type="button" data-mp="${k}" role="checkbox" aria-checked="${on}"${full ? ' aria-disabled="true" class="off"' : ""}>${MI(i)}${esc(l)}<span class="mchk${on ? " on" : ""}">${on ? MPIN.indexOf(k) + 1 : ""}</span></button>`; }).join("")
       + `<hr><button type="button" data-me="reset">${MI('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>')}Reset to default</button>`
-    : MNAV.map(([k, l, , i]) => `<button type="button" data-mt="${k}">${MI(i)}${esc(l)}</button>`).join("")
+    : MNAV.filter(t => !MPIN.includes(t[0])).map(([k, l, , i]) => `<button type="button" data-mt="${k}">${MI(i)}${esc(l)}</button>`).join("")
       + `<hr><button type="button" data-mc="gsOpen">${MI('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')}Search</button>
   <button type="button" data-mc="syncOpen">${MI('<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/>')}Sync your devices</button>
   <button type="button" data-mc="themeBtn">${MI('<path d="M12 3a9 9 0 1 0 0 18z"/><circle cx="12" cy="12" r="9"/>')}Light / dark mode</button>

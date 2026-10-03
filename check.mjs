@@ -98,7 +98,7 @@ const inPage = async () => {
   ok(tabs().split(",").length === 10, "Nav: tabs should stay visible after switching");
   // Phone tab bar: four pinned tabs + More menu with every tab, hidden on desktop; picking a menu-only tab lights up More.
   ok(getComputedStyle($(".mbar")).display === "none", "Phone bar: should be hidden at desktop width");
-  ok([...$$(".mpill [data-mt]")].map(b => b.dataset.mt).join() === "dyn,board,play,ab" && $$("#mMenu [data-mt]").length === 10, "Phone bar: expected 4 pinned tabs and all 10 in the menu");
+  ok([...$$(".mpill [data-mt]")].map(b => b.dataset.mt).join() === "dyn,board,play,ab" && $$("#mMenu [data-mt]").length === 6 && !$("#mMenu [data-mt=board]"), "Phone bar: expected 4 pinned tabs and only the other 6 in the menu");
   $("#mMore").click(); ok(!$("#mMenu").hidden, "Phone bar: More should open the menu");
   $("#mMenu [data-mt=rand]").click(); ok(curTab === "rand" && $("#mMenu").hidden && $("#mMore").classList.contains("on"), "Phone bar: menu tab should open, close menu, light More");
   $(".mpill [data-mt=board]").click(); ok(curTab === "board" && $(".mpill [data-mt=board]").classList.contains("on") && !$("#mMore").classList.contains("on"), "Phone bar: pinned tab should open and highlight");
