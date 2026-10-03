@@ -700,6 +700,10 @@ const inPage = async () => {
     // Merge rules: one-sided changes win, deletes on one side stick, both-sided list edits union, single values keep this device's.
     const m = sMerge({"dyn-v1":"A", "rec-v1":"x", "abfav-v1":'["QB|A"]', "house-v1":"L"}, {"dyn-v1":"A", "rec-v1":null, "abfav-v1":'["QB|B"]', "house-v1":"R"}, {"dyn-v1":"A", "rec-v1":"x", "abfav-v1":"[]", "house-v1":"0"});
     ok(m["rec-v1"] === null && m["abfav-v1"] === '["QB|A","QB|B"]' && m["house-v1"] === "L" && m["dyn-v1"] === "A", `Sync: merge rules wrong: ${JSON.stringify(m)}`);
+    // Archetype notes merge note by note: each device's own edit survives, a note cleared on the other device goes.
+    { const was = JSON.stringify({"QB|A":"old", "WR|B":"keep", "TE|C":"gone"});
+      const n = JSON.parse(sMerge({"abnote-v1": JSON.stringify({"QB|A":"mine", "WR|B":"keep", "TE|C":"gone"})}, {"abnote-v1": JSON.stringify({"QB|A":"old", "WR|B":"theirs", "HB|D":"new"})}, {"abnote-v1": was})["abnote-v1"]);
+      ok(n["QB|A"] === "mine" && n["WR|B"] === "theirs" && n["HB|D"] === "new" && !("TE|C" in n), `Sync: notes should merge one by one, got ${JSON.stringify(n)}`); }
     // Wrong code, a malformed code, then a copy deleted from another device.
     await sJoin("AAAAA-BBBBB-CCCCC-DDDDD");
     ok(!S.code && /No synced data uses that code/.test($("#sy").textContent) && $("#sNew"), "Sync: an unknown code should say so, leave sync off and offer a new code");

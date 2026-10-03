@@ -36,13 +36,17 @@ const sDec = async (key, row) => JSON.parse(new TextDecoder().decode(await crypt
 const sApi = (id, opt) => (window.__syncStub || fetch)(`/api/sync/${id}`, opt);
 
 // Both devices changed the same key: lists merge by id (nothing is lost), anything else keeps one side.
-function sUnion(k, a, b){
+function sUnion(k, a, b, was){
   const by = (x, y) => { const ids = new Set(x.map(i => i && i.id)); return [...x, ...y.filter(i => i && !ids.has(i.id))]; };
   try {
     const A = JSON.parse(a), B = JSON.parse(b);
     if (k === "dyn-v1") return JSON.stringify({...A, list:by(A.list || [], B.list || [])});
     if (k === "poschg-v1") return JSON.stringify(by(A, B));
     if (k === "abfav-v1") return JSON.stringify([...new Set([...A, ...B])]);
+    // Archetype notes merge note by note: a note only the other device changed (or cleared) comes over; both changed keeps this one.
+    if (k === "abnote-v1") { const W = was ? JSON.parse(was) : {}, o = {};
+      for (const n of new Set([...Object.keys(A), ...Object.keys(B)])) { const v = B[n] !== W[n] && A[n] === W[n] ? B[n] : A[n]; if (v) o[n] = v; }
+      return JSON.stringify(o); }
     if (k === "house-custom-v1") return JSON.stringify({...A, rules:by(A.rules || [], B.rules || []), presets:by(A.presets || [], B.presets || [])});
   } catch (e) {}
   return null;
@@ -54,7 +58,7 @@ function sMerge(local, remote, last, preferRemote){
   for (const k of SKEYS) {
     const l = local[k] ?? null, r = remote[k] ?? null, was = k in last ? last[k] : undefined;
     const lc = l !== was, rc = r !== was;
-    out[k] = !rc || l === r ? l : !lc ? r : l === null ? r : r === null ? l : sUnion(k, l, r) ?? (preferRemote ? r : l);
+    out[k] = !rc || l === r ? l : !lc ? r : l === null ? r : r === null ? l : sUnion(k, l, r, was) ?? (preferRemote ? r : l);
   }
   return out;
 }
