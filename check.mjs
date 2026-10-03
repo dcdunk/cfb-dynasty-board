@@ -514,6 +514,10 @@ const inPage = async () => {
     c.querySelector("h3").click(); ok(c.classList.contains("open") && ABOPEN.has(k), "Abilities: tapping a card header should open it");
     abDraw(); ok($(`#abGrid [data-card="${k}"]`).classList.contains("open"), "Abilities: an open card should stay open after a redraw");
     $(`#abGrid [data-card="${k}"] h3`).click(); ok(!ABOPEN.has(k), "Abilities: tapping again should close it"); }
+  { const c = $("#abGrid .ab-card"), t = c.querySelector("[data-abn]"), k = c.dataset.card, old = t.value;
+    t.value = "test note"; t.dispatchEvent(new Event("input", {bubbles: true})); ok(c.classList.contains("noted") && c.querySelector(".ab-noted"), "Abilities: a card with a note should be marked noted");
+    t.value = ""; t.dispatchEvent(new Event("input", {bubbles: true})); ok(!c.classList.contains("noted") && !ABNOTE[k], "Abilities: clearing the note should remove the mark");
+    if (old) { t.value = old; t.dispatchEvent(new Event("input", {bubbles: true})); } }
   // Mode chips: Physical (was Player), Mental (own page), Coach, Position changes.
   ok([...$$("#abMode .chip")].map(b => b.textContent).join() === "Physical,Mental,Coach,Position changes", "Abilities: mode chips should be Physical, Mental, Coach, Position changes");
   ok(!$("#abPlayer").contains($("#abMent")), "Abilities: mental abilities should not be on the Physical page");

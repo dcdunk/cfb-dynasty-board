@@ -472,8 +472,6 @@ textarea.hfi{resize:vertical; line-height:1.45}
 .psave{margin:0 24px 18px; padding:14px 16px; border:1px solid var(--line); background:var(--raise); display:grid; gap:12px}
 @media (max-width:560px){.psave{margin:0 16px 16px}}
 .empty{padding:50px 0; color:var(--faint); text-align:center}
-.foot{max-width:1500px; margin:0 auto; padding:22px; color:var(--faint); font-size:11.5px;
-  border-top:1px solid var(--line); line-height:1.6}
 :focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 
@@ -1101,4 +1099,9 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
   .ab-list:not(.ab-clist) li > span{display:inline; margin-left:6px}
   .ab-list:not(.ab-clist) .ab-gate{margin-top:6px}
   .ab-list .ab-gr{width:auto; margin-right:4px}
+}
+/* Phones: a closed archetype card with a note shows a note icon in its header */
+.ab-noted{display:none}
+@media (max-width:767px){
+  .ab-card.noted:not(.open) .ab-noted{display:inline-flex; vertical-align:-2px; margin-right:8px; color:var(--accent)}
 }
