@@ -1,7 +1,7 @@
 // Player Database tab: every player on every roster (PLAYERS, flattened from DATA rosters), filterable and sortable.
 /* ---- player database ---- */
-// Roster rows in DATA are [name, pos, class ("SR*" = redshirt), overall, dev 0-3, speed].
-const PLAYERS = DATA.flatMap(t => t.r.map(p => ({name:p[0], pos:p[1], yr:p[2], ovr:p[3], dev:p[4], spd:p[5], team:t.n, conf:t.c})));
+// Roster rows in DATA are [name, pos, class ("SR*" = redshirt), overall, dev 0-3, speed, archetype index (parch)].
+const PLAYERS = DATA.flatMap(t => t.r.map(p => ({name:p[0], pos:p[1], yr:p[2], ovr:p[3], dev:p[4], spd:p[5], arch:parch(p), team:t.n, conf:t.c})));
 PLAYERS.forEach((p, i) => p.i = i);
 const PLCOLS = [
   {k:"pos", t:"Pos", cls:"l"}, {k:"name", t:"Player", cls:"l"}, {k:"team", t:"School", cls:"l"}, {k:"conf", t:"Conf", cls:"l"},
@@ -45,7 +45,7 @@ function plDraw(){
   $("#plrows").innerHTML = list.slice(0, plShown).map(p => `
     <tr tabindex="0" data-n="${esc(p.team)}" data-i="${p.i}">
       <td class="l role">${p.pos}</td>
-      <td class="l"><span class="team">${hl(p.name, plQuery)}</span>${p.dev ? `<span class="dev d${p.dev}">${DEVN[p.dev]}</span>` : ""}</td>
+      <td class="l"><span class="team">${hl(p.name, plQuery)}</span>${p.dev ? `<span class="dev d${p.dev}">${DEVN[p.dev]}</span>` : ""}${p.arch ? `<span class="parch">${esc(p.arch)}</span>` : ""}</td>
       <td class="l sub">${hl(p.team, plQuery)}</td>
       <td class="l mut">${esc(p.conf)}</td>
       <td class="l yr">${p.yr}</td>
@@ -112,7 +112,7 @@ async function plCard(i){
   $("#plcN").innerHTML = `${esc(p.name)}${p.dev ? ` <span class="dev d${p.dev}">${DEVN[p.dev]}</span>` : ""}`;
   $("#plcB").innerHTML = `<p class="plc-none">Loading ratings…</p>`; if (!$("#plc").open) $("#plc").showModal(); $("#plcX").focus();
   const R = await plRatings(), r = R && plRow(p), ht = r && r[1] ? `${Math.floor(r[1] / 12)}′${r[1] % 12}″` : "";
-  const top = `<p class="plc-sub">${p.pos} · ${esc(p.team)} · ${esc(p.conf)} · ${p.yr}</p><div class="plc-top">
+  const top = `<p class="plc-sub">${p.pos} · ${esc(p.team)} · ${esc(p.conf)} · ${p.yr}${p.arch ? ` · <button type="button" class="plc-arch" data-parch="${esc(p.arch)}" data-ppos="${p.pos}" title="See this archetype's abilities">${esc(p.arch)}</button>` : ""}</p><div class="plc-top">
     <div><b>${r ? r[0] : p.ovr}</b><span>Overall${r ? ` (${esc(R.it)})` : ""}</span></div><div><b>${p.spd}</b><span>Speed</span></div>
     ${r ? `<div><b>${ht}</b><span>Height</span></div><div><b>${r[2]}</b><span>Weight</span></div><div><b>#${r[3]}</b><span>Jersey</span></div>` : ""}
     <button class="ghost plc-go" type="button" data-team="${esc(p.team)}">Open ${esc(p.team)}</button></div>${r && r[4] ? `<p class="plc-sub" style="margin-top:10px">From ${esc(r[4])}</p>` : ""}`;
@@ -123,6 +123,7 @@ async function plCard(i){
     return `<div class="plc-r"><span>${plLbl(k)}</span><b>${v}</b><i style="--v:${v}%"></i></div>`; }).join("")).join("")}</div>`;
 }
 $("#plcB").addEventListener("click", e => { const b = e.target.closest("[data-team]"); if (b) { $("#plc").close(); openTeam(b.dataset.team); } });
+$("#plcB").addEventListener("click", e => { const b = e.target.closest("[data-parch]"); if (b) { $("#plc").close(); abOpenArch(b.dataset.ppos, b.dataset.parch); } });
 $("#plcX").addEventListener("click", () => $("#plc").close());
 // A roster row in the team dossier opens that player's card on top of it.
 const plFromDossier = tr => { const p = PLAYERS.find(x => x.team === picked && x.name === tr.dataset.pl); if (p) plCard(p.i); };

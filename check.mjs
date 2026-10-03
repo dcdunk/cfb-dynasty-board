@@ -88,13 +88,16 @@ const inPage = async () => {
   ok(/^Inter/.test(wm.fontFamily) && parseFloat(wm.fontSize) >= 36 && getComputedStyle($(".wordmark em")).fontStyle === "normal", `Theme: wordmark is ${wm.fontFamily} ${wm.fontSize}`);
   // Navigation: one row of ten tabs, all visible; arrow keys move along the row and wrap.
   const tabs = () => [...$$(".tabs .tab")].filter(b => !b.hidden && b.offsetParent).map(b => b.id).join(",");
-  ok(tabs() === "tabDyn,tabBoard,tabPipe,tabCoach,tabPlay,tabRand,tabHouse,tabRec,tabSlide,tabAb" && !$("#viewBoard").hidden && curTab === "board", `Nav: expected all ten tabs with Board open, got ${tabs()}`);
+  ok(tabs() === "tabDyn,tabAb,tabCoach,tabHouse,tabPlay,tabBoard,tabPipe,tabRand,tabRec,tabSlide" && !$("#viewBoard").hidden && curTab === "board", `Nav: expected all ten tabs with Board open, got ${tabs()}`);
   ok(!$("#tabGroups") && !$("#subtabs") && $(".tabs").getAttribute("role") === "tablist", "Nav: grouped navigation should be gone");
   $("#tabAb").click(); await wait(50); ok(!$("#viewAb").hidden && $("#tabAb").getAttribute("aria-selected") === "true", "Nav: clicking Abilities should open it");
-  $("#tabAb").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-  ok(curTab === "dyn", `Nav: ArrowRight from Abilities should wrap to My Dynasty, got ${curTab}`);
+  // Tab order: My Dynasty first, then alphabetical (owner, Oct 2026)
+  ok([...$$(".tabs .tab")].map(b => b.textContent).join("|") === "My Dynasty|Abilities|Coach Database|House Rules|Player Database|Program Database|Program Pipelines|Randomizer|Recruiting & NIL|Sliders", "Nav: tabs should be My Dynasty, then A to Z");
+  $("#tabSlide").click(); await wait(50);
+  $("#tabSlide").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+  ok(curTab === "dyn", `Nav: ArrowRight from Sliders should wrap to My Dynasty, got ${curTab}`);
   $("#tabDyn").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-  ok(curTab === "board", `Nav: ArrowRight from My Dynasty should go to Program Database, got ${curTab}`);
+  ok(curTab === "ab", `Nav: ArrowRight from My Dynasty should go to Abilities, got ${curTab}`);
   ok(tabs().split(",").length === 10, "Nav: tabs should stay visible after switching");
   // Phone tab bar: four pinned tabs + More menu with every tab, hidden on desktop; picking a menu-only tab lights up More.
   ok(getComputedStyle($(".mbar")).display === "none", "Phone bar: should be hidden at desktop width");
@@ -223,6 +226,14 @@ const inPage = async () => {
   ok(nRated > 10800 && Object.keys(RATINGS.p).length === DATA.length, `Players: ratings should cover 10,800+ players on all teams, got ${nRated}`);
   $("#plcB [data-team]").click(); await wait(50); ok(!$("#plc").open && $("#dname").innerText.trim() === sm.team, "Players: Open team on the card should open the dossier"); closeTeam(); await wait(50);
   plOpen(""); plRows()[0].click(); await wait(80); ok($("#plc").open && $("#plcN").textContent.includes(PLAYERS[+plRows()[0].dataset.i].name), "Players: clicking a row should open that player's card"); $("#plc").close();
+  // Player archetypes (TeamCrafters, tools/player-archetypes.mjs): most players have one, every one is a real archetype,
+  // and the card's archetype link opens that archetype on Abilities.
+  ok(PLAYERS.filter(p => p.arch).length > PLAYERS.length * 0.9 && PLAYERS.every(p => !p.arch || ABARCH.some(a => a[1] === p.arch)), "Players: 90%+ should have an archetype, all known to Abilities");
+  { const lt = PLAYERS.find(p => p.pos === "LT" && p.arch && ABARCH.some(a => a[0] === "OT" && a[1] === p.arch)); await plCard(lt.i);
+    $("#plcB .plc-arch").click(); await wait(50);
+    ok(curTab === "ab" && abM === "player" && abP === "OT" && !$("#plc").open, `Players: archetype link should open Abilities on OT, got ${curTab} ${abP}`);
+    showTab("play"); }
+  ok($("#plist .parch") || $$(".parch").length, "Players: archetype should show under player names");
   const unrated = PLAYERS.find(p => !RATINGS.p[p.team]?.[p.name]); await plCard(unrated.i); ok(/doesn't list/.test($("#plcB").textContent), "Players: unrated players should say so"); $("#plc").close();
   // Roster rows in the dossier open the player card (dossier stays underneath).
   openTeam("Georgia"); await wait(50); { const tr = $("#dbody tr[data-pl]"); tr.click(); await wait(80);

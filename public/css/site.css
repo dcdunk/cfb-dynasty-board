@@ -1080,3 +1080,6 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
   body.coach-lock{position:fixed; left:0; right:0; overflow:hidden}
   .plog{overscroll-behavior:contain}
 }
+/* Player archetype under the name (dossier roster, Player Database) and as a link on the player card */
+.parch{display:block; font-size:11.5px; font-weight:400; color:var(--dim); margin-top:2px}
+.plc-arch{font:inherit; color:var(--accent-ink); background:none; border:0; padding:0; cursor:pointer; text-decoration:underline; text-underline-offset:2px}

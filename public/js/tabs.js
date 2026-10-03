@@ -53,13 +53,13 @@ setRail();
 const MI = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const MNAV = [
   ["dyn", "My Dynasty", "Dynasty", '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/>'],
-  ["board", "Program Database", "Programs", '<path d="M4 6h16M4 12h16M4 18h16"/>'],
-  ["play", "Player Database", "Players", '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'],
   ["ab", "Abilities", "Abilities", '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>'],
-  ["pipe", "Program Pipelines", "Pipelines", '<path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>'],
   ["coach", "Coach Database", "Coaches", '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10h6M9 14h6"/>'],
-  ["rand", "Randomizer", "Random", '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="16" r="1"/><circle cx="12" cy="12" r="1"/>'],
   ["house", "House Rules", "Rules", '<path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-5h4v5"/>'],
+  ["play", "Player Database", "Players", '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'],
+  ["board", "Program Database", "Programs", '<path d="M4 6h16M4 12h16M4 18h16"/>'],
+  ["pipe", "Program Pipelines", "Pipelines", '<path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>'],
+  ["rand", "Randomizer", "Random", '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="16" r="1"/><circle cx="12" cy="12" r="1"/>'],
   ["rec", "Recruiting & NIL", "Recruiting", '<path d="M12 3 2 8l10 5 10-5z"/><path d="M6 10v5c3 2 9 2 12 0v-5"/>'],
   ["slide", "Sliders", "Sliders", '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>']
 ];

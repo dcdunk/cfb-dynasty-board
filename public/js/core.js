@@ -35,3 +35,6 @@ function hl(s, q){
 const TSUB = {};
 // Filters as "/key=value&..." (empty ones left out), read back with new URLSearchParams.
 const hashQ = o => { const q = new URLSearchParams(Object.entries(o).filter(([, v]) => v)).toString(); return q ? "/" + q : ""; };
+
+// A roster row's archetype (r[6] indexes PARCH.a, from tools/player-archetypes.mjs); "" when TeamCrafters didn't list the player.
+const parch = r => r[6] != null && typeof PARCH !== "undefined" ? PARCH.a[r[6]] || "" : "";

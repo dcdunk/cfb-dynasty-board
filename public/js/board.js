@@ -141,7 +141,7 @@ function body(t){
   }).join("");
   const roster = pool.slice(0, capped ? 15 : pool.length).map(p => `
     <tr tabindex="0" data-pl="${esc(p[0])}"><td>${p[1]}</td>
-      <td class="nm">${p[0]}<span class="dev d${p[4]}">${DEVN[p[4]]}</span></td>
+      <td class="nm">${p[0]}<span class="dev d${p[4]}">${DEVN[p[4]]}</span>${parch(p) ? `<span class="parch">${parch(p)}</span>` : ""}</td>
       <td class="yr">${p[2]}</td>
       <td class="mono">${p[3]}</td>
       <td class="mono mut">${p[5]}</td></tr>`).join("");

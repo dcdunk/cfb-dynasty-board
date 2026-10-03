@@ -283,3 +283,14 @@ $("#pcNote").addEventListener("input", e => pcFit(e.target));
 addEventListener("resize", () => document.querySelectorAll("#viewAb .pc-n, #pcNote").forEach(pcFit));   // narrower cards need taller notes
 $("#pcList").addEventListener("click", e => { const b = e.target.closest("[data-del]"); if (b && confirm("Delete this position change?")) { PC = PC.filter(c => c.id !== b.dataset.del); pcSave(); pcDraw(); } });
 abDraw();
+
+// Roster position -> Abilities position chip; abOpenArch shows a player's archetype card (Player Database card link).
+const ABGRP = {QB:"QB", HB:"HB", FB:"FB", WR:"WR", TE:"TE", LT:"OT", RT:"OT", LG:"OG", RG:"OG", C:"C", LEDG:"EDGE", REDG:"EDGE", DT:"DL",
+  SAM:"LB", MIKE:"LB", WILL:"LB", CB:"CB", FS:"S", SS:"S", K:"K/P", P:"K/P"};
+function abOpenArch(pos, a){
+  // A player whose position changed since the roster update can carry another position's archetype: use the group that has it.
+  const g = ABARCH.some(x => x[0] === ABGRP[pos] && x[1] === a) ? ABGRP[pos] : (ABARCH.find(x => x[1] === a) || [ABGRP[pos]])[0];
+  abM = "player"; abP = g; $("#abQ").value = ""; showTab("ab"); abDraw();
+  const c = [...document.querySelectorAll("#abGrid .sl-card")].find(c => c.querySelector("h3")?.textContent.startsWith(a));
+  if (c) c.scrollIntoView({block: "start"});
+}
