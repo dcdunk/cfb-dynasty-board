@@ -311,6 +311,7 @@ const inPage = async () => {
   await gs("georgia"); ok($("#dname").innerText.trim() === "Georgia", "Search: 'georgia' should open the Georgia dossier"); closeTeam(); await wait(50);
   await gs("portal king"); ok(curTab === "ab" && abM === "coach" && $("#abQ").value === "Portal King", "Search: coach ability should open Abilities in coach mode");
   await gs("dot!"); ok(curTab === "ab" && abM === "player" && $("#abQ").value === "Dot!", "Search: player ability should open Abilities in player mode");
+  await gs("clutch kicker"); ok(curTab === "ab" && abM === "ment" && !$("#abMental").hidden && $("#abQ").value === "Clutch Kicker", "Search: mental ability should open the Mental page");
   const gsC = COACHES[0].name; await gs(gsC); ok($("#plc").open && $("#plcN").textContent.includes(gsC), `Search: coach ${gsC} should open their coach card`); $("#plc").close();
   await gs("elusive bruiser"); ok(curTab === "ab" && abM === "player" && abP === "HB" && $("#abQ").value === "", `Search: player archetype should open Abilities on HB, got ${abM} ${abP}`);
   await gs("master motivator"); ok(curTab === "ab" && abM === "coach" && abC === "Motivator", `Search: coach archetype should open the Motivator group, got ${abM} ${abC}`);
@@ -508,7 +509,13 @@ const inPage = async () => {
   find("#abQ", "sure hands");
   ok($$("#abGrid .sl-card").length === 6, `Abilities: Sure Hands should be in 6 archetypes, got ${$$("#abGrid .sl-card").length}`);
   find("#abQ", "");
+  // Mode chips: Physical (was Player), Mental (own page), Coach, Position changes.
+  ok([...$$("#abMode .chip")].map(b => b.textContent).join() === "Physical,Mental,Coach,Position changes", "Abilities: mode chips should be Physical, Mental, Coach, Position changes");
+  ok(!$("#abPlayer").contains($("#abMent")), "Abilities: mental abilities should not be on the Physical page");
+  $('#abMode [data-m="ment"]').click(); await wait(30);
+  ok(!$("#abMental").hidden && $("#abPlayer").hidden && location.hash === "#abilities/mental", "Abilities: Mental chip should open its own page");
   ok($$("#abMent li").length === 16 && !/Hot Head/.test($("#abMent").textContent), "Abilities: expected the 16 mental abilities, without Hot Head");
+  $('#abMode [data-m="player"]').click(); await wait(30);
   ok(ABARCH.every(a => a[2].every(n => ABICO.has(abSlug(n)))), `Abilities: every archetype ability needs an icon, missing ${[...new Set(ABARCH.flatMap(a => a[2]).filter(n => !ABICO.has(abSlug(n))))]}`);
   ok(!/Battering Ram/.test(JSON.stringify(ABARCH)) && ABARCH.every(a => a[2].every(n => n in ABPHYS)), "Abilities: every archetype ability needs a description, and no Battering Ram");
   $('#abPos [data-p="K/P"]').click(); await wait(50);

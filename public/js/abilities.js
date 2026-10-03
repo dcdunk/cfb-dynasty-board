@@ -217,28 +217,30 @@ function cDrawAb(q){
     + `<div class="sl-grid">${a.br.flatMap(([b, ab]) => a.pos ? CPOS.map(p => card(a, b, ab, true, p)) : [card(a, b, ab, true)]).join("")}</div></section>`).join("");
 }
 // Abilities view in the URL: #abilities/cb, #abilities/favorites, #abilities/coach/recruiter, #abilities/position-changes.
-TSUB.ab = () => abM === "chg" ? "/position-changes" : abM === "coach" ? "/coach/" + abSlug(abC) : "/" + abSlug(abP === "FAV" ? "favorites" : abP);
+TSUB.ab = () => abM === "chg" ? "/position-changes" : abM === "ment" ? "/mental" : abM === "coach" ? "/coach/" + abSlug(abC) : "/" + abSlug(abP === "FAV" ? "favorites" : abP);
 function abFromHash(sub){
   const [a, b] = sub.split("/");
   if (a === "position-changes") abM = "chg";
+  else if (a === "mental") abM = "ment";
   else if (a === "coach") { abM = "coach"; const g = CGROUP.find(g => abSlug(g[0]) === b); if (g) abC = g[0]; }
   else { const p = a === "ol" ? "OT" : [...ABPOS, "FAV"].find(p => abSlug(p === "FAV" ? "favorites" : p) === a); if (p) { abM = "player"; abP = p; } }
 }
 function abDraw(){
   if (curTab === "ab") tabHash();
   const q = $("#abQ").value.trim().toLowerCase();
-  $("#abMode").innerHTML = [["player","Player"],["coach","Coach"],["chg","Position changes"]].map(([k, t]) => `<button type="button" class="chip" data-m="${k}" aria-pressed="${k === abM}">${t}</button>`).join("");
-  $("#abPlayer").hidden = abM !== "player"; $("#abCoach").hidden = abM !== "coach"; $("#abChg").hidden = abM !== "chg"; $("#abQ").hidden = abM === "chg";
+  $("#abMode").innerHTML = [["player","Physical"],["ment","Mental"],["coach","Coach"],["chg","Position changes"]].map(([k, t]) => `<button type="button" class="chip" data-m="${k}" aria-pressed="${k === abM}">${t}</button>`).join("");
+  $("#abPlayer").hidden = abM !== "player"; $("#abMental").hidden = abM !== "ment"; $("#abCoach").hidden = abM !== "coach"; $("#abChg").hidden = abM !== "chg"; $("#abQ").hidden = abM === "chg";
   if (abM === "chg") return pcDraw();
-  $("#abQ").placeholder = abM === "player" ? "Search an ability, e.g. Sure Hands" : "Search an ability, e.g. Portal King";
+  $("#abQ").placeholder = abM === "player" ? "Search an ability, e.g. Sure Hands" : abM === "ment" ? "Search an ability, e.g. Clutch Kicker" : "Search an ability, e.g. Portal King";
   if (abM === "coach") return cDrawAb(q);
+  $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(abRow).join("") || `<p class="hint">No mental ability matches "${esc(q)}".</p>`;
+  if (abM === "ment") return;
   $("#abPos").innerHTML = ABPOS.map(p => { const f = ABFAV.filter(k => k.startsWith(p + "|")).length; return `<button type="button" class="chip" data-p="${p}" aria-pressed="${!q && p === abP}">${p}${f ? ` <span class="abfn" title="${f} favorite${f > 1 ? "s" : ""}">★${f}</span>` : ""}</button>`; }).join("") + `<button type="button" class="chip" data-p="FAV" aria-pressed="${!q && abP === "FAV"}">★ Favorites${ABFAV.length ? ` <span class="abfn">${ABFAV.length}</span>` : ""}</button>`;
   const orph = ["K/P", "Archetype not confirmed", Object.keys(ABPHYS).filter(n => !abWho(n).length)];
   const arch = (q ? [...ABARCH, orph].filter(a => a[2].some(n => n.toLowerCase().includes(q))) : [...ABARCH, orph].filter(a => abP === "FAV" ? ABFAV.includes(a[0] + "|" + a[1]) : a[0] === abP)).filter(a => a[2].length).sort((a, b) => ABFAV.includes(b[0] + "|" + b[1]) - ABFAV.includes(a[0] + "|" + a[1]));
   $("#abGrid").innerHTML = arch.length ? arch.map(([p, n, ab]) => `<section class="sl-card"><h3>${esc(n)}<span>${p}${p === "K/P" ? "" : (f => `<button type="button" class="abfav" data-fav="${esc(p + "|" + n)}" aria-pressed="${f}" aria-label="${f ? "Remove" : "Add"} ${esc(n)} ${f ? "from" : "to"} favorites" title="${f ? "Unfavorite" : "Favorite"}">${f ? "★" : "☆"}</button>`)(ABFAV.includes(p + "|" + n))}</span></h3><ul class="ab-list">${ab.map(x => abRow(x, p + "|" + n)).join("")}</ul><textarea class="pc-n ab-n" data-abn="${esc(p + "|" + n)}" rows="1" maxlength="500" placeholder="Add a note" aria-label="Note for ${esc(n)} ${p}">${esc(ABNOTE[p + "|" + n] || "")}</textarea></section>`).join("")
     : `<p class="hint">${q ? `No archetype has a physical ability matching "${esc(q)}".` : "No favorites yet. Tap the ☆ on an archetype to add it."}</p>`;
   document.querySelectorAll("#abGrid [data-abn]").forEach(pcFit);
-  $("#abMent").innerHTML = Object.keys(ABMENT).filter(n => !q || n.toLowerCase().includes(q)).map(abRow).join("");
 }
 // Clicking the active Favorites chip again turns the filter off, back to the last position.
 let abLast = "QB";
