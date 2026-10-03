@@ -76,9 +76,6 @@ function draw(){
       <td class="mono mut">${t.ap.toFixed(1)}</td>
     </tr>`).join("");
   $("#empty").hidden = list.length > 0;
-  $("#cTeams").textContent = list.length;
-  $("#cPlayers").textContent = fmt(list.reduce((s, t) => s + t.r.length, 0));
-  $("#cTitles").textContent = fmt(list.reduce((s, t) => s + t.ti, 0));
 }
 
 $("#rows").addEventListener("click", e => {

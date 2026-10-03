@@ -12,11 +12,6 @@
 
 <div class="masthead">
   <h1 class="wordmark">Dynasty<br><em>Board</em></h1>
-  <div class="counts">
-    <div class="count"><b id="cTeams">138</b><span>Programs</span></div>
-    <div class="count"><b id="cPlayers">11,730</b><span>Players</span></div>
-    <div class="count"><b id="cTitles">144</b><span>Titles</span></div>
-  </div>
   <div class="mhact">
   <button class="coachbtn syncbtn" id="syncOpen" type="button" title="Keep your dynasties the same on every device"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/></svg><span id="syncLbl">Sync your devices</span></button>
   <button class="coachbtn gsbtn" id="gsOpen" type="button" aria-haspopup="dialog" aria-label="Search everything" title="Search everything (Ctrl+K or /)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Search <kbd>/</kbd></button>
@@ -190,7 +185,6 @@
 <section id="viewHouse" class="house" role="tabpanel" aria-labelledby="tabHouse" hidden>
   <div>
     <h2 class="hh">House rules</h2>
-    <p class="hint">Self-imposed rules that make a dynasty feel like a real program. Rules adapt to the program you pick: its pipelines, home state, conference, prestige and NIL budget. Start from a preset or deal a random set, then lock the rules you like and reroll the rest.</p>
     <div class="fgroup"><label class="lbl" for="hq">Your program</label>
       <div class="hprog">
         <span class="search">
@@ -228,7 +222,6 @@
   <header class="sl-head">
     <div>
       <h2 class="hh">Recruiting &amp; NIL plan</h2>
-      <p class="hint">A strategy for the program itself, built on what doesn't change much from year to year: its tier, budget, lasting strengths and pipelines. Useful whether you start there or take the job in year 5. Recruiting NIL and keeping your own players draw on the same budget, so plan both together.</p>
     </div>
     <div class="rec-ctl">
     <button type="button" class="tgl" id="rLink" role="switch" aria-checked="true" title="When on, this tab and House Rules share one program"><span class="trk" aria-hidden="true"><i></i></span>Follow House Rules team</button>
@@ -294,7 +287,6 @@
     <input class="ab-q" id="abQ" type="search" placeholder="Search an ability" aria-label="Search abilities" autocomplete="off">
   </header>
   <div id="abPlayer">
-    <p class="hint ab-intro">Physical abilities come from a player's archetype and unlock as the player's ratings climb, in Bronze, Silver, Gold and Platinum tiers. Mental abilities aren't tied to an archetype. Pick a position to see its archetypes.</p>
     <p class="hint ab-legend"><span class="mt mt0">Bronze</span><span class="mt mt1">Silver</span><span class="mt mt2">Gold</span><span class="mt mt3">Platinum</span> Each chip is the minimum rating to unlock that tier in Dynasty, with the skill point cost (<i class="spi"></i> SP) in small type. Two numbers mean two ratings must both reach it. Heisman, a fifth tier, isn't unlocked this way.</p>
     <div class="chips" id="abPos" role="group" aria-label="Position" style="margin:16px 0"></div>
     <div class="sl-grid" id="abGrid"></div>
@@ -304,7 +296,6 @@
     <p class="hint ab-src">Ability names, the mental list and Field Flip were checked against the CFB 27 game files. Unlock ratings and SP costs come from CFB 27 game-file data.</p>
   </div>
   <div id="abChg" hidden>
-    <p class="hint ab-intro">Plan offseason position changes and keep them here to check while you play. Pick a player's current position and archetype, then the position you'd move them to. The game doesn't show the new archetype ahead of time, so set it if you know it from testing or the community, or leave it as Not sure yet.</p>
     <div class="pc-form">
       <label>From<select id="pcFp" aria-label="Current position"></select></label>
       <label>Archetype<select id="pcFa" aria-label="Current archetype"></select></label>
@@ -317,7 +308,6 @@
     <div class="sl-grid" id="pcList" style="margin-top:18px"></div>
   </div>
   <div id="abCoach" hidden>
-    <p class="hint ab-intro">Coaches earn coach points (CP) and spend them on abilities, tier by tier. Each archetype's perk earns extra coach XP. Base archetypes are open from the start; the rest unlock by hitting a goal and spending CP. Pick an archetype.</p>
     <div class="chips" id="abArch" role="group" aria-label="Coach archetype" style="margin:16px 0"></div>
     <div id="abCGrid"></div>
     <p class="hint ab-src">Costs and values come from CFB 27 game-file data.</p>
