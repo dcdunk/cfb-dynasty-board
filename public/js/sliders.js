@@ -14,7 +14,7 @@ const SLDIFF = {
 };
 const SLFIX = [
   ["Game options", "Both difficulties", [["Quarter Length","12 min"],["Accelerated Clock","On"],["Min Play Clock","15 sec"],["Injuries",25],
-    ["Fatigue",40],["Speed Parity",75],["Auto-Subs","Default"]]],
+    ["Fatigue",40],["Min Player Speed Threshold",75],["Auto-Subs","Default"]]],
   ["Wear and tear", "Impact and recovery", [["Normal Tackle",30],["Catch Tackle",35],["Hit Stick",40],["Cut Stick",40],
     ["Defender Tackle Advantage",45],["Sack",35],["Block",25],["Impact Block",40],["Per-Play Recovery",60],["Per-Timeout Recovery",60],
     ["Between-Quarter Recovery",65],["Halftime Recovery",70],["Week-to-Week / In-Game Healing","90 / 85"]]],
@@ -34,7 +34,7 @@ const SLSETS = {
   matt:{n:"Matt10", v:"v5.5 · Posted 9/25/26", d:SLDIFF, pen:SLPEN, fix:SLFIX},
   as:{n:"Armor & Sword", v:"Posted 9/6/26", fix:[
     ["Game options", "Both difficulties", [["Quarter Length","12 min"],["Accelerated Clock","On"],["Min Play Clock","25 sec"],["Coach Mode","Off"],["Auto Pass","Off"],
-      ["Injuries",35],["Fatigue",65],["Speed Parity",75]]],
+      ["Injuries",35],["Fatigue",65],["Min Player Speed Threshold",75]]],
     ["Wear and tear", "V3, impact and recovery", [["Normal Tackle",48],["Catch Tackle",48],["Hit Stick",60],["Cut Stick",52],["Defender Tackle Advantage",60],
       ["Sack",60],["Block",45],["Impact Block",60],["Pre-Play Recovery",50],["Per-Timeout Recovery",50],["Between-Quarter Recovery",50],["Halftime Recovery",50],
       ["Week-to-Week Recovery",60,50],["In-Game Healing Pool",55,50]]],
@@ -59,7 +59,7 @@ const SLSETS = {
   // MassChaos's Ratings Matter Slider Project V4.0 (post 9/3 patch), from his thread's image (owner sent it, Oct 2026; post last
   // edited 9/7/26). All-American only. He marks changes in bold without old values, so changed cells use "" as the previous value.
   rm:{n:"Ratings Matter", v:"Posted 9/7/26", fix:[
-    ["Game options", "All-American", [["Injuries",5],["Fatigue",75],["Speed Parity",44,""],["Special Teams","SuperSim ST plays"]]],
+    ["Game options", "All-American", [["Injuries",5],["Fatigue",75],["Min Player Speed Threshold",44,""],["Special Teams","SuperSim ST plays"]]],
     ["League settings", "His picks", [["Difficulty","All-American"],["Quarter Length","Your choice"],["Min Play Clock","Your choice"],["Player Progression","Automatic"]]],
     ["Transfer portal", "Still testing", [["Max Transfers per Team","Your choice"],["User Transfer Chance","Your choice"],["CPU Transfer Chance","Your choice"]]],
     ["Preferences", "Optional", [["Pass Lead Increase","Medium"],["Passing Type","Classic"],["Reticle Speed",10],["AI WR for User","On"],["Timing Catching","Off"]]]],

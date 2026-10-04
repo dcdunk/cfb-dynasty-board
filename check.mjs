@@ -435,7 +435,7 @@ const inPage = async () => {
   $('#slDiff [data-d="var"]').click(); await wait(50);
   ok(row("Pass Blocking") === "Pass Blocking 55 70" && row("Block in the Back") === "Block in the Back 99" && location.hash === "#sliders/s=as&d=var", `Sliders: A&S Varsity wrong: ${row("Pass Blocking")} ${location.hash}`);
   $('#slSet [data-s="rm"]').click(); await wait(50);
-  ok(slD === "aa" && row("Run Blocking") === "Run Blocking 42 55" && row("Defensive PI") === "Defensive PI 70" && row("Speed Parity") === "Speed Parity 44" && $$("#slDiff [data-d]").length === 1, `Sliders: Ratings Matter values wrong: ${row("Run Blocking")} / ${row("Speed Parity")}`);
+  ok(slD === "aa" && row("Run Blocking") === "Run Blocking 42 55" && row("Defensive PI") === "Defensive PI 70" && row("Min Player Speed Threshold") === "Min Player Speed Threshold 44" && $$("#slDiff [data-d]").length === 1, `Sliders: Ratings Matter values wrong: ${row("Run Blocking")} / ${row("Min Player Speed Threshold")}`);
   ok($$("#slGrid td.chg").length === 17 && $("#slGrid td.chg").title === "Changed in this version", "Sliders: Ratings Matter bold changes should be highlighted");
   $('#slSet [data-s="matt"]').click(); await wait(50);
   ok(slD === "heis" && row("QB Accuracy") === "QB Accuracy 38 32", "Sliders: switching back to Matt10 should open Heisman");
