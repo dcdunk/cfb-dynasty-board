@@ -5,7 +5,7 @@ const PLAYERS = DATA.flatMap(t => t.r.map(p => ({name:p[0], pos:p[1], yr:p[2], o
 PLAYERS.forEach((p, i) => p.i = i);
 const PLCOLS = [
   {k:"pos", t:"Pos", cls:"l"}, {k:"name", t:"Player", cls:"l"}, {k:"team", t:"School", cls:"l"}, {k:"conf", t:"Conf", cls:"l"},
-  {k:"yr", t:"Yr", cls:"l"}, {k:"ovr", t:"Ovr", title:"Overall: EA's current ratings week when EA lists the player"}, {k:"spd", t:"Spd", title:"Speed: EA's current ratings week when EA lists the player"}];
+  {k:"yr", t:"Yr", cls:"l"}, {k:"ovr", t:"Ovr", title:"Overall, from the game's main-menu roster"}, {k:"spd", t:"Spd", title:"Speed, from the game's main-menu roster"}];
 const PLYR = ["FR", "SO", "JR", "SR"]; // class order for sorting by year (a trailing * is a redshirt)
 const PLPAGE = 200; // rows drawn at a time; "Show more" adds another page
 let plKey = "ovr", plDir = -1, plPos = "All", plQuery = "", plShown = PLPAGE;

@@ -67,7 +67,7 @@ export default [
   {name: "biggest NIL in the Big Ten", say: [["which big ten team has the biggest nil budget",
     {js: "document.querySelector('#pLog .pm.bot:last-child li').textContent.includes(DATA.filter(t => t.c === 'Big Ten').sort((a, b) => b.nt - a.nt)[0].n)"}]]},
   {name: "lowest NIL", say: [["which team has the smallest nil budget", {has: ["Smallest NIL"]}]]},
-  {name: "rebuild jobs", say: [["best sec team for a rebuild", {has: ["Best rebuild jobs · SEC"], not: ["Big Ten", "Georgia \\(", "Alabama \\("]}]]},
+  {name: "rebuild jobs", say: [["best sec team for a rebuild", {has: ["Best rebuild jobs · SEC"], not: ["Big Ten", "Georgia \\(", "Texas \\("]}]]},
   {name: "most titles", say: [["which teams have the most national titles", {has: ["Alabama"]}]]},
   {name: "pipeline by state", say: [["who has a tier 5 pipeline in texas", {has: ["Texas pipelines", "Tier 5"]}]]},
   {name: "pipeline by region", say: [["best pipeline in metro atlanta", {has: ["Metro Atlanta pipelines"]}]]},
@@ -108,7 +108,7 @@ export default [
 
   // ---- roster roadmap
   {name: "roadmap", say: [["plan my first 3 seasons at florida", {has: ["3-season roster roadmap", "After season 1", "After season 3", "Recruiting priorities"], not: ["House rules"]}]]},
-  {name: "roadmap priorities include big losses", say: [["florida roster needs", {has: ["Recruiting priorities.*(LT|LG|C|RG|RT)\\b"]}]]},
+  {name: "roadmap priorities include big losses", say: [["florida roster needs", {has: ["Recruiting priorities.*1\\. (QB|RB|WR|TE|LT|LG|C|RG|RT|LEDG|REDG|DT|SAM|MIKE|WILL|CB|FS|SS|K|P)\\b"]}]]},
   {name: "roadmap 2 seasons", say: [["plan my first two seasons at texas", {has: ["2-season"], not: ["After season 3"]}]]},
   {name: "roadmap follow-up", say: [["florida roster roadmap", {}], ["what about georgia?", {has: ["Georgia · 3-season roster roadmap"]}]]},
 

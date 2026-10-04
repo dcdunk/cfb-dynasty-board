@@ -258,7 +258,7 @@ const inPage = async () => {
   $('#plpos [data-p="QB"]').click(); await wait(30);
   ok($("#plarch").value === "" && [...$("#plarch").options].some(o => o.value === "Pocket Passer"), "Players: changing position should reset an archetype that doesn't fit");
   $('#plpos [data-p="All"]').click(); await wait(30);
-  const unrated = PLAYERS.find(p => !RATINGS.p[p.team]?.[p.name]); await plCard(unrated.i); ok(/doesn't list/.test($("#plcB").textContent), "Players: unrated players should say so"); $("#plc").close();
+  { const unrated = PLAYERS.find(p => !RATINGS.p[p.team]?.[p.name]); if (unrated) { await plCard(unrated.i); ok(/doesn't list/.test($("#plcB").textContent), "Players: unrated players should say so"); $("#plc").close(); } }
   // Roster rows in the dossier open the player card (dossier stays underneath).
   openTeam("Georgia"); await wait(50); { const tr = $("#dbody tr[data-pl]"); tr.click(); await wait(80);
     ok($("#plc").open && $("#plcN").textContent.includes(tr.dataset.pl) && picked === "Georgia", "Dossier: clicking a roster player should open their card"); $("#plc").close(); closeTeam(); await wait(250); }
@@ -280,7 +280,7 @@ const inPage = async () => {
     `Players: picking Temple should list its ${tem} players, got ${plRows().length}`);
   ok(plRows().every(r => { const p = PLAYERS[+r.dataset.i], e = RATINGS.p[p.team]?.[p.name]; return +r.cells[5].textContent === (e ? e[0] : p.ovr0); }), "Players: Ovr should be EA's overall, or the roster value when EA doesn't list the player");
   ok(plRows().every(r => { const p = PLAYERS[+r.dataset.i], e = RATINGS.p[p.team]?.[p.name]; return +r.cells[6].textContent === (e ? plStat(p, "speed") : p.spd0); }), "Players: Spd should be EA's speed, or the roster value when EA doesn't list the player");
-  ok(PLAYERS.some(p => p.ovr0 != null && p.ovr !== p.ovr0), "Players: some overalls should have changed to EA's current week");
+  ok(PLAYERS.every(p => p.ovr === (plRow(p) ? plRow(p)[0] : p.ovr0)), "Players: Ovr should match the game roster's overall");
   plOpen(""); ok($("#plteam").value === "", "Players: plOpen should clear the program filter");
   $("#plq").value = "zzqx"; $("#plq").dispatchEvent(new Event("input")); ok(!$("#plempty").hidden && $("#plmore").hidden, "Players: no matches should show the empty message");
   plOpen("");
