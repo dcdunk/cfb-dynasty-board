@@ -100,11 +100,15 @@ function pFindTeams(q){
 function pRules(t, strict, pre, force){
   if (pre) return presetOf(pre).r.filter(id => HR[id] && HR[id].w(t) && !force.some(f => HR[f].c === HR[id].c)).concat(force);
   const want = {cas:1, std:2, hard:3}[strict], k = HSTRICT[strict].k, used = new Set(force.map(f => HR[f].c));
-  const cats = ["ter", "star", "port", "nil", "ros", "sch", "job", "game"].filter(c => !used.has(c)).slice(0, Math.max(0, k - force.length));
+  // Variety (owner, Oct 2026): random categories each time, rules one strain level off now and then (pFit evens the
+  // difficulty out afterwards), and the last plan's rules skipped when the category has others.
+  const prev = new Set(P.plan ? P.plan.rules : []);
+  const cats = ["ter", "star", "port", "nil", "ros", "sch", "job", "game"].filter(c => !used.has(c)).sort(() => Math.random() - .5).slice(0, Math.max(0, k - force.length));
   return force.concat(cats.map(c => {
-    const ok = HRULES.filter(r => r.c === c && !r.u && r.w(t) && !pBan(r.id));
-    const best = Math.min(...ok.map(r => Math.abs(r.l - want)));
-    const pool = ok.filter(r => Math.abs(r.l - want) === best);
+    let ok = HRULES.filter(r => r.c === c && !r.u && r.w(t) && !pBan(r.id));
+    if (ok.some(r => !prev.has(r.id))) ok = ok.filter(r => !prev.has(r.id));
+    const best = Math.min(...ok.map(r => Math.abs(r.l - want))) + (Math.random() < .3 ? 1 : 0);
+    const pool = ok.filter(r => Math.abs(r.l - want) <= best);
     return pool.length ? pool[Math.floor(Math.random() * pool.length)].id : null;
   }).filter(Boolean)).sort((a, b) => catIx(a) - catIx(b));
 }

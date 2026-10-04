@@ -1109,3 +1109,5 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
 .rb-w{margin:4px 0 12px}
 .rb-pick i.rb-oth{color:var(--dim)}
 @media (max-width:767px){.rb-c span small{font-size:8.5px}}
+/* iPhone zooms into any text field under 16px and stays zoomed after typing (owner, Oct 2026), so phone fields are 16px. */
+@media (max-width:767px){input,select,textarea{font-size:16px!important}}

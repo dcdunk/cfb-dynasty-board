@@ -77,6 +77,11 @@ const inPage = async () => {
   for (const [nm, r, want] of [[...tok[0].slice(0, 2), "#1F5FD1,#141A20,#B06D0E"], [...tok[1].slice(0, 2), "#5B9BFF,#E5E5E6,#E8A33D"], [...tok[2].slice(0, 2), "#5B9BFF,#E5E5E6,#E8A33D"]])
     ok(["--accent", "--logo", "--logo-em"].map(v => r?.style.getPropertyValue(v).trim()).join() === want, `Theme: ${nm} accent/logo colors should be ${want}`);
   // Light/dark toggle sits next to Coach, flips the theme, saves it, and its label says what a click does.
+  { const rs = [...document.styleSheets].flatMap(x => { try { return [...x.cssRules]; } catch (e) { return []; } });
+    ok(rs.some(r => r.media && /767/.test(r.media.mediaText) && /input, select, textarea/.test(r.cssText) && /16px/.test(r.cssText)), "Phones: text fields must be 16px so iPhone doesn't zoom in");
+    const t = DATA.find(x => x.n === "Florida"), seen = new Set(), cats = new Set();
+    for (let i = 0; i < 40; i++) { const r = pRules(t, "cas", null, []); seen.add(r.join()); r.forEach(id => cats.add(HR[id].c)); }
+    ok(seen.size > 5 && cats.size > 4, `Coach: house rule picks should vary (${seen.size} sets, ${cats.size} categories)`); }
   { const b = $("#themeBtn"), root = document.documentElement, t0 = root.dataset.theme, eff = () => root.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     ok(b && b.nextElementSibling === $("#pOpen") && b.querySelector("svg"), "Theme: toggle should sit just left of the Coach button");
     const before = eff(); b.click();
