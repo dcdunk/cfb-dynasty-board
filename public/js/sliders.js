@@ -1,4 +1,4 @@
-// Sliders tab: Matt10's and Armor & Sword's slider sets.
+// Sliders tab: Matt10's, Armor & Sword's and Ratings Matter slider sets.
 /* ---- sliders (Matt10 v5.5, transcribed from his revised image; first posted 9/25/26) ---- */
 // Each row: [name, value] or [name, value, previous value]. Skill rows: [name, user, cpu, prevUser, prevCpu].
 const SLPEN = [["Offside",50],["False Start",50],["Offensive Holding",52,50],["Facemask",40],["Block in the Back",70,50],
@@ -55,10 +55,22 @@ const SLSETS = {
         ["Ball Security",20,20],["Interceptions",25,25,30,30],["Pass Coverage",50,50],["Tackling",49,49],["FG Power",50,50],
         ["FG Accuracy",35,35],["Punt Power",50,50],["Punt Accuracy",50,50],["Kickoff Power",50,50]],
         pen:ASPEN(51, 90, 60, 99, 99, [99, 99, 99])}}}
+,
+  // MassChaos's Ratings Matter Slider Project V4.0 (post 9/3 patch), from his thread's image (owner sent it, Oct 2026; post last
+  // edited 9/7/26). All-American only. He marks changes in bold without old values, so changed cells use "" as the previous value.
+  rm:{n:"Ratings Matter", v:"Posted 9/7/26", fix:[
+    ["Game options", "All-American", [["Injuries",5],["Fatigue",75],["Speed Parity",44,""],["Special Teams","SuperSim ST plays"]]],
+    ["League settings", "His picks", [["Difficulty","All-American"],["Quarter Length","Your choice"],["Min Play Clock","Your choice"],["Player Progression","Automatic"]]],
+    ["Transfer portal", "Still testing", [["Max Transfers per Team","Your choice"],["User Transfer Chance","Your choice"],["CPU Transfer Chance","Your choice"]]],
+    ["Preferences", "Optional", [["Pass Lead Increase","Medium"],["Passing Type","Classic"],["Reticle Speed",10],["AI WR for User","On"],["Timing Catching","Off"]]]],
+    d:{aa:{n:"All-American", v:"V4.0", skill:[["QB Accuracy",30,30,"",""],["Pass Blocking",53,56,"",""],["WR Catching",48,48,"",""],["Run Blocking",42,55,"",""],
+      ["Ball Security",50,50],["Interceptions",30,30],["Pass Coverage",60,60,"",""],["Tackling",40,48,"",""]],
+      pen:[["Offside",49],["False Start",62,""],["Offensive Holding",53,""],["Facemask",50,""],["Defensive PI",70,""],["Block in the Back",50],
+        ["Roughing the Passer",50],["All Other Penalties","On"]]}}}
 };
 let slS = "matt", slD = "heis";
 const slCell = (v, was) => was == null ? `<td class="mono">${v}</td>`
-  : `<td class="mono chg" title="Was ${was}">${v}</td>`;
+  : `<td class="mono chg" title="${was === "" ? "Changed in this version" : `Was ${was}`}">${v}</td>`;
 const slCard = (h, sub, rows) => `<section class="sl-card"><h3>${h}<span>${sub}</span></h3><table><tbody>${
   rows.map(([n, v, w]) => `<tr><td class="l">${n}</td>${slCell(v, w)}</tr>`).join("")}</tbody></table></section>`;
 // Set and difficulty in the URL: #sliders/s=as&d=var (Matt10 and each set's first difficulty are left out).
