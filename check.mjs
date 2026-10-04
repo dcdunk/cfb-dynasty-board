@@ -177,6 +177,8 @@ const inPage = async () => {
   $('[data-mode="any"]').click();
   $("#roll").click(); await wait(2000);
   ok($("#result").innerText.trim().length > 0, "Randomizer: roll produced no result");
+  { const t = DATA.find(x => x.n === $("#result .rname").textContent), c = [...$$("#result .rstats div")].find(d => /capacity/i.test(d.textContent));
+    ok(t && c && c.querySelector("b").textContent === fmt(t.sc), "Randomizer: result card should show the stadium capacity"); }
 
   await open("tabCoach");
   ok($$("#crows tr").length > 0, "Coaches: no coach rows");

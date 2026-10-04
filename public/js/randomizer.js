@@ -65,10 +65,11 @@ function rShow(t, final){
       <div><span>Prestige</span><b>${t.p.toFixed(1)}</b></div>
       <div><span>Titles</span><b>${t.ti || "–"}</b></div>
       <div><span>NIL budget</span><b>${fmt(t.nt)}</b></div>
+      <div><span>Stadium capacity</span><b>${t.sc ? fmt(t.sc) : "–"}</b></div>
     </div>
     <div class="rmeta">
       ${t.hc ? `Head coach <b>${t.hc}</b><br>` : ""}
-      ${t.sn ? `Home field <b>${t.sn}</b>, ${t.sl} (${fmt(t.sc)})` : ""}
+      ${t.sn ? `Home field <b>${t.sn}</b>, ${t.sl}` : ""}
     </div>
     <div class="ract"><button class="ghost" type="button" id="rOpen">Open full team card</button><button class="ghost" type="button" id="rHouse">Set house rules</button></div>`;
   $("#rOpen").addEventListener("click", () => openTeam(t.n));
