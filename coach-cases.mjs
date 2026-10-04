@@ -72,6 +72,7 @@ export default [
   {name: "pipeline by state", say: [["who has a tier 5 pipeline in texas", {has: ["Texas pipelines", "Tier 5"]}]]},
   {name: "pipeline by region", say: [["best pipeline in metro atlanta", {has: ["Metro Atlanta pipelines"]}]]},
   {name: "compare", say: [["florida vs florida state", {has: ["Florida vs Florida State", "Overall", "Best players", "Head coaches"]}]]},
+  {name: "compare three, with a pick", say: [["should i do missouri, vanderbilt or kentucky dyanasty?", {has: ["Missouri vs Vanderbilt vs Kentucky", "Head coaches", "By the numbers", "longest climb", "an 88 OVR C"], not: ["House rules"], js: "/I.d (take|lean)|My vote/.test(pLog.lastElementChild.textContent)"}]]},
   {name: "compare word", say: [["compare ohio state and michigan", {has: ["Ohio State vs Michigan"]}]]},
   // ---- messy input
   {name: "typo", say: [["tough floida dynasty", {has: ["Reading “floida” as Florida", "Florida Gators"]}]]},
@@ -145,6 +146,8 @@ export default [
   // ---- new question types
   {name: "recruiting power ranking", say: [["what teams have the best recruiting power", {has: ["Strongest recruiting power", "Tier 3\\+ pipelines"], not: ["Highest rated"]}]]},
   {name: "beginner pick", say: [["i have never played dynasty, what team should i start with", {has: ["Good first dynasties"], not: ["Blue-blood burden", "Heisman"]}]]},
+  {name: "overview gives a take", say: [["what do you think about missouri", {has: ["Missouri is a solid program that can win now", "Good if you want"]}]]},
+  {name: "roster gives a take", say: [["best players at missouri", {has: ["85\\+ and", "Ahmad Hardy"]}], ["best hb at missouri", {has: ["HB (in the country|nationally)"]}]]},
   {name: "team overview", say: [["what do you think about oregon", {has: ["Oregon Ducks · at a glance", "National titles:.*none yet", "Best players"], not: ["House rules"]}]]},
   {name: "overview isn't a roster question", say: [["tell me about oregon's qbs", {has: ["Oregon · Best QB"], not: ["House rules", "at a glance"]}]]},
   {name: "easiest path to a title", say: [["which team has the easiest path to a natty", {has: ["Easiest paths to a title"], not: ["didn't catch"]}]]},

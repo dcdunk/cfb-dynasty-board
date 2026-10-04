@@ -319,7 +319,18 @@ function pPlayers(q, t){
   const xs = (grp ? t.r.filter(p => grp.includes(p[1])) : t.r.slice()).sort((a, b) => fast ? b[5] - a[5] || b[3] - a[3] : b[3] - a[3] || b[5] - a[5]).slice(0, n);
   const what = `${n > 1 ? `Top ${n}` : fast ? "Fastest" : "Best"}${pos ? " " + pos[0] : n > 1 ? " players" : " player"}${n > 1 && fast ? " by speed" : ""}`;
   P.team = t;
-  return pMd([`### ${t.n} · ${what}`, ...xs.map(p => `- ${pRow(p)}`), ...(xs.length ? [] : ["- No players at that position on the roster."])].join("\n"));
+  return pMd([`### ${t.n} · ${what}`, ...(xs.length ? [pTake(xs, t, fast)] : []), ...xs.map(p => `- ${pRow(p)}`), ...(xs.length ? [] : ["- No players at that position on the roster."])].join("\n"));
+}
+// A sentence of opinion before the roster list (owner, Oct 2026: Coach should talk, not just list): national rank at the
+// position, how long they stay (FR 4, SO 3, JR 2, SR 1 seasons left), and what that means for recruiting.
+const PLEFT = {FR:4, SO:3, JR:2, SR:1}, pLeft = p => PLEFT[p[2].slice(0, 2)] || 1;
+function pTake(xs, t, fast){
+  const p = xs[0], k = fast ? 5 : 3, nat = DATA.flatMap(x => x.r).filter(x => x[1] === p[1]).sort((a, b) => b[k] - a[k]).findIndex(x => x === p) + 1;
+  const stay = pLeft(p) === 1 ? "he's a senior, so enjoy this season and start recruiting his replacement now" : `he has ${pLeft(p)} seasons left, so the spot is set for a while`;
+  if (xs.length === 1) return pick([`**${p[0]}** is your guy, the #${nat} ${p[1]} in the country, and ${stay}.`, `Start with **${p[0]}**: #${nat} ${p[1]} nationally, and ${stay}.`]);
+  const good = xs.filter(x => x[3] >= 85).length, srs = xs.filter(x => pLeft(x) === 1).length;
+  const grade = good >= Math.ceil(xs.length * .6) ? "This is a strong group" : good ? "There's real talent here, but it thins out fast" : "Honestly, this group needs help";
+  return `${grade}: ${good === xs.length ? `all ${good} are` : `${good} of ${xs.length} ${good === 1 ? "is" : "are"}`} 85+ and **${p[0]}** leads it (#${nat} ${p[1]} nationally). ${srs ? `${srs === 1 ? "One is a senior" : `${srs} are seniors`}, so plan to recruit behind ${srs === 1 ? "him" : "them"}.` : "Nobody here is a senior, so you have time."}`;
 }
 // Coaching staff (t.st rows: [role, name, level, grade, archetype, pipeline, ...]).
 const PROLE = {HC:"Head coach", OC:"Offensive coordinator", DC:"Defensive coordinator"};
@@ -445,18 +456,42 @@ function pFiltered(s, xs, where, labels, n){
   return pMd([`### ${where} · ${labels.join(" · ")}`, `- ${xs.length} program${xs.length === 1 ? "" : "s"} match${xs.length === 1 ? "es" : ""}${xs.length > shown.length ? `, top ${shown.length} shown` : ""}.`,
     ...shown.map(t => `- ${tLine(t)}${key === "of" ? ` · ${t.of} off` : key === "df" ? ` · ${t.df} def` : ""}`), ...(xs.length ? [] : ["- Try loosening one of the filters."])].join("\n"));
 }
+// Compare 2-4 programs (owner, Oct 2026: answer like a person first, a verdict and who each one suits, then the numbers).
+function pCompare(ts, s){
+  const nr = t => NILRANK.indexOf(t.n) + 1, p3 = t => pipesAt(t, 3).length;
+  const rec = t => t.p * 10 - nr(t) * .3 + p3(t) * 3, all = t => t.o + rec(t) / 2;
+  const top = f => [...ts].sort((a, b) => f(b) - f(a))[0], low = f => [...ts].sort((a, b) => f(a) - f(b))[0];
+  const best = t => [...t.r].sort((x, y) => y[3] - x[3])[0], hc = t => (t.st || []).find(c => c[0] === "HC");
+  const tough = /\b(tough|hard|harder|challenge|challenging|rebuild|underdog|build)\b/.test(s);
+  const me = tough ? low(all) : top(all), now = top(t => t.o), rc = top(rec), climb = low(all);
+  const why = me === now && !tough ? `the best roster right now (${me.o} overall)` : tough ? `the steepest climb: ${me.p}★ prestige, NIL rank #${nr(me)}`
+    : `the easiest recruiting: ${me.p}★ prestige, NIL rank #${nr(me)}, ${p3(me)} strong pipelines`;
+  const lead = pick([`If I had to pick one, I'd take **${me.n}**. It has ${why}.`, `My vote goes to **${me.n}**, mostly for ${why}.`, `I'd lean **${me.n}** here. It offers ${why}.`]);
+  const fits = [me !== now ? `Want to win early? **${now.n}** has the best roster (${now.o} overall).` : "",
+    rc === me && me !== now && !tough ? "" : rc !== now ? `Want recruiting to come easy? **${rc.n}** has the strongest pull (${rc.p}★, NIL #${nr(rc)}).` : `It's also the easiest place to recruit (${rc.p}★, NIL #${nr(rc)}).`,
+    ts.length > 2 || climb !== now ? `Want a real build-from-scratch dynasty? **${climb.n}** is the longest climb.` : ""].filter(Boolean);
+  // Every program gets a word: the one it leads outright, else its best player.
+  const LEADS = [["the most strong pipelines", p3], ["the best defense", t => t.df], ["the best offense", t => t.of], ["the highest prestige", t => t.p]];
+  for (const t of ts) if (![me, now, rc, climb].includes(t)) {
+    const l = LEADS.find(([, f]) => ts.every(x => x === t || f(x) < f(t))), b = best(t);
+    fits.push(`**${t.n}** ${l ? `has ${l[0]} of the group (${l[1](t)}) and` : "has"} ${b[0]}, ${/^8/.test(b[3]) ? "an" : "a"} ${b[3]} OVR ${b[1]}.`);
+  }
+  const close = (o, d) => Math.abs(o - d) <= 1;
+  const tight = ts.every(t => close(t.o, ts[0].o)) ? "On the field these are almost even, so it comes down to the kind of dynasty you want." : "";
+  const row = (lbl, f, hi = true) => { const v = ts.map(f), w = hi ? Math.max(...v) : Math.min(...v), uniq = v.filter(x => x === w).length === 1;
+    return `- **${lbl}:** ${ts.map((t, i) => `${t.n} ${uniq && v[i] === w ? `**${v[i]}**` : v[i]}`).join(" · ")}`; };
+  P.team = ts[0]; P.last = {kind:"compare", a:ts[0]};
+  return pMd([`### ${ts.map(t => t.n).join(" vs ")}`, [lead, tight].filter(Boolean).join(" "), ...fits.map(f => `- ${f}`),
+    "### By the numbers", row("Overall", t => t.o), row("Offense", t => t.of), row("Defense", t => t.df), row("Prestige", t => t.p),
+    row("NIL rank", nr, false), row("National titles", t => t.ti), row("Tier 3+ pipelines", p3),
+    "### Best players", ...ts.map(t => `- ${pRow(best(t), t)}`),
+    "### Head coaches", ...ts.map(t => hc(t) ? `- ${sRow(hc(t), t)}` : `- ${t.n}: none listed`),
+    `Pick one and I'll build it: try "tough ${me.n} dynasty".`].join("\n"));
+}
 function pLeague(q){
   const s = norm(q), teams = pFindTeams(q), n = Math.min(15, +(s.match(/\btop (\d+)/) || [])[1] || 5);
   // Compare two programs.
-  if (teams.length >= 2 && /\b(vs\.?|versus|compare|compared|or|against|better)\b/.test(s)) {
-    const [a, b] = teams, best = t => [...t.r].sort((x, y) => y[3] - x[3])[0], hc = t => (t.st || []).find(c => c[0] === "HC");
-    const row = (lbl, f, hi = true) => { const x = f(a), y = f(b); const w = x === y ? "" : (hi ? x > y : x < y) ? ` · edge ${a.n}` : ` · edge ${b.n}`; return `- **${lbl}:** ${x} vs ${y}${w}`; };
-    P.team = a; P.last = {kind:"compare", a};
-    return pMd([`### ${a.n} vs ${b.n}`, row("Overall", t => t.o), row("Offense", t => t.of), row("Defense", t => t.df), row("Prestige", t => t.p),
-      row("NIL rank", t => NILRANK.indexOf(t.n) + 1, false), row("National titles", t => t.ti), row("Tier 3+ pipelines", t => pipesAt(t, 3).length),
-      `### Best players`, `- ${pRow(best(a), a)}`, `- ${pRow(best(b), b)}`,
-      `### Head coaches`, ...[a, b].map(t => hc(t) ? `- ${sRow(hc(t), t)}` : `- ${t.n}: none listed`)].join("\n"));
-  }
+  if (teams.length >= 2 && /\b(vs\.?|versus|compare|compared|or|against|better)\b/.test(s)) return pCompare(teams.slice(0, 4), s);
   const [pool, where] = pScope(s), league = /\b(in the country|nationally|in the nation|in (the )?(fbs|college football)|any team|who has|which team|what team|across|in the (sec|acc|big|pac|mac|sun|mountain|american|conference)|overall)\b/.test(s)
     || PCONF.some(([, re]) => re.test(s)) || /\b(p4|g5|power (4|four)|group of (5|five))\b/.test(s);
   // Best players across many teams ("best QB in the SEC", "who has the fastest receiver").
@@ -620,7 +655,11 @@ function pOverview(t){
   const pl = t.pl.filter(x => x[1] >= 3).sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 4);
   const [, arch] = ARCH.find(a => t.p >= a[0]);
   P.team = t; P.last = {kind:"stat", q:"overall"};
-  const out = [`### ${t.n} ${t.nk} · at a glance`, `- **${t.c}** · ${t.p}★ prestige · recruiting band: ${arch}`,
+  const r = rk(x => x.o), lvl = r <= 10 ? "a real contender" : r <= 30 ? "a solid program that can win now" : r <= 70 ? "a middle-of-the-pack program" : "a rebuild";
+  const recr = t.p >= 4 ? "recruiting comes easy" : t.p >= 3 ? "recruiting takes some work" : "you'll have to fight for every recruit";
+  const fit = r <= 10 ? `Good if you want to chase titles from day one${t.ti ? "" : ", and a first-ever title would be a great story"}.`
+    : t.p < 3 ? `Good if you want a long climb where every win feels earned.` : `Good if you want to win early and build something bigger.`;
+  const out = [`### ${t.n} ${t.nk} · at a glance`, `${t.n} is ${lvl} (#${r} of ${DATA.length}), and with ${t.p}★ prestige ${recr}. ${fit}`, `- **${t.c}** · ${t.p}★ prestige · recruiting band: ${arch}`,
     `- **Overall ${t.o}** (#${rk(x => x.o)} of ${DATA.length}) · offense ${t.of} (#${rk(x => x.of)}) · defense ${t.df} (#${rk(x => x.df)})`,
     `- **NIL budget:** ${fmt(t.nt)} (#${nr} of ${DATA.length})`,
     `- **National titles:** ${t.ti ? `${t.ti} (last in ${tYears(t).slice(-1)[0]})` : "none yet"}`,
@@ -759,7 +798,7 @@ function pCanon(j, q){
         ...(gd ? [`i play on ${gd}`] : []), ...(j.exclude || []).map(x => ({portal:"no transfers", nil:"no nil", five_stars:"no five stars"})[x]).filter(Boolean),
         ...(j.title_goal ? ["win a national title"] : []), ...keep].join(", ");
     }
-    case "compare": return ts.length >= 2 ? `${ts[0].n} vs ${ts[1].n}` : null;
+    case "compare": return ts.length >= 2 ? ts.slice(0, 4).map(t => t.n).join(" vs ") : null;
     case "players": return t ? `best ${pos || "players"} at ${t.n}` : `best ${pos || "players"}${conf || " in the country"}`;
     case "staff": return t ? `${t.n} coaching staff` : null;
     case "overview": return t ? `what do you think about ${t.n}` : null;
