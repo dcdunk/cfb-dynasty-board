@@ -38,3 +38,6 @@ const hashQ = o => { const q = new URLSearchParams(Object.entries(o).filter(([, 
 
 // A roster row's archetype (r[6] indexes PARCH.a, from tools/player-archetypes.mjs); "" when TeamCrafters didn't list the player.
 const parch = r => r[6] != null && typeof PARCH !== "undefined" ? PARCH.a[r[6]] || "" : "";
+// Power 4 conferences, plus Notre Dame (used by House rules, Coach and the Randomizer).
+const P4 = new Set(["SEC", "Big Ten", "Big 12", "ACC"]);
+const isP4 = t => P4.has(t.c) || t.n === "Notre Dame";

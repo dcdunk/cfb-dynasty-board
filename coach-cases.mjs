@@ -115,7 +115,8 @@ export default [
   // ---- combined filters
   {name: "filters: conference + overall + pipeline", say: [["sec teams under 85 overall with a texas pipeline",
     {has: ["SEC · overall under 85 · Texas pipeline"], js: "[...document.querySelectorAll('#pLog .pm.bot:last-child li')].slice(1).every(li => { const t = DATA.find(x => li.textContent.startsWith(x.n + ' (')); return t && t.c === 'SEC' && t.o < 85 && t.pl.some(p => regsIn('TX').includes(p[0])); })"}]]},
-  {name: "filters: G5 + NIL rank", say: [["group of five teams with a top 50 nil budget", {has: ["Group of Five · top-50 NIL budget"]}]]},
+  {name: "group of 6 wording", say: [["best group of 6 teams", {has: ["Group of 6"]}]]},
+  {name: "filters: G5 + NIL rank", say: [["group of five teams with a top 50 nil budget", {has: ["Group of 6 · top-50 NIL budget"]}]]},
   {name: "filters: prestige + titles", say: [["big ten teams with at least 4 stars prestige and a national title", {has: ["prestige at least 4★", "at least one national title"]}]]},
   {name: "filters: nothing matches", say: [["sec teams under 60 overall", {has: ["0 programs", "loosening"]}]]},
 

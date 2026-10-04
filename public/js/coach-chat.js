@@ -424,7 +424,7 @@ function pScope(s){
   const c = PCONF.filter(([, re]) => re.test(s)).map(x => x[0]);
   if (c.length) return [DATA.filter(t => c.includes(t.c)), and(c)];
   if (/\b(p4|power (4|four|conference))\b/.test(s)) return [DATA.filter(isP4), "Power 4"];
-  if (/\b(g5|group of (5|five))\b/.test(s)) return [DATA.filter(t => !isP4(t)), "Group of Five"];
+  if (/\b(g[56]|group of (5|five|6|six))\b/.test(s)) return [DATA.filter(t => !isP4(t)), "Group of 6"];
   return [DATA, "FBS"];
 }
 const orank = t => [...DATA].sort((a, b) => b.o - a.o).indexOf(t) + 1;
@@ -691,7 +691,7 @@ function pEasyPath(s){
 function pFollow(q){
   const s = norm(q), L = P.last; if (!L || s.split(/\s+/).length > 8) return null;
   if (!/^(what|how) about\b|^and\b|^(same|now|ok|okay)\b|^(for|at|in) \w|^(do|try|show) (the same|that) for|^(what|how) (about|is|are) (their|its)/.test(s) && !(pFindTeams(q).length && s.split(/\s+/).length <= 2 && ![...PDIFF, ...PPRE].some(([, re]) => re.test(s)) && !/dynasty|rebuild/.test(s))) return null;
-  const t = pFindTeams(q)[0], scope = PCONF.find(([, re]) => re.test(s)) || (/\b(p4|power (4|four)|g5|group of (5|five)|country|nation|fbs)\b/.test(s) ? [s.match(/\b(p4|power (4|four)|g5|group of (5|five)|country|nation|fbs)\b/)[0]] : null);
+  const t = pFindTeams(q)[0], scope = PCONF.find(([, re]) => re.test(s)) || (/\b(p4|power (4|four)|g[56]|group of (5|five|6|six)|country|nation|fbs)\b/.test(s) ? [s.match(/\b(p4|power (4|four)|g[56]|group of (5|five|6|six)|country|nation|fbs)\b/)[0]] : null);
   if (L.kind === "compare" && t && t !== L.a) return pLeague(`${L.a.n} vs ${t.n}`);
   if (L.kind === "league" && (scope || t)) {
     const base = L.q.replace(new RegExp(PCONF.map(([, re]) => re.source).join("|"), "g"), " ").replace(/\b(in the|in|p4|g5|power (4|four)|group of (5|five)|country|nation|fbs)\b/g, " ");

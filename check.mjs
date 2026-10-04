@@ -166,6 +166,14 @@ const inPage = async () => {
   ok($("#hdeal").compareDocumentPosition($("#hstrict")) & Node.DOCUMENT_POSITION_FOLLOWING, "House rules: Deal should come before Strictness");
   ok($("#rFilters").hidden, "Randomizer: filters should be hidden in Completely random");
   $('[data-mode="filt"]').click(); ok(!$("#rFilters").hidden, "Randomizer: Use my filters should show the filters");
+  { const lv = i => $(`#rFilters [data-g="lv"] [data-i="${i}"]`), g6 = ["American", "Pac-12", "Mountain West", "Conference USA", "Sun Belt", "MAC"];
+    lv(1).click();
+    ok(rPool().length > 40 && rPool().every(t => g6.includes(t.c)) && /lv=1/.test(location.hash), "Randomizer: Group of 6 should leave only its six conferences");
+    lv(1).click(); lv(2).click();
+    ok(rPool().map(t => t.n).sort().join() === "Notre Dame,UConn", "Randomizer: Independent should be Notre Dame and UConn");
+    lv(2).click(); lv(0).click();
+    ok(rPool().every(t => P4.has(t.c)) && !rPool().some(t => t.n === "Notre Dame"), "Randomizer: Power 4 should be the four conferences only");
+    lv(0).click(); }
   $('[data-mode="any"]').click();
   $("#roll").click(); await wait(2000);
   ok($("#result").innerText.trim().length > 0, "Randomizer: roll produced no result");

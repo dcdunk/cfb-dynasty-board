@@ -6,8 +6,6 @@ const regsIn = s => HREG.filter(p => MAP.split[p] ? MAP.split[p].s === s : MAP.r
 const homeRegs = t => regsIn(stOf(t));
 const pipesAt = (t, min) => t.pl.filter(p => p[1] >= min).map(p => p[0]);
 const and = a => a.length < 3 ? a.join(" and ") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
-const P4 = new Set(["SEC", "Big Ten", "Big 12", "ACC"]);
-const isP4 = t => P4.has(t.c) || t.n === "Notre Dame";
 const purist = t => { const a = pipesAt(t, 3); return a.length >= 3 ? [3, a] : [2, pipesAt(t, 2)]; };
 const top3 = t => t.pl.filter(p => p[1] > 0).sort((a, b) => b[2] - a[2]).slice(0, 3).map(p => p[0]);
 const footprint = t => [...new Set(DATA.filter(x => x.c === t.c).flatMap(x => regsIn(stOf(x))))];
@@ -62,7 +60,7 @@ const HRULES = [
   {id:"port-patch", c:"port", n:"Patch the holes", l:1, w:() => true,
     x:() => `Up to three transfers a year, and only at positions where your projected starter is under 75 OVR.`},
   {id:"port-up", c:"port", n:"Step-up transfers", l:2, w:() => true,
-    x:t => isP4(t) ? `Transfers must come from Group of Five or FCS programs. No power-conference transfers.`
+    x:t => isP4(t) ? `Transfers must come from Group of 6 or FCS programs. No power-conference transfers.`
                    : `Transfers must come from FCS programs. No players leaving FBS schools.`},
   {id:"port-poach", c:"port", n:"No poaching", l:1, w:t => t.c !== "Independent",
     x:t => `Never sign a transfer who played last season for a ${t.c} school.`},

@@ -7,9 +7,11 @@ const RG = {
        ["Rebuild 0–1★", t => t.p < 1.5]],
   nt: [["8,000+", t => t.nt >= 8000], ["4,000–7,999", t => t.nt >= 4000 && t.nt < 8000],
        ["1,500–3,999", t => t.nt >= 1500 && t.nt < 4000], ["Under 1,500", t => t.nt < 1500]],
+  // Power 4 conferences, the Group of 6 (American, Pac-12, Mountain West, Conference USA, Sun Belt, MAC) and independents (Notre Dame, UConn).
+  lv: [["Power 4", t => P4.has(t.c)], ["Group of 6", t => !P4.has(t.c) && t.c !== "Independent"], ["Independent", t => t.c === "Independent"]],
   c:  [...new Set(DATA.map(t => t.c))].sort().map(c => [c, t => t.c === c])
 };
-const rSel = {ti:new Set(), p:new Set(), nt:new Set(), c:new Set()};
+const rSel = {ti:new Set(), p:new Set(), nt:new Set(), lv:new Set(), c:new Set()};
 let rMode = "any", rBusy = false, rHist = [];
 
 function rPool(skip){
