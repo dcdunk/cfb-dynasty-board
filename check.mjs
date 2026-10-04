@@ -428,6 +428,14 @@ const inPage = async () => {
   $('#slDiff [data-d="aa"]').click(); await wait(50);
   ok(row("WR Catching") === "WR Catching 50 60", `Sliders: All-American WR catching wrong: ${row("WR Catching")}`);
   ok($('#slDiff [data-d="aa"]').getAttribute("aria-pressed") === "true", "Sliders: difficulty chip not selected");
+  $('#slSet [data-s="as"]').click(); await wait(50);
+  ok(slD === "aa" && $('#slSet [data-s="as"]').getAttribute("aria-pressed") === "true" && /v5\.0/.test($("#slVer").textContent), "Sliders: Armor & Sword should open on All-American v5.0");
+  ok(row("QB Accuracy") === "QB Accuracy 39 39" && row("Tackling") === "Tackling 49 49" && row("Offensive Holding") === "Offensive Holding 60", `Sliders: A&S All-American values wrong: ${row("QB Accuracy")} / ${row("Offensive Holding")}`);
+  ok($$("#slGrid .sl-card").length === 8 && $$("#slGrid td.chg").length > 0, "Sliders: A&S should show 8 cards with changes highlighted");
+  $('#slDiff [data-d="var"]').click(); await wait(50);
+  ok(row("Pass Blocking") === "Pass Blocking 55 70" && row("Block in the Back") === "Block in the Back 99" && location.hash === "#sliders/s=as&d=var", `Sliders: A&S Varsity wrong: ${row("Pass Blocking")} ${location.hash}`);
+  $('#slSet [data-s="matt"]').click(); await wait(50);
+  ok(slD === "heis" && row("QB Accuracy") === "QB Accuracy 38 32", "Sliders: switching back to Matt10 should open Heisman");
 
   // Player abilities: position chips, archetype cards, ability detail, search, mental list.
   await open("tabAb");

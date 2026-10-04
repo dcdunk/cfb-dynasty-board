@@ -1111,3 +1111,7 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
 @media (max-width:767px){.rb-c span small{font-size:8.5px}}
 /* iPhone zooms into any text field under 16px and stays zoomed after typing (owner, Oct 2026), so phone fields are 16px. */
 @media (max-width:767px){input,select,textarea{font-size:16px!important}}
+/* Sliders title: "CFB27 Sliders by [Matt10 | Armor & Sword]", the author chips sit inside the heading. */
+.sl-title{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-bottom:8px}
+#viewSlide .sl-head{margin-bottom:20px}
+.sl-seg{display:inline-flex; gap:6px}
