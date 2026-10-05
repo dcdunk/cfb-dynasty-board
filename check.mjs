@@ -582,6 +582,9 @@ const inPage = async () => {
     ok(hot("QB") === "20" && hot("K/P") === "10", `Abilities: Hot Hand should cost 20 on QB and 10 on K/P, got ${hot("QB")} / ${hot("K/P")}`); }
   $('#abArch [data-c="Tactician"]').click(); await wait(50);
   ok($$("#abCGrid .ab-arch").length === 2 && $$("#abCGrid .sl-card").length === 16 && /top 25/.test($("#abCGrid").textContent), "Abilities: Tactician chip should show Tactician and Scheme Guru (16 branches)");
+  { const card = h => [...$$("#abCGrid .sl-card")].find(c => c.querySelector("h3").textContent === h), qb = card("Passing Game (QB)"), ct = card("Cross Training");
+    ok(qb?.querySelector("h3 img[src=\"ab/c/group-qb.png\"]") && [...qb.querySelectorAll("li")].every(l => l.querySelector("img[src=\"ab/c/group-qb.png\"]")) && ct?.querySelector("h3 img[src=\"ab/c/to-the-whistle.png\"]"),
+      "Abilities: position-group coach trees should show the game's group icon (Cross Training the whistle)"); }
   find("#abQ", "whisperer");
   ok(/Talent Developer/.test($("#abCGrid").textContent), "Abilities: coach search should find Whisperer");
   find("#abQ", "");
