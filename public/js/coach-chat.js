@@ -29,7 +29,8 @@ function pAbil(q){
 
 /* ---- dynasty planner: keyword planner over the site's own data, with an optional in-browser AI model for wording ---- */
 // The planner never invents facts: every number comes from DATA/HRULES/ARCH/SLDIFF.
-const PDIFF = [["hard", /\b(hard|harder|tough|tougher|brutal|hardcore|difficult|challeng\w*|insane|nightmare|grind)\b/], ["cas", /\b(casual|easy|easier|light|relaxed|chill)\b/]];
+const PDIFF = [["hard", /\b(hard|harder|tough|tougher|brutal|hardcore|difficult|challeng\w*|insane|nightmare|grind)\b/], ["cas", /\b(casual|easy|easier|light|relaxed|chill)\b/],
+  ["std", /\b(standard|normal|medium|moderate|regular|balanced|in between|middle)\b/]];
 const PPRE = [["money", /moneyball|no blue.?chips?|walk.?ons?|underdog/], ["old", /old.?school|no portal and no nil|classic/], ["portal", /portal era|portal program/],
   ["blue", /blue.?blood/], ["home", /hometown|home.?grown|local kids/], ["real", /realis(m|tic)|sim.?like/], ["carousel", /carousel|coordinator|headset/]];
 // PNEG: "don't want to use", "without", "avoid", "no", "skip", "ban" a few words before the topic.
@@ -193,6 +194,10 @@ function pPlan(q){
   let strict = (said || [prev ? prev.strict : P.pref || "std"])[0];
   const pre = (PPRE.find(([, re]) => re.test(s)) || [null])[0];
   const force = [...new Set(PRULE.filter(([, re]) => re.test(s)).map(x => x[0]))].filter(id => HR[id].w(t));
+  // No difficulty, preset or rule named for a new program ("i want to do a baylor dynasty"): ask instead of guessing (owner, Oct 2026;
+  // it used to silently reuse a Hardcore pick remembered from an older chat).
+  // Right after another plan, the difficulty carries over ("tough florida dynasty" → "what about michigan?").
+  if (!said && !pre && !force.length && !prev && !dir && !gd && !/\b(rebuild|challenge)\b/.test(s) && !(P.pref && P.last && P.last.kind === "plan")) return {ask:true, t};
   const created = /creat\w* (a )?coach|custom coach|my own coach|own coach|create a coach/.test(s) || (P.plan && t === P.team && P.plan.created);
   const keep = [...new Set([...(prev ? prev.keep || [] : []), ...force])].filter(id => !pBan(id)), rebuild = /rebuild/.test(s) || !!(prev && prev.rebuild);
   const fix = rs => rs.filter(id => !pBan(id));   // a newly stated game difficulty drops rules it contradicts
@@ -586,6 +591,14 @@ function pChallenges(q = ""){
   return pMd([`### ${xs.length === 3 ? "Three" : xs.length} dynasty challenges${noTi ? " · programs without a national title" : ""}`, ...xs.flatMap((c, i) => [`- **${i + 1}. ${c.name}: ${c.t.n}** · ${c.why} **Goal:** ${c.goal}`]),
     'Reply with a number or the team to build that plan, or say "more ideas".'].join("\n"));
 }
+// "How tough?" before a plan when the message didn't say. Mentions the last pick if there is one, so it's one word to repeat it.
+const PDN = {cas:"Casual", std:"Standard", hard:"Hardcore"};
+function pAskDiff(t){
+  const nr = NILRANK.indexOf(t.n) + 1;
+  return pMd([`### ${t.n} ${t.nk}`, `Good pick. ${t.n} is ${t.o} overall with ${t.p}★ prestige and the #${nr} NIL budget. How tough do you want it?`,
+    `- **Casual:** a few light rules, room to enjoy the build.`, `- **Standard:** real limits on recruiting and money.`, `- **Hardcore:** tight pipelines, a smaller budget and a short leash.`,
+    P.pref ? `Last time you went ${PDN[P.pref]}. Say "${PDN[P.pref].toLowerCase()}" to do that again, or pick another.` : `Just say casual, standard or hardcore.`].join("\n"));
+}
 function pTakeChallenge(c){
   const plan = pPlan(c.q); if (!plan) return null;
   if (P.plan) P.past.push(P.plan);
@@ -756,7 +769,8 @@ async function pAsk(q){
   else if (fp) { P.team = fp[0]; html = pMd([`### ${fp[1][0]}`, `- ${pRow(fp[1], fp[0])}`].join("\n")); }
   else if (rq && tp) { html = pPlayers(q, tp); P.last = {kind:"players", q}; }
   else if (/powerhouse|back to glory|sleeping giant|fallen|glory days|restore|revive|blue.?blood.* (fall|decline)/i.test(q)) html = pGlory();
-  else if (plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); P.last = {kind:"plan"}; }
+  else if ((plan = /real coach/i.test(q) && P.plan ? {...P.plan, created:false} : pPlan(q)) && plan.ask) { P.team = plan.t; html = pAskDiff(plan.t); plan = null; }
+  else if (plan) { if (P.plan) P.past.push(P.plan); P.team = plan.t; P.plan = plan; html = pRender(plan); P.last = {kind:"plan"}; }
   if (html && P.fuzzy) html = `<p class="pguess">Reading “${esc(P.fuzzy.typed)}” as ${esc(P.fuzzy.t.n)}.</p>` + html;
   pSay("bot", html || (P.team || pFindTeams(q)[0] ? pHelp(pFindTeams(q)[0] || P.team) : `<p>I didn't catch a program in that.</p>` + PHELP));
   pSave();

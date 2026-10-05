@@ -131,7 +131,9 @@ export default [
   {name: "long plan request with 'recruiting power' and 'have'", say: [["i'm thinking about doing an oregon dynasty as they have never won a national championship, but their recruiting power makes it easy. give me a good challenge. i also mainly play on all american",
     {has: ["Oregon Ducks", "House rules · Hardcore", "First title", "first national title in Oregon history", "All-American set, for the All-American difficulty you play on"], not: ["Power K/P", "Mega Leg", "Heisman or bust"],
       js: "P.plan.gd === 'aa' && !P.plan.rules.includes('game-heis')"}]]},
-  {name: "'power' in a plan isn't the kicker archetype", say: [["build me a dynasty where i have to win with a power run game at wisconsin", {has: ["Wisconsin Badgers", "House rules"], not: ["Power K/P"]}]]},
+  {name: "'power' in a plan isn't the kicker archetype", say: [["build me a dynasty where i have to win with a power run game at wisconsin", {has: ["Wisconsin Badgers", "How tough do you want it"], not: ["Power K/P"]}], ["standard", {has: ["Wisconsin", "House rules · Standard"]}]]},
+  {name: "no difficulty named: asks instead of guessing", say: [["i want to do a baylor dynasty", {has: ["Baylor Bears", "How tough do you want it"], not: ["House rules"]}], ["casual", {has: ["Baylor", "House rules · Casual"]}]]},
+  {name: "old preference isn't silently reused", say: [["tough florida dynasty", {}], ["best qb at georgia", {}], ["i want to do a baylor dynasty", {has: ["How tough do you want it", "Last time you went Hardcore"], not: ["House rules"]}]]},
   {name: "archetype questions still work", say: [["what abilities does a power kicker get", {has: ["Power K/P", "Mega Leg"]}], ["what does a zone corner get", {has: ["Zone CB", "Ballhawk"]}]]},
   {name: "archetype word alone isn't an ability question", say: [["what's a good zone defense team to rebuild", {not: ["Zone CB", "Ballhawk"]}]]},
   // ---- negation
