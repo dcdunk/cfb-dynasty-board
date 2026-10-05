@@ -61,7 +61,7 @@ const MNAV = [
   ["pipe", "Program Pipelines", "Pipelines", '<path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>'],
   ["rand", "Randomizer", "Random", '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="16" r="1"/><circle cx="12" cy="12" r="1"/>'],
   ["rec", "Recruiting & NIL", "Recruiting", '<path d="M12 3 2 8l10 5 10-5z"/><path d="M6 10v5c3 2 9 2 12 0v-5"/>'],
-  ["slide", "Sliders", "Sliders", '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>']
+  ["slide", "Sliders & Transfer Portal", "Sliders", '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>']
 ];
 // Which four tabs sit in the bar is the user's choice ("Edit tab bar" in the menu), saved in mbar-v1.
 const MPIN0 = ["dyn", "board", "play", "ab"];

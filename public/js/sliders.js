@@ -68,21 +68,24 @@ const SLSETS = {
       pen:[["Offside",49],["False Start",62,""],["Offensive Holding",53,""],["Facemask",50,""],["Defensive PI",70,""],["Block in the Back",50],
         ["Roughing the Passer",50],["All Other Penalties","On"]]}}}
 };
-let slS = "matt", slD = "heis";
+let slS = "matt", slD = "heis", slM = "sl";   // slM: "sl" sliders or "tp" transfer portal tips (owner, Oct 2026)
 const slCell = (v, was) => was == null ? `<td class="mono">${v}</td>`
   : `<td class="mono chg" title="${was === "" ? "Changed in this version" : `Was ${was}`}">${v}</td>`;
 const slCard = (h, sub, rows) => `<section class="sl-card"><h3>${h}<span>${sub}</span></h3><table><tbody>${
   rows.map(([n, v, w]) => `<tr><td class="l">${n}</td>${slCell(v, w)}</tr>`).join("")}</tbody></table></section>`;
 // Set and difficulty in the URL: #sliders/s=as&d=var (Matt10 and each set's first difficulty are left out).
 const slFirst = k => Object.keys(SLSETS[k].d)[0];
-TSUB.slide = () => hashQ({s: slS === "matt" ? "" : slS, d: slD === slFirst(slS) ? "" : slD});
+TSUB.slide = () => slM === "tp" ? "/transfer-portal" : hashQ({s: slS === "matt" ? "" : slS, d: slD === slFirst(slS) ? "" : slD});
 function slFromHash(sub){
+  if (sub === "transfer-portal") { slM = "tp"; return; }
   const q = new URLSearchParams(sub), k = q.get("s"), d = q.get("d");
   if (SLSETS[k]) { slS = k; slD = slFirst(k); }
   if (SLSETS[slS].d[d]) slD = d;
 }
 function slDraw(){
   if (curTab === "slide") tabHash();
+  document.querySelectorAll("#slMode [data-m]").forEach(b => b.setAttribute("aria-pressed", b.dataset.m === slM));
+  $("#slHead").hidden = $("#slGrid").hidden = slM === "tp"; $("#slTpView").hidden = slM !== "tp";
   const S = SLSETS[slS], d = S.d[slD];
   $("#slSet").innerHTML = Object.entries(SLSETS).map(([k, x]) =>
     `<button type="button" class="chip" data-s="${k}" aria-pressed="${k === slS}">${x.n}</button>`).join("");
@@ -95,6 +98,7 @@ function slDraw(){
     + slCard("Penalties", d.pen ? d.n : "Both difficulties", d.pen || S.pen)
     + S.fix.map(([h, sub, rows]) => slCard(h, sub, rows)).join("");
 }
+$("#slMode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (b) { slM = b.dataset.m; slDraw(); } });
 $("#slSet").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (b) { slS = b.dataset.s; slD = slFirst(slS); slDraw(); } });
 $("#slDiff").addEventListener("click", e => { const b = e.target.closest("[data-d]"); if (b) { slD = b.dataset.d; slDraw(); } });
 slDraw();

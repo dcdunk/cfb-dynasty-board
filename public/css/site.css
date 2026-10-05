@@ -1115,3 +1115,12 @@ dialog, .dossier .dbody{overscroll-behavior:contain}
 .sl-title{display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-bottom:8px}
 #viewSlide .sl-head{margin-bottom:20px}
 .sl-seg{display:inline-flex; gap:6px}
+/* Sliders: transfer portal tips under the slider cards. */
+.sl-mode{margin-bottom:18px}
+.sl-tp-h{margin:0 0 4px}
+.sl-tp-sub{margin:0 0 16px}
+.sl-tip p{margin:0; padding:0 12px 10px; font-size:13px; line-height:1.5; color:var(--dim)}
+.sl-tip p:first-of-type{color:var(--text)}
+.sl-tip .sl-tip-do{color:var(--text)}
+.sl-tip-do b{color:var(--accent); font-weight:590}
+.sl-tp td small{display:block; font-size:11.5px; color:var(--faint)}

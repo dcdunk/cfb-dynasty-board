@@ -97,7 +97,7 @@ const inPage = async () => {
   ok(!$("#tabGroups") && !$("#subtabs") && $(".tabs").getAttribute("role") === "tablist", "Nav: grouped navigation should be gone");
   $("#tabAb").click(); await wait(50); ok(!$("#viewAb").hidden && $("#tabAb").getAttribute("aria-selected") === "true", "Nav: clicking Abilities should open it");
   // Tab order: My Dynasty first, then alphabetical (owner, Oct 2026)
-  ok([...$$(".tabs .tab")].map(b => b.textContent).join("|") === "My Dynasty|Abilities|Coach Database|House Rules|Player Database|Program Database|Program Pipelines|Randomizer|Recruiting & NIL|Sliders", "Nav: tabs should be My Dynasty, then A to Z");
+  ok([...$$(".tabs .tab")].map(b => b.textContent).join("|") === "My Dynasty|Abilities|Coach Database|House Rules|Player Database|Program Database|Program Pipelines|Randomizer|Recruiting & NIL|Sliders & Transfer Portal", "Nav: tabs should be My Dynasty, then A to Z");
   $("#tabSlide").click(); await wait(50);
   $("#tabSlide").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
   ok(curTab === "dyn", `Nav: ArrowRight from Sliders should wrap to My Dynasty, got ${curTab}`);
@@ -444,6 +444,11 @@ const inPage = async () => {
   ok($$("#slGrid .sl-card").length === 8 && $$("#slGrid td.chg").length > 0, "Sliders: A&S should show 8 cards with changes highlighted");
   $('#slDiff [data-d="var"]').click(); await wait(50);
   ok(row("Pass Blocking") === "Pass Blocking 55 70" && row("Block in the Back") === "Block in the Back 99" && location.hash === "#sliders/s=as&d=var", `Sliders: A&S Varsity wrong: ${row("Pass Blocking")} ${location.hash}`);
+  ok($("#slTpView").hidden && !$("#slGrid").hidden, "Sliders: the Sliders chip should be the default view");
+  $('#slMode [data-m="tp"]').click(); await wait(50);
+  ok(!$("#slTpView").hidden && $("#slGrid").hidden && $("#slHead").hidden && location.hash === "#sliders/transfer-portal", `Sliders: Transfer Portal chip should show only the tips (${location.hash})`);
+  ok($$(".sl-tp .sl-card").length === 4 && /Max transfers per team/.test($(".sl-tp").textContent) && /5 \/ 100/.test($(".sl-tp").textContent), "Sliders: transfer portal settings section should show 3 tips and starting points");
+  $('#slMode [data-m="sl"]').click(); await wait(50);
   $('#slSet [data-s="rm"]').click(); await wait(50);
   ok(slD === "aa" && row("Run Blocking") === "Run Blocking 42 55" && row("Defensive PI") === "Defensive PI 70" && row("Min Player Speed Threshold") === "Min Player Speed Threshold 44" && $$("#slDiff [data-d]").length === 1, `Sliders: Ratings Matter values wrong: ${row("Run Blocking")} / ${row("Min Player Speed Threshold")}`);
   ok($$("#slGrid td.chg").length === 17 && $("#slGrid td.chg").title === "Changed in this version", "Sliders: Ratings Matter bold changes should be highlighted");
@@ -806,7 +811,8 @@ for (const [set, want, got] of [
   [`showTab("pipe"); pSet("Oregon"); pPipe = $("#ppipe").options[1].value; $("#ppipe").value = pPipe; pDraw()`, null, `[curTab, pTeam, pPipe === $("#ppipe").options[1].value].join()`, "pipe,Oregon,true"],
   [`showTab("rand"); document.querySelector('#viewRand .seg [data-mode="filt"]').click(); document.querySelector('#rFilters [data-g="p"] [data-i="0"]').click()`, "#randomizer/mode=filt&p=0", `[curTab, rMode, [...rSel.p].join()].join()`, "rand,filt,0"],
   [`showTab("rec"); $('#recMode [data-m="board"]').click(); rbPick("lt"); $('#plcB [data-rba="Well Rounded"]').click()`, "#recruiting/board", `[curTab, rM, RB.lt, !$("#rbWrap").hidden, $("#recGrid").hidden, document.querySelectorAll("#rb .rb-c").length].join()`, "rec,board,Well Rounded,true,true,25"],
-  [`showTab("slide"); document.querySelector('#slDiff [data-d]:not([aria-pressed="true"])').click()`, null, `[curTab, slD !== "heis"].join()`, "slide,true"]].map(([a, h, g, w]) => [a, h, [g, w]])) {
+  [`showTab("slide"); document.querySelector('#slMode [data-m="tp"]').click()`, null, `[curTab, slM].join()`, "slide,tp"],
+  [`showTab("slide"); document.querySelector('#slMode [data-m="sl"]').click(); document.querySelector('#slDiff [data-d]:not([aria-pressed="true"])').click()`, null, `[curTab, slD !== "heis"].join()`, "slide,true"]].map(([a, h, g, w]) => [a, h, [g, w]])) {
   const h = await ev(set + `; location.hash`); await new Promise(r => { loaded = r; send("Page.reload"); });
   const v = await ev(got[0]); if ((want && h !== want) || v !== got[1]) fails.push(`Refresh: ${set.slice(0, 40)}... should survive a reload (hash ${h}, got ${v})`);
 }

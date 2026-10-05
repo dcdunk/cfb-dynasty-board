@@ -50,7 +50,7 @@
   <button class="tab" role="tab" id="tabPipe" aria-controls="viewPipe" aria-selected="false" tabindex="-1" type="button">Program Pipelines</button>
   <button class="tab" role="tab" id="tabRand" aria-controls="viewRand" aria-selected="false" tabindex="-1" type="button">Randomizer</button>
   <button class="tab" role="tab" id="tabRec" aria-controls="viewRec" aria-selected="false" tabindex="-1" type="button">Recruiting &amp; NIL</button>
-  <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders</button>
+  <button class="tab" role="tab" id="tabSlide" aria-controls="viewSlide" aria-selected="false" tabindex="-1" type="button">Sliders &amp; Transfer Portal</button>
 </div>
 </nav>
 
@@ -267,7 +267,11 @@
 </section>
 
 <section id="viewSlide" class="sl" role="tabpanel" aria-labelledby="tabSlide" hidden>
-  <header class="sl-head">
+  <div class="chips sl-mode" id="slMode" role="group" aria-label="Sliders or transfer portal">
+    <button type="button" class="chip" data-m="sl" aria-pressed="true">Sliders</button>
+    <button type="button" class="chip" data-m="tp" aria-pressed="false">Transfer Portal</button>
+  </div>
+  <header class="sl-head" id="slHead">
     <div>
       <h2 class="hh sl-title">CFB27 Sliders by <span class="sl-seg" id="slSet" role="group" aria-label="Slider author"></span></h2>
       <p class="hint"><span id="slVer">v5.5 · Posted 9/25/26</span> · <span class="sl-chg">Highlighted</span> values changed in this version.</p>
@@ -275,6 +279,31 @@
     <div class="chips" id="slDiff" role="group" aria-label="Difficulty"></div>
   </header>
   <div class="sl-grid" id="slGrid"></div>
+  <!-- Transfer portal tips (owner, Oct 2026): from community five-season dynasty sims, written in our own words. -->
+  <div id="slTpView" hidden>
+  <h2 class="hh sl-tp-h" id="slTp">Transfer portal settings</h2>
+  <p class="hint sl-tp-sub">Found in League Settings. They change who leaves each offseason and how strong the rest of the league stays.</p>
+  <div class="sl-grid sl-tp">
+    <section class="sl-card sl-tip"><h3>Max transfers per team<span>The biggest lever</span></h3>
+      <p>Caps how many players each team can lose to the portal every offseason.</p>
+      <p>High caps let weaker programs lose half their depth, and the bottom of the league sinks within a few seasons. Low caps keep more teams competitive.</p>
+      <p class="sl-tip-do"><b>Tip:</b> 5 to 10 keeps the league balanced. Go higher only if you want a few superteams.</p></section>
+    <section class="sl-card sl-tip"><h3>Transfer chance<span>User and CPU</span></h3>
+      <p>How likely each player is to enter the portal. You set it separately for your team and the CPU.</p>
+      <p>It mostly changes how many 2★ and 3★ players move. Every cycle has a fairly fixed group of stars: about 0 to 5 five-stars and 50 to 200 four-stars, whatever the setting.</p>
+      <p class="sl-tip-do"><b>Tip:</b> a high chance with a low cap makes good teams lose real talent while limiting the damage to small schools.</p></section>
+    <section class="sl-card sl-tip"><h3>Unsigned transfers<span>Why players vanish</span></h3>
+      <p>CPU teams are slow to sign transfers. The bigger the portal, the more players go unsigned, even some 4★s.</p>
+      <p>Unsigned players either disappear from the dynasty or come back as walk-ons the next offseason, so a huge portal drains talent from the whole league.</p>
+      <p class="sl-tip-do"><b>Tip:</b> if good players keep vanishing, lower Max transfers before anything else.</p></section>
+    <section class="sl-card"><h3>Starting points<span>Max / chance</span></h3><table><tbody>
+      <tr><td class="l">Competitive league<small>About 600 to 700 transfers a year</small></td><td class="mono">5 / 100</td></tr>
+      <tr><td class="l">More movement<small>More players go unsigned</small></td><td class="mono">10 / 100</td></tr>
+      <tr><td class="l">Quiet portal<small>Mostly stars move</small></td><td class="mono">5 / 25-50</td></tr>
+      <tr><td class="l">Chaos<small>Weak teams get gutted</small></td><td class="mono">20+ / 100</td></tr>
+    </tbody></table></section>
+  </div>
+  </div>
 </section>
 
 <section id="viewAb" class="sl ab" role="tabpanel" aria-labelledby="tabAb" hidden>
