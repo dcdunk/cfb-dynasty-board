@@ -79,7 +79,13 @@ const ccTree = () => ccP ||= new Promise(r => { if (typeof CTREE === "object") r
   s.onload = () => r(CTREE); s.onerror = () => { ccP = null; r(null); }; document.head.append(s); });
 // "Advanced Look - DB" -> ["Advanced Look", "DB"]; the game buys position-group abilities once per group.
 const ccPos = n => { const m = n.trim().match(/^(.*?)\s*-\s*([A-Z/]+)$/); return m ? [m[1], m[2]] : [n.trim(), ""]; };
-const ccRow = (n, d, pos) => `<li>${abImg("c", n) || '<span class="ab-slot"></span>'}<div class="ab-tx"><b class="ab-nm">${esc(n)}</b>${pos.length ? `<span class="cc-pos">${pos.map(p => `<i>${esc(p)}</i>`).join("")}</span>` : ""}<span class="ab-ds">${esc(d)}</span></div></li>`;
+// Icon: the ability's own art, else its tree branch's group icon (as on the Abilities tab), else the group of the first position
+// it was bought for ("Advanced Look - DB" → the DB icon). Roster "RB" is the game's RB/FB group.
+const ccGrp = p => CPOS.find(g => g === p || g.split("/").includes(p)) || "";
+const ccIco = (n, a, pos) => abImg("c", n) || (a && abImg("c", cGroupIco(a.br.find(b => b[1].some(x => x[0].toLowerCase() === n.toLowerCase()))?.[0] || "")))
+  || (pos.length && ccGrp(pos[0]) ? abImg("c", "group " + ccGrp(pos[0])) : "")
+  || (ccGrp((n.match(/^([A-Z][A-Z\/]*) /) || [])[1]) ? abImg("c", "group " + ccGrp(n.match(/^([A-Z][A-Z\/]*) /)[1])) : "");   // "DB Ratings Boost 1"
+const ccRow = (n, d, pos, a) => `<li>${ccIco(n, a, pos) || '<span class="ab-slot"></span>'}<div class="ab-tx"><b class="ab-nm">${esc(n)}</b>${pos.length ? `<span class="cc-pos">${pos.map(p => `<i>${esc(p)}</i>`).join("")}</span>` : ""}<span class="ab-ds">${esc(d)}</span></div></li>`;
 // One owned archetype: its perk (the "Core" ability), then each ability once with the position groups it was bought for.
 function ccOwned(arch, ids, T, open){
   const a = CARCH.find(x => x.n === arch), g = new Map(); let perk = "";
@@ -89,7 +95,7 @@ function ccOwned(arch, ids, T, open){
   // The main archetype stays open; the others start collapsed so a 70-ability head coach isn't one endless scroll.
   return `<details class="cc-arch"${open ? " open" : ""}><summary class="cc-h">${abImg("a", arch)}${esc(arch)} <span>${a ? esc(a.g) + " · " : ""}${ids.length} abilit${ids.length === 1 ? "y" : "ies"}</span></summary>`
     + (perk ? `<p class="cc-p"><b>Perk</b> ${esc(perk)}</p>` : "")
-    + `<ul class="ab-list ab-clist cc-own">${[...g.values()].map(([n, d, pos]) => ccRow(n, d, pos)).join("")}</ul></details>`;
+    + `<ul class="ab-list ab-clist cc-own">${[...g.values()].map(([n, d, pos]) => ccRow(n, d, pos, a)).join("")}</ul></details>`;
 }
 async function ccCard(team, name){
   const c = COACHES.find(x => x.team === team && x.name === name); if (!c) return;
@@ -117,7 +123,7 @@ async function ccCard(team, name){
   }
   const a = CARCH.find(x => x.n === c.arch);
   $("#plcB").innerHTML = top() + (a ? `<h3 class="cc-h">${abImg("a", a.n)}What a ${esc(a.n)} can unlock</h3><p class="plc-none">Couldn't load this coach's abilities, so this is the full ${esc(a.n)} list.</p>`
-    + `<ul class="ab-list ab-clist cc-own">${a.br.flatMap(b => b[1]).map(([n, d]) => ccRow(n, d, [])).join("")}</ul>` : "") + staff;
+    + `<ul class="ab-list ab-clist cc-own">${a.br.flatMap(b => b[1]).map(([n, d]) => ccRow(n, d, [], a)).join("")}</ul>` : "") + staff;
 }
 $("#plcB").addEventListener("click", e => {
   const s = e.target.closest("[data-coach]"); if (s) return ccCard(s.dataset.n, s.dataset.coach);

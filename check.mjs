@@ -195,7 +195,10 @@ const inPage = async () => {
   ok(DATA.every(t => t.st.every(c => CTREE.c[t.n + "|" + c[1]])) && Object.values(CTREE.c).every(c => Object.keys(c[1]).every(a => CARCH.some(x => x.n === a))), "Coach data: every coach needs ability data, and every archetype in it must be in CARCH");
   const ccO = $$("#plcB .cc-st")[1]; ccO.click(); ok($("#plcN").textContent.includes(ccO.dataset.coach), "Coach card: tapping another staff member should open them");
   // Kirby Smart: 73 abilities in 7 archetypes (TeamCrafters 9/25/26); position abilities collapse into one row with group chips; real icons where we have them.
-  await ccCard("Georgia", "Kirby Smart"); ok(/73 bought, across 7 archetypes/.test($("#plcB").textContent) && /Specialty: Defensive Line/.test($("#plcB").textContent), "Coach card: Kirby Smart should show 73 abilities in 7 archetypes and his specialty");
+  await ccCard("Georgia", "Kirby Smart");
+  { const li = [...$$("#plcB .cc-own li")], withIco = li.filter(x => x.querySelector("img.ab-ico")).length, grp = li.some(x => /group-/.test(x.querySelector("img")?.src || ""));
+    ok(withIco > li.length * .7 && grp, `Coach card: most abilities should show a game icon, position-group ones their group icon (${withIco}/${li.length})`); }
+  ok(/73 bought, across 7 archetypes/.test($("#plcB").textContent) && /Specialty: Defensive Line/.test($("#plcB").textContent), "Coach card: Kirby Smart should show 73 abilities in 7 archetypes and his specialty");
   ok([...$$("#plcB .cc-arch summary")].map(x => x.textContent.split(" ")[0]).join() === "CEO,Recruiter,Elite,Tactician,Scheme,Strategist,Program", "Coach card: main archetype first, then each base followed by its elite");
   const ccAL = [...$$("#plcB .ab-nm")].find(b => b.textContent === "Advanced Look"); ok(ccAL && [...ccAL.parentNode.querySelectorAll(".cc-pos i")].map(i => i.textContent).join() === "DB,DL,K/P,LB,RB" && $("#plcB img.ab-ico[src$='c/gasoline.png']"), "Coach card: grouped position chips and coach ability icons");
   const ccTop = COACHES.filter(c => c.role === "HC").sort((a, b) => b.lvl - a.lvl)[0]; await ccCard(ccTop.team, ccTop.name); ok($("#plcB").textContent.includes("#1"), "Coach card: the top head coach should rank #1");
