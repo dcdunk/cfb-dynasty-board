@@ -28,7 +28,7 @@ function pAbil(q){
 }
 
 /* ---- dynasty planner: keyword planner over the site's own data, with an optional in-browser AI model for wording ---- */
-// The planner never invents facts: every number comes from DATA/HRULES/ARCH/SLDIFF.
+// The planner never invents facts: every number comes from DATA/HRULES/ARCH.
 const PDIFF = [["hard", /\b(hard|harder|tough|tougher|brutal|hardcore|difficult|challeng\w*|insane|nightmare|grind)\b/], ["cas", /\b(casual|easy|easier|light|relaxed|chill)\b/],
   ["std", /\b(standard|normal|medium|moderate|regular|balanced|in between|middle)\b/]];
 const PPRE = [["money", /moneyball|no blue.?chips?|walk.?ons?|underdog/], ["old", /old.?school|no portal and no nil|classic/], ["portal", /portal era|portal program/],
@@ -284,7 +284,7 @@ function pRender(p){
   const {t, strict, pre, rules, created} = p, s = strainOf(rules), [sl] = strainLbl(s);
   const [, arch, archTxt] = ARCH.find(a => t.p >= a[0]), nr = NILRANK.indexOf(t.n) + 1;
   const pl = t.pl.filter(x => x[1] > 0).sort((a, b) => b[1] - a[1] || b[2] - a[2]).slice(0, 3);
-  const hc = (t.st || []).find(c => c[0] === "HC"), sld = SLDIFF[p.gd === "heis" || (!p.gd && strict === "hard") ? "heis" : "aa"];
+  const hc = (t.st || []).find(c => c[0] === "HC");
   const label = pre ? presetOf(pre).n : HSTRICT[strict].n;
   const hcS = hc ? `${hc[1]} (level ${hc[2]}, ${hc[4]})` : "the head coach";
   const coach = rules.includes("job-coord")   // Earn the headset: you're a coordinator, not the head coach
@@ -293,12 +293,20 @@ function pRender(p){
     ? `You replace ${hc ? `${hc[1]} (level ${hc[2]}, ${hc[4]}, pipeline ${hc[5] || "none"})` : "the current head coach"}. A created coach doesn't inherit that level or pipeline, so the program's own pipelines carry recruiting early on. Pair it with the Earn the headset rule if you want to start as a coordinator.`
     : hc ? `You coach as ${hc[1]}: level ${hc[2]}, ${hc[4]}, grade ${hc[3]}${hc[5] ? `, pipeline ${hc[5]}` : ""}.` : "";
   const recT = pRecTips(t, rules, archTxt);
-  const html = pMd([`### ${t.n} ${t.nk}`, `- ${t.c} · ${t.p}★ prestige · ${t.o} overall · NIL rank #${nr} of ${DATA.length}`,
+  // Talk first (owner, Oct 2026: Coach should sound like a person, and plans no longer recommend sliders).
+  const where = `${t.n} is a ${t.p}★ ${t.c} program at ${t.o} overall and the #${nr} NIL budget out of ${DATA.length}`;
+  const fit = strict === "cas" && !pre ? "The rules stay light, so you can enjoy the build." : t.p >= 4 ? "You start with a loaded program, so these rules are what keep it honest." : t.p >= 3 ? "There's a solid base here, so the rules decide how fast you climb."
+    : "This is a build from the ground up, and the rules make every recruit count.";
+  const open = p.change ? pick(["Done.", "Updated.", "Got it, here's the new version."]) + ` ${where}.`
+    : `${pick([`Here's your ${label} ${t.n} plan.`, `Alright, a ${label} run at ${t.n}.`, `Let's do it: ${label} ${t.n}.`])} ${where}. ${fit}${p.gd ? ` Built for ${PGDN[p.gd]} difficulty.` : ""}`;
+  const close = pick([`Want it lighter or tougher? Say "easier" or "harder", or name a rule to swap out.`,
+    `If a rule doesn't fit how you play, tell me which one and I'll swap it.`, `Happy with it? Add it to My Dynasty below, or ask me to make it harder or easier.`]);
+  const html = pMd([`### ${t.n} ${t.nk}`, open,
     ...(p.goal ? [`### Your goal · ${p.goalName}`, `- ${p.goal}`] : []),
     ...(p.change ? ["### What changed", ...p.change.notes.map(x => `- ${x}`), `- **Difficulty:** ${strainLbl(p.change.from)[0]} (${p.change.from} pts) to ${sl} (${s} pts)`] : []),
     `### House rules · ${pre ? label + " · " : ""}${sl} (${s} pts)`, ...rules.map(id => `- **${plain(HR[id].n)}:** ${plain(HR[id].x(t))}`),
     ...pWhy(p), `### Recruiting · ${arch}`, ...recT.map(x => `- ${x}`), ...(rules.some(id => PONLY.includes(id)) ? [] : [`- **Best pipelines:** ${pl.length ? and(pl.map(x => x[0])) : "thin, so recruit close to home"}`]),
-    ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), `### Sliders`, `- Matt10's ${sld.n} set${p.gd && p.gd !== "aa" && p.gd !== "heis" ? ` (closest to ${PGDN[p.gd]}: his sets cover All-American and Heisman)` : p.gd ? `, for the ${PGDN[p.gd]} difficulty you play on` : ""}`].join("\n"));
+    ...(coach ? [`### ${created && !rules.includes("job-coord") ? "Created coach" : "Your coach"}`, `- ${coach}`] : []), close].join("\n"));
   const save = {team:t.n, rules, label:pre ? presetOf(pre).n : HSTRICT[strict].n, goal:p.goal, goalName:p.goalName, gd:p.gd ? PGDN[p.gd] : ""};
   return html + `<button type="button" class="pdyn" data-plan="${esc(JSON.stringify(save))}">Add to My Dynasty?</button>`;
 }
@@ -344,7 +352,10 @@ function pStaff(q, t){
   const s = norm(q), role = /\b(oc|offensive coordinator)\b/.test(s) ? "OC" : /\b(dc|defensive coordinator)\b/.test(s) ? "DC" : /\bhead coach\b|\bhc\b/.test(s) ? "HC" : null;
   const xs = (t.st || []).filter(c => !role || c[0] === role);
   P.team = t;
-  return pMd([`### ${t.n} · ${role ? PROLE[role] : "Coaching staff"}`, ...xs.map(c => `- ${sRow(c)}`), ...(xs.length ? [] : ["- No staff listed for this program."])].join("\n"));
+  // A spoken line first: how the lead coach in the answer ranks by level among coaches in the same role.
+  const c0 = xs[0], peers = c0 ? DATA.flatMap(x => (x.st || []).filter(c => c[0] === c0[0])) : [], r = c0 ? peers.filter(c => c[2] > c0[2]).length + 1 : 0;
+  const lead = c0 ? `${c0[1]} is ${c0[0] === "HC" ? `${t.n}'s head coach` : `the ${PROLE[c0[0]].toLowerCase()}`}, level ${c0[2]}, which ranks #${r} of ${peers.length} at that job. ${r <= 15 ? "That's one of the best in the country." : r <= 50 ? "Solid, with room to grow." : "Expect to spend coach points early."}` : "";
+  return pMd([`### ${t.n} · ${role ? PROLE[role] : "Coaching staff"}`, ...(lead ? [lead] : []), ...xs.map(c => `- ${sRow(c)}`), ...(xs.length ? [] : ["- No staff listed for this program."])].join("\n"));
 }
 const pFindCoach = q => { const v = " " + norm(q).replace(/[^a-z0-9' .-]+/g, " ") + " ";
   for (const t of DATA) for (const c of t.st || []) if (v.includes(" " + norm(c[1]) + " ")) return [t, c]; return null; };
@@ -643,7 +654,9 @@ function pStat(q, t){
   const grp = k === "df" ? ["DL", "LB", "CB", "S"] : k === "of" ? ["QB", "RB", "WR", "TE", "OL"] : null;
   const ps = grp ? t.r.filter(p => grp.some(g => pGrp(g).includes(p[1]))).sort((a, b) => b[3] - a[3]).slice(0, 3) : [];
   P.team = t; P.last = {kind:"stat", q};
-  const out = [`### ${t.n} · ${lbl}`, `- **${lbl}:** ${val} · #${rk(DATA, f)} of ${DATA.length}${t.c !== "Independent" ? ` · #${rk(conf, f)} of ${conf.length} in the ${t.c}` : ""}`,
+  const r = rk(DATA, f), take = k === "ti" ? (t.ti ? "" : " Still chasing the first one.") : r <= 10 ? " That's elite." : r <= 30 ? " That's a real strength." : r <= 70 ? " Middle of the pack nationally." : " That's the area to build.";
+  const cr = rk(conf, f), low = k !== "ti" && t.c !== "Independent" && cr > conf.length * .75 ? ` Near the bottom of the ${t.c}, though.` : "";
+  const out = [`### ${t.n} · ${lbl}`, `${t.n}'s ${lbl.toLowerCase()} is ${val}, #${r} of ${DATA.length} nationally${t.c !== "Independent" ? ` and #${cr} of ${conf.length} in the ${t.c}` : ""}.${take}${low}`,
     ...(k === "ti" && tYears(t).length ? [`- **Seasons:** ${tYears(t).join(", ")}`] : []), ...(ps.length ? ["### Best on that side", ...ps.map(p => `- ${pRow(p)}`)] : [])];
   return pMd(out.join("\n"));
 }

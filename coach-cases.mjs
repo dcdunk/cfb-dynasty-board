@@ -103,7 +103,9 @@ export default [
   {name: "follow-up conference", say: [["best wr in the sec", {}], ["how about the big ten", {has: ["Best WR · Big Ten"], not: ["· SEC"]}]]},
   {name: "follow-up staff", say: [["who is oregon's head coach?", {}], ["what about texas?", {has: ["Texas · Head coach"]}]]},
   {name: "follow-up after plan is a plan", say: [["tough florida dynasty", {}], ["what about michigan?", {has: ["Michigan Wolverines", "House rules · Hardcore"]}]]},
-  {name: "team stat", say: [["how good is alabama's defense", {has: ["Alabama · Defense", "in the SEC"]}]]},
+  {name: "team stat", say: [["how good is alabama's defense", {has: ["Alabama · Defense", "in the SEC", "Alabama's defense is"]}]]},
+  {name: "plans talk and skip sliders", say: [["tough baylor dynasty", {has: ["Baylor", "House rules · Hardcore", "Baylor is a 2.5★ Big 12 program", "(easier|harder|swap)"], not: ["Sliders", "Matt10"]}]]},
+  {name: "staff answer opens with a take", say: [["who is georgia's head coach", {has: ["Georgia's head coach, level", "ranks #\\d+ of"]}]]},
   {name: "moneyball is still a preset", say: [["moneyball at temple", {has: ["Moneyball"], not: ["NIL budget:"]}]]},
 
   // ---- roster roadmap
@@ -129,7 +131,7 @@ export default [
   {name: "powerhouse", say: [["former powerhouse back to glory, 3 options?", {has: ["Minnesota", "1960"]}]]},
   // ---- whole-message routing (Oct 2026): a plan request can't be hijacked by a stray keyword
   {name: "long plan request with 'recruiting power' and 'have'", say: [["i'm thinking about doing an oregon dynasty as they have never won a national championship, but their recruiting power makes it easy. give me a good challenge. i also mainly play on all american",
-    {has: ["Oregon Ducks", "House rules · Hardcore", "First title", "first national title in Oregon history", "All-American set, for the All-American difficulty you play on"], not: ["Power K/P", "Mega Leg", "Heisman or bust"],
+    {has: ["Oregon Ducks", "House rules · Hardcore", "First title", "first national title in Oregon history", "Built for All-American difficulty"], not: ["Power K/P", "Mega Leg", "Heisman or bust"],
       js: "P.plan.gd === 'aa' && !P.plan.rules.includes('game-heis')"}]]},
   {name: "'power' in a plan isn't the kicker archetype", say: [["build me a dynasty where i have to win with a power run game at wisconsin", {has: ["Wisconsin Badgers", "How tough do you want it"], not: ["Power K/P"]}], ["standard", {has: ["Wisconsin", "House rules · Standard"]}]]},
   {name: "no difficulty named: asks instead of guessing", say: [["i want to do a baylor dynasty", {has: ["Baylor Bears", "How tough do you want it"], not: ["House rules"]}], ["casual", {has: ["Baylor", "House rules · Casual"]}]]},
@@ -141,8 +143,8 @@ export default [
   {name: "without nil money", say: [["tough lsu dynasty without nil money", {js: "P.plan.rules.includes('nil-zero')"}]]},
   {name: "avoid five stars", say: [["casual texas dynasty, avoid five stars", {js: "P.plan.rules.includes('star-none')"}]]},
   // ---- game difficulty and titles
-  {name: "plays on all-american", say: [["I play on all-american, give me an oregon dynasty", {has: ["All-American set"], js: "P.plan.gd === 'aa' && !P.plan.rules.includes('game-heis')"}]]},
-  {name: "plays on heisman", say: [["a challenge for someone who plays on heisman with lsu", {has: ["Heisman set", "Back on top", "first national title since 2019"], js: "P.plan.gd === 'heis'"}]]},
+  {name: "plays on all-american", say: [["I play on all-american, give me an oregon dynasty", {has: ["Built for All-American difficulty"], js: "P.plan.gd === 'aa' && !P.plan.rules.includes('game-heis')"}]]},
+  {name: "plays on heisman", say: [["a challenge for someone who plays on heisman with lsu", {has: ["Built for Heisman difficulty", "Back on top", "first national title since 2019"], js: "P.plan.gd === 'heis'"}]]},
   {name: "game difficulty carries into edits", say: [["tough oregon dynasty, i play on varsity", {}], ["make it harder", {js: "P.plan.gd === 'var' && !P.plan.rules.includes('game-heis')"}]]},
   {name: "challenges for teams without a title", say: [["give me a challenge with a team that has never won a title",
     {has: ["programs without a national title"], js: "P.choices.length === 3 && P.choices.every(c => c.t.ti === 0)"}]]},
